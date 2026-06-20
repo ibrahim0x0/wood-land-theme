@@ -1,0 +1,74 @@
+{#
+  Rating Stars Component
+
+  Props:
+  - rating: number (0-5)
+  - size: number (default 16) - size in pixels
+#}
+
+{% set star_size = size or 16 %}
+
+{% if rating is not none %}
+  {% set ratingRounded = ((rating * 2) | round(0, 'ceil')) / 2 %}
+  <div class="flex gap-0.5">
+    {% for n in range(1, 6) %}
+      {% if n <= ratingRounded %}
+        {# Full star #}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="{{ star_size }}"
+          height="{{ star_size }}"
+          viewBox="0 0 16 16"
+          fill="none"
+          class="text-warning"
+        >
+          <path
+            d="M8 11.1733L11.5733 13.3333L10.6933 9.30667L13.7333 6.59333L9.63333 6.28L8 2.5L6.36667 6.28L2.26667 6.59333L5.30667 9.30667L4.42667 13.3333L8 11.1733Z"
+            fill="currentColor"
+          />
+        </svg>
+      {% elif n <= ratingRounded + 0.5 %}
+        {# Half star #}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="{{ star_size }}"
+          height="{{ star_size }}"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <defs>
+            <linearGradient id="half-star-{{ n }}">
+              <stop
+                offset="50%"
+                stop-color="var(--color-warning)"
+              />
+              <stop
+                offset="50%"
+                stop-color="var(--color-muted-foreground)"
+              />
+            </linearGradient>
+          </defs>
+          <path
+            d="M8 11.1733L11.5733 13.3333L10.6933 9.30667L13.7333 6.59333L9.63333 6.28L8 2.5L6.36667 6.28L2.26667 6.59333L5.30667 9.30667L4.42667 13.3333L8 11.1733Z"
+            fill="url(#half-star-{{ n }})"
+          />
+        </svg>
+      {% else %}
+        {# Empty star #}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="{{ star_size }}"
+          height="{{ star_size }}"
+          viewBox="0 0 16 16"
+          fill="none"
+          class="text-muted-foreground"
+        >
+          <path
+            d="M8 11.1733L11.5733 13.3333L10.6933 9.30667L13.7333 6.59333L9.63333 6.28L8 2.5L6.36667 6.28L2.26667 6.59333L5.30667 9.30667L4.42667 13.3333L8 11.1733Z"
+            fill="currentColor"
+          />
+        </svg>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

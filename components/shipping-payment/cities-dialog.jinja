@@ -1,0 +1,91 @@
+<el-dialog id="cities-dialog-wrapper">
+  <dialog
+    id="cities-dialog"
+    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent"
+  >
+    <el-dialog-backdrop
+      class="bg-foreground/10 fixed inset-0 backdrop-blur-sm transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+    ></el-dialog-backdrop>
+    <div
+      tabindex="0"
+      class="flex min-h-full items-end justify-center focus:outline-none sm:items-center sm:p-4"
+    >
+      <el-dialog-panel
+        class="bg-background relative flex max-h-[55vh] w-full max-w-lg transform flex-col overflow-hidden rounded-t-xl p-4 transition-all data-closed:translate-y-full data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:max-h-[80vh] sm:rounded sm:data-closed:translate-y-0 sm:data-closed:scale-95"
+      >
+        <div class="flex shrink-0 items-center justify-between pb-4">
+          <h2
+            class="text-foreground text-lg font-semibold sm:text-sm sm:font-medium"
+            data-cities-dialog-title
+          >
+            {{ _("Supported Areas") }}
+          </h2>
+          <button
+            command="close"
+            commandfor="cities-dialog"
+            type="button"
+            class="btn btn-icon btn-icon-lg"
+            aria-label="{{ _('Close') }}"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="shrink-0 pb-4">
+          <div class="form-input-wrapper">
+            <div data-slot="icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="cities-search-input"
+              placeholder="{{ _('Search') }}"
+              data-cities-search
+            />
+          </div>
+        </div>
+        <div
+          class="min-h-0 flex-1 overflow-y-auto"
+          data-cities-list-container
+        >
+          <div
+            class="text-muted text-sm py-8 text-center"
+            data-cities-empty
+          >
+            {{ _("No areas found") }}
+          </div>
+        </div>
+        <div class="border-border-light -mx-4 -mb-4 shrink-0 border-t p-4 sm:hidden">
+          <button
+            command="close"
+            commandfor="cities-dialog"
+            type="button"
+            class="btn btn-outlined btn-lg w-full"
+          >
+            {{ _("Close") }}
+          </button>
+        </div>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>

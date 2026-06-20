@@ -1,0 +1,118 @@
+{# ──────────────────────────────────────────────────────────────────────────
+   Customer video testimonials — PDP carousel.
+
+   Driven by Layout Settings → Product Videos (global `product_videos_list`,
+   exposed in layout.jinja). Each list row is one video whose `product_ref`
+   names the owning product by URL / handle / name; here we keep only the rows
+   matching the current product, then render a horizontal video carousel.
+
+   Behaviour (play/pause, dots, arrows, scroll-sync) lives in
+   assets/js/features/product-video-testimonials.js.
+   ────────────────────────────────────────────────────────────────────────── #}
+{% if product_videos_enabled and product_videos_list %}
+  {% set _vids = namespace(items=[]) %}
+  {% for _row in product_videos_list %}
+    {% set _src = _row.video_url or _row.video %}
+    {# A row targets products one of two ways: the "all products" toggle, or a
+       `product_ref` naming the product by URL / handle / name (and matching a
+       pasted URL that contains the id or slug — list several to target a group). #}
+    {% set _ref = _row.product_ref | string | trim %}
+    {% set _m = namespace(ok=false) %}
+    {% if _row.all_products %}
+      {% set _m.ok = true %}
+    {% elif _ref %}
+      {% set _pid  = product.id | string %}
+      {% set _slug = product.slug | string %}
+      {# Normalise name comparison: strip ALL spaces and lowercase, so
+         "خلطة ودلاند X" matches the stored "خلطة  ودلاند X" regardless of
+         spacing. Uses only core filters (sandbox-safe). #}
+      {% set _refn  = _ref | replace(' ', '') | lower %}
+      {% set _namen = product.name | string | replace(' ', '') | lower %}
+      {# Lowercased ref + URL-encoded slug, so a pasted address-bar URL with
+         percent-encoded Arabic (…/products/%D8%AE…) still matches the slug. #}
+      {% set _refl    = _ref | lower %}
+      {% set _slugenc = _slug | urlencode | lower %}
+      {% if _ref == _pid or _ref == _slug or (_namen and _refn == _namen) %}
+        {% set _m.ok = true %}
+      {% elif _pid in _ref or (_slug and _slug in _ref) or (_slugenc and _slugenc in _refl) %}
+        {% set _m.ok = true %}
+      {% endif %}
+    {% endif %}
+    {% if _src and _m.ok %}
+      {% set _vids.items = _vids.items + [{'src': _src, 'quote': _row.quote}] %}
+    {% endif %}
+  {% endfor %}
+
+  {% if _vids.items | length > 0 %}
+    <section id="wdl-vid-section" class="wdl-v" data-product-videos>
+      {% raw %}<style>
+        /* Full-width band (rendered outside .theme-container in product.jinja);
+           the inner .wdl-v__slider-wrap keeps the carousel centered. */
+        #wdl-vid-section{width:100%;padding:48px 16px 40px;background:#fdfbf6;direction:rtl;overflow:hidden}
+        #wdl-vid-section *{box-sizing:border-box}
+        #wdl-vid-section .wdl-v__header{text-align:center;margin-bottom:28px}
+        #wdl-vid-section .wdl-v__badge{display:inline-block;background:var(--primary);color:var(--primary-foreground);font-size:13px;font-weight:700;padding:6px 18px;border-radius:50px;margin-bottom:14px}
+        #wdl-vid-section .wdl-v__title{font-size:clamp(20px,4.5vw,30px);font-weight:800;color:var(--foreground);margin:0 0 8px;line-height:1.4}
+        #wdl-vid-section .wdl-v__subtitle{font-size:clamp(14px,3vw,16px);color:color-mix(in srgb,var(--foreground) 60%,transparent);margin:0 auto;max-width:520px;line-height:1.7}
+        #wdl-vid-section .wdl-v__slider-wrap{position:relative;max-width:1240px;margin:0 auto;padding:0 8px}
+        #wdl-vid-section .wdl-v__slider{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:8px 4px 20px;scrollbar-width:none;-ms-overflow-style:none}
+        #wdl-vid-section .wdl-v__slider::-webkit-scrollbar{display:none}
+        #wdl-vid-section .wdl-v__card{flex:0 0 300px;scroll-snap-align:center;background:var(--background);border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgb(0 0 0 / .08);display:flex;flex-direction:column;border:1.5px solid color-mix(in srgb,var(--primary) 15%,transparent);transition:transform .35s,box-shadow .35s}
+        #wdl-vid-section .wdl-v__card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgb(0 0 0 / .14)}
+        #wdl-vid-section .wdl-v__quote{background:var(--primary);color:var(--primary-foreground);text-align:center;font-size:14px;font-weight:700;padding:12px 14px;line-height:1.6}
+        #wdl-vid-section .wdl-v__media{position:relative;aspect-ratio:9/16;background:#1a1a1a;cursor:pointer;-webkit-tap-highlight-color:transparent}
+        #wdl-vid-section .wdl-v__media video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+        #wdl-vid-section .wdl-v__play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;background:rgb(0 0 0 / .18);transition:background .3s,opacity .3s}
+        #wdl-vid-section .wdl-v__play svg{filter:drop-shadow(0 3px 10px rgb(0 0 0 / .3));transition:transform .3s;pointer-events:none}
+        #wdl-vid-section .wdl-v__media:hover .wdl-v__play svg{transform:scale(1.1)}
+        #wdl-vid-section .wdl-v__play.is-hidden{opacity:0;pointer-events:none;background:transparent}
+        #wdl-vid-section .wdl-v__nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:var(--background);border:1.5px solid color-mix(in srgb,var(--primary) 25%,transparent);color:var(--foreground);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgb(0 0 0 / .08);z-index:10;transition:transform .25s,background .25s,color .25s,opacity .25s;padding:0}
+        #wdl-vid-section .wdl-v__nav:hover:not([disabled]){background:var(--primary);color:var(--primary-foreground);transform:translateY(-50%) scale(1.06)}
+        #wdl-vid-section .wdl-v__nav--prev{right:-6px}
+        #wdl-vid-section .wdl-v__nav--next{left:-6px}
+        #wdl-vid-section .wdl-v__nav--next svg{transform:rotate(180deg)}
+        #wdl-vid-section .wdl-v__nav[disabled]{opacity:.35;cursor:not-allowed}
+        #wdl-vid-section .wdl-v__dots{display:flex;justify-content:center;gap:8px;margin-top:14px}
+        #wdl-vid-section .wdl-v__dot{width:8px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--primary) 30%,transparent);border:0;padding:0;cursor:pointer;transition:all .25s}
+        #wdl-vid-section .wdl-v__dot.is-active{background:var(--primary);width:22px;border-radius:4px}
+        @media(max-width:880px){#wdl-vid-section .wdl-v__nav{display:none}}
+        @media(max-width:640px){#wdl-vid-section{padding:36px 12px 32px}#wdl-vid-section .wdl-v__card{flex-basis:78%;max-width:320px}}
+      </style>{% endraw %}
+
+      <div class="wdl-v__header">
+        {% if product_videos_eyebrow %}<span class="wdl-v__badge">{{ product_videos_eyebrow }}</span>{% endif %}
+        {% if product_videos_title %}<h2 class="wdl-v__title">{{ product_videos_title }}</h2>{% endif %}
+        {% if product_videos_subtitle %}<p class="wdl-v__subtitle">{{ product_videos_subtitle }}</p>{% endif %}
+      </div>
+
+      <div class="wdl-v__slider-wrap">
+        <button class="wdl-v__nav wdl-v__nav--prev" aria-label="{{ _('Previous') }}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="wdl-v__nav wdl-v__nav--next" aria-label="{{ _('Next') }}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="wdl-v__slider">
+          {% for _item in _vids.items %}
+            <div class="wdl-v__card" data-index="{{ loop.index0 }}">
+              {% if _item.quote %}<div class="wdl-v__quote">{{ _item.quote }}</div>{% endif %}
+              <div class="wdl-v__media">
+                <video preload="metadata" playsinline webkit-playsinline src="{{ _item.src }}#t=0.5"></video>
+                <div class="wdl-v__play">
+                  <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="32" fill="var(--primary)"/><path d="M26 20L46 32L26 44V20Z" fill="#fff"/></svg>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="wdl-v__dots">
+        {% for _item in _vids.items %}
+          <button class="wdl-v__dot{{ ' is-active' if loop.first }}" data-index="{{ loop.index0 }}" aria-label="{{ loop.index }}"></button>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endif %}

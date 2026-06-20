@@ -1,0 +1,54 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Highlights — compact USP / trust-badge strip (1–4 items).
+   Each item: icon + title + subtitle, laid out horizontally.
+
+   Display styles (`container_style`):
+     • unified — single rounded container with thin vertical dividers
+                 between items (no per-item borders). The "pill" look.
+     • cards   — each item is its own bordered card with a gap between.
+     • bare    — no borders, just spacing.
+
+   This section is a thin wrapper: it resolves the merchant's settings
+   into the shared `hl` namespace and delegates to the
+   `components/highlights-render.jinja` partial. The same partial powers
+   the header-level highlights strip (components/header-highlights.jinja),
+   so the two stay visually and behaviourally in lock-step.
+
+   Auto-id: section-ids.js sees `section-highlights` and assigns
+   id="highlights-N" for in-page anchors / analytics.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{# `points` instead of `items` — `settings.items` collides with the
+   built-in dict.items() method, returning a bound method (no len) when
+   the merchant hasn't added any rows yet. #}
+{% set hl = {
+  'points':           settings.points,
+  'container_style':  settings.container_style | default('unified', true),
+  'item_radius':      settings.item_radius if settings.item_radius is not none else 12,
+  'background':       settings.background | default('secondary', true),
+  'show_on_mobile':   true,
+  'show_on_desktop':  true,
+  'is_lazy':          settings.order > 2
+} %}
+
+{% set instance_id = sectionId %}
+{% include 'components/highlights-render.jinja' %}
+{% endif %}{# /country-visibility guard #}

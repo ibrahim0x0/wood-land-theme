@@ -1,0 +1,253 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Marquee — horizontally scrolling strip of items (text + optional
+   image + optional link).
+
+   Implementation: Embla Carousel + AutoScroll plugin (already wired
+   into `assets/js/lib/carousel.js` and picked up by `main.js` via
+   the `data-carousel*` attributes below). No clones, no keyframe
+   math, no `-50%` translate trick — Embla handles the continuous
+   loop, RTL direction, image-load resilience, and resize.
+
+   The previous implementation hand-rolled CSS animation with a
+   duplicated DOM sequence. That technique works in demos but breaks
+   under real-world conditions (lazy-loaded images, font swap,
+   variable item widths, viewport shorter than sequence). The Embla
+   AutoScroll plugin is purpose-built for this exact use case and
+   handles all those edge cases.
+
+   Static styles live in `assets/css/components.css` (search
+   "MARQUEE SECTION"). Only per-instance CSS variables are inlined
+   on the section's `style` attribute.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{# ── URL safety helper ──
+   Allowlist the schemes we trust, default-deny everything else.
+   Without this, a merchant entering `javascript:alert(1)` in the
+   URL field would produce a working XSS gadget on click. #}
+{% macro safe_url(raw) %}
+{%- set u = (raw | trim) if raw else '' -%}
+{%- if u and (
+       u.startswith('/')
+    or u.startswith('#')
+    or u.startswith('http://')
+    or u.startswith('https://')
+    or u.startswith('mailto:')
+    or u.startswith('tel:')
+) -%}
+{{- u -}}
+{%- endif -%}
+{% endmacro %}
+
+{# ── Item rendering macro — single source of truth for an item.
+   `is_duplicate=true` means this is a re-render to give Embla
+   enough content to overflow the viewport (see the repeat-count
+   logic below). Duplicate items render as `<div>` (not `<a>`) so
+   their links aren't focusable, get `aria-hidden="true"` so screen
+   readers don't announce the same content twice, and force lazy
+   loading on their images since they're rendered for layout
+   width — the actual visible content is the first copy. #}
+{% macro marquee_item(item, is_lazy, is_duplicate) %}
+  {% set has_text = item.text and item.text | trim %}
+  {% set has_img  = item.image %}
+  {% if has_text or has_img %}
+    {% set _safe = safe_url(item.url) | trim %}
+    {% if _safe and not is_duplicate %}
+      <a class="marquee__item" href="{{ _safe }}" rel="noopener">
+    {% else %}
+      <div class="marquee__item"{% if is_duplicate %} aria-hidden="true"{% endif %}>
+    {% endif %}
+      {% if has_img %}
+        <img
+          src="{{ image_url(item.image, w=200, q=90, f='auto') }}"
+          alt="{% if not is_duplicate %}{{ item.text or '' }}{% endif %}"
+          class="marquee__img"
+          {% if is_lazy or is_duplicate %}loading="lazy"{% endif %}
+          decoding="async"
+        />
+      {% endif %}
+      {% if has_text %}
+        <span class="marquee__text">{{ item.text }}</span>
+      {% endif %}
+    {% if _safe and not is_duplicate %}</a>{% else %}</div>{% endif %}
+  {% endif %}
+{% endmacro %}
+
+{# `entries` (not `items`) — `settings.items` collides with Jinja's
+   built-in `dict.items()` method. When a freshly-added section has
+   no rows yet, `settings.items` returns the bound method (truthy,
+   no `__len__`) and `| length` raises an error. The list's id in
+   the schema is also renamed to `entries`. #}
+{% set entries = settings.entries %}
+{% set count   = entries | length if entries else 0 %}
+
+{# Resolve all settings up-front. `is not none` (rather than
+   `| default`) for any range that can legitimately be 0 — prevents
+   an explicit zero from collapsing back to the default. #}
+{% set speed         = settings.speed         if settings.speed         is not none else 1 %}
+{% set direction     = settings.direction     | default('auto', true) %}
+{% set pause_hover   = settings.pause_on_hover if settings.pause_on_hover is not none else true %}
+{% set edge_fade     = settings.edge_fade     if settings.edge_fade     is not none else true %}
+{% set gap_px        = settings.gap           if settings.gap           is not none else 40 %}
+{% set img_h_px      = settings.image_height  if settings.image_height  is not none else 40 %}
+{# `0` is a sentinel meaning "no max-width cap" — resolved to the
+   CSS keyword `none` so wide logos render at their full natural
+   width derived from the height + aspect ratio. #}
+{% set img_w_setting = settings.image_max_width if settings.image_max_width is not none else 120 %}
+{% set img_w_css     = 'none' if img_w_setting == 0 else (img_w_setting ~ 'px') %}
+{% set text_size     = settings.text_size     | default('md', true) %}
+{% set text_weight   = settings.text_weight   | default('medium', true) %}
+{% set text_color    = settings.text_color    | default('auto', true) %}
+{% set bg            = settings.background    | default('primary', true) %}
+{% set padding_y     = settings.padding_y     if settings.padding_y     is not none else 14 %}
+{% set margin_y      = settings.margin_y      if settings.margin_y      is not none else 0 %}
+{% set border_top    = settings.border_top    | default(false) %}
+{% set border_bottom = settings.border_bottom | default(false) %}
+{% set border_radius = settings.border_radius if settings.border_radius is not none else 0 %}
+{% set full_width    = settings.full_width   | default(false) %}
+{% set is_lazy       = settings.order > 2 %}
+
+{# Direction → Embla AutoScroll's `direction` parameter.
+   `auto` means "follow page direction" — Embla reads `document.dir`
+   and scrolls toward the inline-end (in LTR: R→L, in RTL: L→R) by
+   default. For `reverse` we ask Embla to scroll backward, which
+   flips the visual direction relative to whatever auto would do. #}
+{% set autoscroll_direction = 'backward' if direction == 'reverse' else 'forward' %}
+
+{# ── Repeat count for viewport overflow ──
+   Embla's `loop: true` requires the total rendered slide width to
+   exceed the viewport. If the merchant has 4 items at 150px each,
+   that's 600px — fits inside a 1280px desktop viewport, so loop
+   silently disables and AutoScroll has nothing to scroll.
+
+   The thresholds below target ≥16 rendered slides — at typical
+   item widths (120–200px) that's ~1920–3200px, covering ultra-
+   wide displays with safety margin. Bumped from the previous
+   "≥12 minimum" which only covered ~1440px and missed 1920px+
+   monitors. #}
+{% set repeat = 1 %}
+{% if count == 1 %}
+  {% set repeat = 16 %}
+{% elif count == 2 %}
+  {% set repeat = 8 %}
+{% elif count == 3 %}
+  {% set repeat = 6 %}
+{% elif count < 6 %}
+  {% set repeat = 4 %}
+{% elif count < 8 %}
+  {% set repeat = 3 %}
+{% elif count < 16 %}
+  {% set repeat = 2 %}
+{% endif %}
+
+{# Section container is rendered ALWAYS, even when entries is empty,
+   so the editor has a DOM target to outline. When count == 0 we
+   render an empty-state hint inside the wrapper. #}
+<section
+  section-id="{{ sectionId }}"
+  {# Horizontal Tailwind padding (`px-4 md:px-16`) is conditionally
+     omitted when `full_width` is on so the section truly bleeds
+     edge-to-edge. The contained mode (default) keeps the same
+     padding utilities every other contained section uses. #}
+  class="section-marquee{% if count == 0 %} section-marquee--empty{% endif %}{% if not full_width %} px-4 md:px-16{% endif %}"
+  data-bg="{{ bg }}"
+  data-edge-fade="{{ 'true' if edge_fade else 'false' }}"
+  data-text-size="{{ text_size }}"
+  data-text-weight="{{ text_weight }}"
+  data-text-color="{{ text_color }}"
+  data-border-top="{{ 'true' if border_top else 'false' }}"
+  data-border-bottom="{{ 'true' if border_bottom else 'false' }}"
+  {% if border_radius > 0 %}data-rounded="true"{% endif %}
+  {% if full_width %}data-full-width="true"{% endif %}
+  style="
+    --marquee-gap: {{ gap_px }}px;
+    --marquee-img-h: {{ img_h_px }}px;
+    --marquee-img-max-w: {{ img_w_css }};
+    --marquee-padding-y: {{ padding_y }}px;
+    --marquee-margin-y: {{ margin_y }}px;
+    --marquee-radius: {{ border_radius }}px;
+  "
+>
+  {# `theme-container` constrains the marquee to the theme-standard
+     1440px max-width, matching every other section's inset width
+     (Highlights, Testimonials, Why-Us, Logo Strip). The section
+     element keeps its background full-width so colored / cream
+     bg tokens still bleed edge-to-edge — but the scrolling strip
+     itself, the edge-fade mask, and the loop content all sit
+     within the contained 1440px boundary. The `px-4 md:px-16` on
+     the section provides horizontal edge padding before the
+     container, matching the theme convention. #}
+  <div class="theme-container">
+    {% if count == 0 %}
+      {# Empty-state placeholder — visible target for the editor so a
+         freshly-added section is obvious to the merchant. #}
+      <div class="marquee marquee--empty-state">
+        <span class="marquee__empty-hint">
+          {{ 'أضف عناصر لشريطك المتحرك من إعدادات القسم' if session.locale.language.direction == 'rtl' else 'Add items to your marquee from the section settings' }}
+        </span>
+      </div>
+    {% else %}
+      {# ── Embla container.
+         The combination of attributes below tells `main.js` to:
+           • create an Embla carousel instance via `createCarousel()`
+           • enable infinite loop (continuous wrap-around)
+           • attach the AutoScroll plugin with our speed / direction /
+             pause-on-hover settings
+         `main.js` reads `data-carousel-autoscroll` and the related
+         `data-carousel-autoscroll-*` attrs and translates them into
+         plugin options. No JS init needed in this section file. #}
+      <div
+        class="marquee embla"
+        data-carousel
+        data-carousel-loop="true"
+        data-carousel-autoscroll="{{ speed }}"
+        data-carousel-autoscroll-direction="{{ autoscroll_direction }}"
+        data-carousel-autoscroll-pause-on-hover="{{ 'true' if pause_hover else 'false' }}"
+        data-carousel-align="start"
+        data-carousel-dragfree="true"
+        role="region"
+        aria-label="{{ 'محتوى متحرك' if session.locale.language.direction == 'rtl' else 'Scrolling content' }}"
+      >
+        <div
+          class="embla__viewport"
+          data-carousel-viewport
+        >
+          <div class="embla__container">
+            {# Outer loop renders the entries `repeat` times so the
+               total slide width overflows the viewport (see comment
+               above the `repeat` calculation). The first copy
+               (cycle == 0) is the canonical/original — links active,
+               content visible to assistive tech. Subsequent copies
+               are marked as duplicates: links become divs, images
+               get aria-hidden via empty alt + lazy-loading. #}
+            {% for cycle in range(repeat) %}
+              {% for item in entries %}
+                <div class="embla__slide">
+                  {{ marquee_item(item, is_lazy, cycle > 0) }}
+                </div>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}{# /country-visibility guard #}

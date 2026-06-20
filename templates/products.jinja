@@ -1,0 +1,102 @@
+{% extends "layout.jinja" %}
+
+{% block title %}{{ store.name }} – {{ _('All Products') }}{% endblock %}
+
+{% block content %}
+  {# Breadcrumb Section #}
+  <section class="px-4 py-6 md:px-16">
+    <div class="theme-container">
+      {%
+        with
+        items=[
+          {'href': url_for('home'), 'label': _("Home")},
+          {'label': _("All Products")}
+        ]
+      %}
+        {% include 'components/ui/breadcrumb.jinja' %}
+      {% endwith %}
+    </div>
+  </section>
+
+  <section class="px-4 pb-6 md:px-16 md:pb-16">
+    <div class="theme-container">
+      {# Products Content - This entire container is swapped during AJAX filtering #}
+      <div
+        id="products-content"
+        class="flex flex-col gap-6 transition-opacity duration-200"
+      >
+        {% include 'components/products/products-header.jinja' %}
+        {% if products.results %}
+          {# Grid layout driven by the "Listing pages" theme settings
+             (Layout Settings → Listing pages). Per-card knobs fall back
+             to safe defaults inside product-card.jinja. #}
+          <div
+            class="products-grid gap-x-4 gap-y-10"
+            style="--cols-mobile: {{ listing_columns_mobile }}; --cols-desktop: {{ listing_columns_desktop }};"
+          >
+            {% for product in products.results %}
+              {% with
+                card_image_aspect_ratio=listing_image_aspect_ratio,
+                card_density=card_density_default,
+                index=loop.index0
+              %}
+                {% include 'components/products/product-card.jinja' %}
+              {% endwith %}
+            {% endfor %}
+          </div>
+        {% else %}
+          {# No results state #}
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              class="text-muted-foreground mb-6"
+            >
+              <path
+                d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"
+                fill="currentColor"
+              />
+              <path
+                d="M7 9H12V10H7V9Z"
+                fill="currentColor"
+              />
+            </svg>
+            <h3 class="text-foreground text-h6 mb-2">{{ _("No results found") }}</h3>
+            <p class="text-muted-foreground text-body2 mb-6">
+              {{ _("We couldn't find any products matching your search. Try adjusting your filters or search terms.") }}
+            </p>
+            <a
+              href="/products"
+              class="bg-primary text-primary-foreground rounded-lg px-6 py-3 text-sm font-medium"
+            >
+              {{ _("View all products") }}
+            </a>
+          </div>
+        {% endif %}
+        {% if products.results %}
+          {# Load more — filled button that appends the next page (replaces
+             numbered pagination on /products). #}
+          {% set totalPages = ((products.count / (session.query_params.get('page_size') or 24)|int) | round(0, 'ceil')) | int %}
+          {% set currentPage = products.page %}
+          {% include 'components/products/load-more.jinja' %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# Quick View Modal #}
+  {% include 'components/products/quick-view-modal.jinja' %}
+
+{% endblock %}
+
+{% block footer_scripts %}
+  {# Listing-only JS bundle (noUiSlider price slider). Kept out of the global
+     theme.js — see assets/js/listing.js + vite.config.js `listing` entry. #}
+  <script
+    defer
+    src="{{ 'dist/theme-listing.js' | asset_url }}"
+  ></script>
+{% endblock %}

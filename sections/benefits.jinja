@@ -1,0 +1,314 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Store Benefits — 2-col mobile / 4-col desktop grid of icon +
+   title + description "trust" tiles. Was previously a minimal
+   section with no heading and hardcoded image size + colors;
+   updated to use the shared section-heading partial (so it picks
+   up the global Section Headings settings) and to expose merchant
+   controls for icon size + per-section color overrides.
+
+   `store_features` (legacy field name, kept to preserve existing
+   merchant data — renaming would orphan filled-in entries on
+   already-deployed instances).
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set features = settings.store_features %}
+{% set count    = features | length if features else 0 %}
+{% set is_rtl   = session.locale.language.direction == 'rtl' %}
+
+{% set image_size       = settings.image_size if settings.image_size is not none else 48 %}
+{% set mobile_scale     = settings.mobile_font_scale if settings.mobile_font_scale is not none else 0.8 %}
+{% set title_color      = (settings.title_color | trim)       if settings.title_color else '' %}
+{% set description_clr  = (settings.description_color | trim) if settings.description_color else '' %}
+
+{% set bg          = settings.background    | default('secondary', true) %}
+{% set padding_y   = settings.padding_y     if settings.padding_y is not none else 48 %}
+{% set margin_y    = settings.margin_y      if settings.margin_y  is not none else 0 %}
+{% set border_top  = settings.border_top    | default(false) %}
+{% set border_bot  = settings.border_bottom | default(false) %}
+{% set is_lazy     = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-benefits{% if count == 0 %} section-benefits--empty{% endif %} px-4 md:px-16"
+  data-bg="{{ bg }}"
+  data-border-top="{{ 'true' if border_top else 'false' }}"
+  data-border-bottom="{{ 'true' if border_bot else 'false' }}"
+  {# Color override gates — only emit the data-attr (and the CSS
+     variable) when the merchant has set a non-empty value. Empty
+     values would otherwise cascade and replace the foreground-
+     based default color rules. Same pattern marquee + reviews
+     use for their per-section color overrides. #}
+  {% if title_color %}data-has-title-color{% endif %}
+  {% if description_clr %}data-has-description-color{% endif %}
+  style="
+    --benefits-padding-y: {{ padding_y }}px;
+    --benefits-margin-y: {{ margin_y }}px;
+    --benefits-image-size: {{ image_size }}px;
+    --benefits-mobile-scale: {{ mobile_scale }};
+    {% if title_color %}--benefits-title-color: {{ title_color }};{% endif %}
+    {% if description_clr %}--benefits-description-color: {{ description_clr }};{% endif %}
+  "
+>
+  <div class="theme-container">
+    {% if (settings.title and settings.title | trim) or settings.subtitle or settings.eyebrow %}
+      {# Heading via the shared partial — eyebrow / subtitle colors
+         inherit from the theme-wide Section Headings settings, just
+         like every other section. The merchant gets `inherit` /
+         `souq` / `elite` choices via the schema's `heading_style`. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      {% with
+        eyebrow=settings.eyebrow,
+        title=settings.title,
+        subtitle=settings.subtitle,
+        heading_style=_hs,
+        heading_alignment=heading_alignment_default,
+        heading_icon=heading_icon_default
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    {% endif %}
+
+    {% if count == 0 %}
+      {# Empty-state placeholder — visible target for the editor
+         when the section is freshly added. #}
+      <div class="benefits-empty-state">
+        <span class="benefits-empty-hint">
+          {{ 'أضف خصائص المتجر من إعدادات القسم' if is_rtl else 'Add store benefits from the section settings' }}
+        </span>
+      </div>
+    {% else %}
+      <div class="benefits-grid">
+        {% for feature in features %}
+          {% set _has_image = feature.image %}
+          {% set _has_title = feature.title and feature.title | trim %}
+          {% set _has_desc  = feature.description and feature.description | trim %}
+          {% if _has_image or _has_title or _has_desc %}
+            <div class="benefit-item">
+              {% if _has_image %}
+                {# Mobile-specific source falls back to desktop image
+                   when the merchant didn't upload a separate one.
+                   Both are fetched at 2× the rendered size for
+                   retina sharpness. #}
+                {% set _img_w_2x = (image_size * 2) | int %}
+                <picture class="benefit-item__icon">
+                  {% if feature.image_mobile %}
+                    <source
+                      media="(max-width: 767px)"
+                      srcset="{{ image_url(feature.image_mobile, w=_img_w_2x, q=80, f='auto') }}"
+                    />
+                  {% endif %}
+                  <img
+                    src="{{ image_url(feature.image, w=_img_w_2x, q=80, f='auto') }}"
+                    alt="{{ feature.title or '' }}"
+                    {% if not _has_title %}aria-hidden="true"{% endif %}
+                    class="benefit-item__img"
+                    {% if is_lazy %}loading="lazy"{% endif %}
+                    decoding="async"
+                  />
+                </picture>
+              {% endif %}
+              <div class="benefit-item__text">
+                {% if _has_title %}
+                  <h3 class="benefit-item__title">{{ feature.title }}</h3>
+                {% endif %}
+                {% if _has_desc %}
+                  <p class="benefit-item__desc">{{ feature.description }}</p>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  /* ===========================================================
+     SECTION CONTAINER — `[section-id]` is unique per instance
+     so we use it directly (no descendant combinator bug).
+     =========================================================== */
+  [section-id="{{ sectionId }}"] {
+    padding-block: var(--benefits-padding-y, 48px);
+    margin-block: var(--benefits-margin-y, 0);
+  }
+
+  [section-id="{{ sectionId }}"][data-bg="background"]  { background: var(--background); }
+  [section-id="{{ sectionId }}"][data-bg="secondary"]   { background: var(--secondary); }
+  [section-id="{{ sectionId }}"][data-bg="warm"]        { background: #FFFDF8; }
+  [section-id="{{ sectionId }}"][data-bg="transparent"] { background: transparent; }
+
+  /* Containered borders — same pattern as marquee / logo-strip /
+     reviews-slider. Borders attach to the .theme-container so
+     they hug the 1440px max width instead of bleeding to viewport
+     edges. The vertical padding redistributes to the container so
+     the line gets breathing room. */
+  [section-id="{{ sectionId }}"][data-border-top="true"] > .theme-container {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-start: var(--benefits-padding-y, 48px);
+  }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] > .theme-container {
+    border-block-end: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-end: var(--benefits-padding-y, 48px);
+  }
+  [section-id="{{ sectionId }}"][data-border-top="true"]    { padding-block-start: 0; }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] { padding-block-end: 0; }
+
+  /* Heading spacing — the partial owns its typography; we just
+     space it from the grid below. */
+  [section-id="{{ sectionId }}"] .theme-container > :first-child {
+    margin-block-end: 32px;
+  }
+
+  /* ===========================================================
+     GRID — 2 columns on mobile, 4 on desktop. Mirrors the
+     original Tailwind layout (`grid-cols-2 lg:grid-cols-4`)
+     but expressed in CSS so the rules are co-located with the
+     rest of the section's styles.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    text-align: center;
+  }
+  @media (min-width: 1024px) {
+    [section-id="{{ sectionId }}"] .benefits-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+  }
+
+  /* ===========================================================
+     BENEFIT ITEM — vertical stack of icon + title + description.
+     ----------------------------------------------------------
+     `font-size` is set on the item itself (the parent) so title
+     and description below can use `em` units relative to it.
+     This is what makes the mobile-scale variable work as a
+     single proportional knob — change the parent's font-size
+     once on mobile, and both child text sizes scale in lockstep.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .benefit-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    font-size: 16px;
+  }
+  /* Mobile scaling — single point of control for both title and
+     description sizes on small screens. The merchant's
+     `mobile_font_scale` (default 0.8em = 80%) gets multiplied
+     into the parent's font-size, and both children inherit the
+     change via their `em` units. No per-element media queries
+     needed below. */
+  @media (max-width: 768px) {
+    [section-id="{{ sectionId }}"] .benefit-item {
+      font-size: calc(16px * var(--benefits-mobile-scale, 0.8));
+    }
+  }
+
+  /* Icon container + image — sized via the merchant-controlled
+     `--benefits-image-size` variable (default 48px). `object-fit:
+     contain` keeps non-square icons (rare but possible) from
+     getting distorted. */
+  [section-id="{{ sectionId }}"] .benefit-item__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    width: var(--benefits-image-size, 48px);
+    height: var(--benefits-image-size, 48px);
+  }
+  [section-id="{{ sectionId }}"] .benefit-item__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* Text stack — title + description, vertically gapped slightly. */
+  [section-id="{{ sectionId }}"] .benefit-item__text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ===========================================================
+     TITLE / DESCRIPTION — colors default to `--foreground`. The
+     merchant can override either independently via the schema's
+     color pickers. Override is gated by a data-attribute on the
+     section so empty values (default) don't cascade and clobber
+     the default rule.
+     =========================================================== */
+  /* Title and description sizes are expressed in `em` so they
+     scale with the parent `.benefit-item`'s font-size — which is
+     16px on desktop and `calc(16px * mobile-scale)` on mobile.
+     - Title: 1em → 16px desktop, ~12.8px at 0.8em mobile scale
+     - Desc:  0.875em → 14px desktop, ~11.2px at 0.8em mobile scale
+     The relative ratio (title:desc = 16:14) is preserved at every
+     scale because both use em units. */
+  [section-id="{{ sectionId }}"] .benefit-item__title {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  [section-id="{{ sectionId }}"] .benefit-item__desc {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 0.875em;
+    line-height: 1.5;
+  }
+
+  /* Per-section color overrides — only apply when the merchant
+     has set a value (gated via `data-has-*-color`). Specificity
+     of `[section-id][data-has-*]` (0,2,1) beats the class-only
+     defaults above (0,1,0) without `!important`. */
+  [section-id="{{ sectionId }}"][data-has-title-color] .benefit-item__title {
+    color: var(--benefits-title-color);
+  }
+  [section-id="{{ sectionId }}"][data-has-description-color] .benefit-item__desc {
+    color: var(--benefits-description-color);
+  }
+
+  /* ===========================================================
+     EMPTY STATE — same pattern as marquee / testimonials.
+     =========================================================== */
+  [section-id="{{ sectionId }}"].section-benefits--empty .benefits-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 96px;
+    padding: 16px;
+    margin-inline: 16px;
+    border: 1px dashed color-mix(in srgb, var(--foreground) 25%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  [section-id="{{ sectionId }}"].section-benefits--empty .benefits-empty-hint {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-align: center;
+    line-height: 1.3;
+  }
+</style>
+{% endif %}{# /country-visibility guard #}

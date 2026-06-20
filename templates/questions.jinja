@@ -1,0 +1,257 @@
+{% extends "layout.jinja" %}
+
+{% block title %}{{ _("Questions") }} – {{ product.name }} – {{ store.name }}{% endblock %}
+
+{% block content %}
+  {# Breadcrumb Section #}
+  <section class="px-4 py-6 md:px-16">
+    <div class="theme-container">
+      {%
+        with
+        items=[
+          {'href': url_for('home'), 'label': _("Home")},
+          {'href': url_for('product_details', slug=product.slug), 'label': product.name},
+          {'label': _("Questions")}
+        ]
+      %}
+        {% include 'components/ui/breadcrumb.jinja' %}
+      {% endwith %}
+    </div>
+  </section>
+
+  {# Questions Section #}
+  <section class="px-4 pb-12 md:px-16 md:pb-16">
+    <div class="theme-container">
+      {# Product Header #}
+      <a
+        href="{{ url_for('product_details', slug=product.slug) }}"
+        class="mb-8 flex items-center gap-4 transition-opacity hover:opacity-80"
+      >
+        <div class="size-16 shrink-0 overflow-hidden rounded">
+          {% if product.main_image %}
+            <img
+              src="{{ image_url(product.main_image.image.medium, w=64, h=64, q=85, f='auto') }}"
+              alt="{{ product.name }}"
+              class="size-full object-cover"
+            />
+          {% else %}
+            <div class="bg-secondary size-full"></div>
+          {% endif %}
+        </div>
+        <h1 class="text-foreground text-lg font-semibold">{{ product.name }}</h1>
+      </a>
+
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {# Left Column: Ask Question Form #}
+        <div class="lg:col-span-4">
+          <div class="bg-secondary sticky top-32 rounded-lg p-6">
+            <h2 class="text-foreground text-sm font-medium mb-4">{{ _("Have a question?") }}</h2>
+            <p class="text-muted text-sm mb-6">
+              {{ _("Ask about this product and get an answer from the store.") }}
+            </p>
+
+            <form
+              id="question-form"
+              data-product-id="{{ product.id }}"
+              data-sending-text="{{ _('Sending...') }}"
+              data-success-message="{{ _('Your question has been sent successfully. You will receive a notification if it is answered.') }}"
+              data-success-title="{{ _('Sent Successfully') }}"
+              data-error-message="{{ _('Failed to send your question. Please try again.') }}"
+              data-error-title="{{ _('Error') }}"
+              class="flex flex-col gap-4"
+            >
+              {# Email Input #}
+              <div class="grid w-full items-center gap-2">
+                <label
+                  for="question_email"
+                  class="form-label"
+                >
+                  {{ _('Email') }}<span class="form-label-required">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="question_email"
+                  name="question_email"
+                  required
+                  autocomplete="email"
+                  class="form-input"
+                />
+              </div>
+
+              {# Name Input #}
+              <div class="grid w-full items-center gap-2">
+                <label
+                  for="question_name"
+                  class="form-label"
+                >
+                  {{ _('Name') }}<span class="form-label-required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="question_name"
+                  name="question_name"
+                  required
+                  autocomplete="name"
+                  class="form-input"
+                />
+              </div>
+
+              {# Question Textarea #}
+              <div class="grid w-full items-center gap-2">
+                <label
+                  for="question_text"
+                  class="form-label"
+                >
+                  {{ _('Your question') }}<span class="form-label-required">*</span>
+                </label>
+                <textarea
+                  id="question_text"
+                  name="question_text"
+                  placeholder="{{ _('Enter your question here') }}"
+                  rows="4"
+                  required
+                  class="form-textarea"
+                ></textarea>
+              </div>
+
+              {# Anonymous Checkbox #}
+              <label class="form-control">
+                <input
+                  type="checkbox"
+                  id="is_anonymous"
+                  name="is_anonymous"
+                  class="form-checkbox"
+                />
+                {{ _('Do not show my name in the comments') }}
+              </label>
+
+              {# Submit Button #}
+              <button
+                type="submit"
+                id="submit-question-btn"
+                class="btn btn-filled btn-md w-full"
+              >
+                {{ _('Ask question') }}
+              </button>
+
+              {# Success/Error Message #}
+              <div
+                id="question-form-message"
+                class="hidden rounded-lg px-4 py-3 text-sm"
+                role="alert"
+              ></div>
+            </form>
+          </div>
+        </div>
+
+        {# Right Column: Questions List #}
+        <div class="lg:col-span-8">
+          <div class="mb-6 flex items-center justify-between">
+            <h2 class="text-foreground text-sm font-medium">
+              {{ _("Questions") }}
+              {% if product.questions and product.questions.count %}
+                <span class="text-muted text-sm">({{ product.questions.count }})</span>
+              {% endif %}
+            </h2>
+          </div>
+
+          {% if product.questions and product.questions.results and product.questions.results|length > 0 %}
+            <div class="divide-border-light divide-y">
+              {% for question in product.questions.results %}
+                <div class="py-6 first:pt-0">
+                  {# Question #}
+                  <div class="mb-3 flex items-start gap-3">
+                    <span
+                      class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                    >
+                      Q
+                    </span>
+                    <div class="flex-1">
+                      <p class="text-foreground text-sm font-semibold">{{ question.question }}</p>
+                      {% if not question.is_anonymous and question.name %}
+                        <p class="text-muted-foreground text-xs mt-1">{{ question.name }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  {# Answer #}
+                  {% if question.answers and question.answers[0] and question.answers[0].answer %}
+                    <div class="ms-11 flex items-start gap-3">
+                      <span
+                        class="bg-secondary text-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                      >
+                        A
+                      </span>
+                      <div class="flex-1">
+                        <p class="text-foreground text-sm">{{ question.answers[0].answer }}</p>
+
+                        {# Answer Images #}
+                        {% if question.answers[0].images and question.answers[0].images|length > 0 %}
+                          <div class="mt-3 flex flex-wrap gap-2">
+                            {% for image in question.answers[0].images %}
+                              <div class="size-16 overflow-hidden rounded">
+                                <img
+                                  src="{{ image_url(image.image.medium, w=128, q=85, f='auto') if image.image else image_url(('images/placeholder-image.svg' | asset_url), w=128, q=85, f='auto') }}"
+                                  alt="{{ _('Answer image') }}"
+                                  class="size-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="ms-11">
+                      <p class="text-muted text-sm italic">{{ _("Awaiting answer from the store") }}</p>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+
+            {# Pagination #}
+            {% if product.questions.pages_count > 1 %}
+              <div class="mt-8">
+                {% with totalPages=product.questions.pages_count, currentPage=product.questions.page %}
+                  {% include 'components/products/pagination.jinja' %}
+                {% endwith %}
+              </div>
+            {% endif %}
+          {% else %}
+            {# Empty State #}
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="text-muted-foreground mb-4"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <path d="M12 17h.01" />
+              </svg>
+              <h2 class="text-foreground text-sm font-medium mb-2">{{ _("No questions yet") }}</h2>
+              <p class="text-muted text-sm">{{ _("Be the first to ask a question about this product") }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block footer_scripts %}
+  <script src="{{ 'js/question-form.js' | asset_url }}"></script>
+{% endblock %}

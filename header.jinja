@@ -1,0 +1,364 @@
+{# ─── Resolve layout settings with safe defaults ─── #}
+{# Layout group #}
+{% set preset             = settings.header_preset or 'logo_left_nav_inline' %}
+{% set header_height      = settings.header_header_height or 80 %}
+{% set container_width    = settings.header_container_width or 'contained' %}
+{% set is_sticky          = settings.header_sticky | default(true) %}
+{% set shrink_on_scroll   = settings.header_shrink_on_scroll %}
+{% set scroll_reveal      = settings.header_scroll_reveal %}
+{% set scroll_blur        = settings.header_scroll_blur %}
+{% set transparent_home   = settings.header_transparent_on_home and session.template == 'home' %}
+
+{# Header style group #}
+{# Token resolver — maps theme palette tokens to CSS variables; 'custom' falls back to the explicit color picker. #}
+{% set token_map = {
+  'primary':    'var(--primary)',
+  'secondary':  'var(--secondary)',
+  'accent':     'var(--accent)',
+  'foreground': 'var(--foreground)',
+  'muted':      'var(--muted)',
+  'background': 'var(--background)'
+} %}
+
+{% set _bg_src = settings.header_background_source or 'secondary' %}
+{% set bg_color = (settings.header_background_color or '#F6F5F4') if _bg_src == 'custom' else token_map[_bg_src] %}
+
+{% set _fg_src = settings.header_text_color_source or 'foreground' %}
+{% set fg_color = (settings.header_text_color or '#0B0A09') if _fg_src == 'custom' else token_map[_fg_src] %}
+
+{% set _nav_src = settings.header_nav_link_source or 'foreground' %}
+{% set nav_link_color = (settings.header_nav_link_color or '#0B0A09') if _nav_src == 'custom' else token_map[_nav_src] %}
+
+{% set _navh_src = settings.header_nav_link_hover_source or 'accent' %}
+{% set nav_link_hover = (settings.header_nav_link_hover_color or '#A89C90') if _navh_src == 'custom' else token_map[_navh_src] %}
+
+{% set _accent_src = settings.header_nav_hover_accent_source or 'accent' %}
+{% set nav_hover_accent = (settings.header_nav_hover_accent_color or '#A89C90') if _accent_src == 'custom' else token_map[_accent_src] %}
+
+{% set show_border        = settings.header_show_border | default(true) %}
+{% set nav_spacing        = settings.header_nav_spacing or 24 %}
+{% set nav_hover_effect   = settings.header_nav_hover_effect or 'underline_grow' %}
+{% set nav_hover_speed    = settings.header_nav_hover_speed or 250 %}
+{% set dropdown_bg        = settings.header_dropdown_bg or '#FFFFFF' %}
+{% set dropdown_link      = settings.header_dropdown_link_color or '#0B0A09' %}
+{% set dropdown_hover     = settings.header_dropdown_link_hover_color or '#A89C90' %}
+{% set drawer_bg          = settings.header_drawer_bg or '#FFFFFF' %}
+{% set drawer_link        = settings.header_drawer_link_color or '#0B0A09' %}
+{% set drawer_hover       = settings.header_drawer_link_hover_color or '#A89C90' %}
+{% set icons_gap          = settings.header_icons_gap | default(8) %}
+
+{# Search group #}
+{% set search_style       = settings.header_search_style or 'icon' %}
+{% set search_shape       = settings.header_search_shape or 'pill' %}
+{% set search_bg          = settings.header_search_bg or '#EFEEEC' %}
+{% set search_text_color  = settings.header_search_text_color or '#0B0A09' %}
+{% set search_min_width   = settings.header_search_min_width or 200 %}
+
+{# Extras group #}
+{% set show_wishlist      = settings.header_show_wishlist %}
+{% set account_label      = settings.header_account_label or 'icon' %}
+{% set active_link        = settings.header_active_link_indicator | default(true) %}
+
+{# Cart group (defined in layout.schema.json — global theme settings) #}
+{% set cart_drawer        = settings.cart_drawer | default(true) %}
+
+{# Icons group #}
+{% set icon_size          = settings.logo_icons_size or 22 %}
+
+{% set container_class = {
+  'full':      'max-w-none',
+  'contained': 'theme-container',
+  'narrow':    'mx-auto max-w-5xl'
+}[container_width] %}
+
+{% set sticky_class      = 'sticky top-0 z-50' if is_sticky else '' %}
+{% set border_class      = 'border-b border-border-light' if show_border else '' %}
+{% set transparent_class = 'is-transparent' if transparent_home else '' %}
+{% set shrink_class      = 'has-shrink' if shrink_on_scroll else '' %}
+{% set reveal_class      = 'has-scroll-reveal' if scroll_reveal else '' %}
+{% set blur_class        = 'has-scroll-blur' if scroll_blur else '' %}
+{% set drawer_only_class = 'layout-drawer-only' if preset in ['logo_center_drawer', 'logo_center_drawer_nav_below'] else '' %}
+
+{# ─── Reusable macros ─── #}
+
+{% macro logo_block() %}
+  <a href="{{ url_for('home') }}" class="shrink-0 flex items-center" aria-label="{{ _('Home') }}">
+    {% include 'components/header/logo.jinja' %}
+  </a>
+{% endmacro %}
+
+{% macro nav_block(extra_class='') %}
+  <div class="header-nav {{ extra_class }}" style="--nav-gap: {{ nav_spacing }}px;">
+    {% include 'components/header/main-nav.jinja' %}
+  </div>
+{% endmacro %}
+
+{% macro icon_action(href, label, slug, svg_default, badge=false) %}
+  <a href="{{ href }}" class="header-icon-link relative flex size-10 items-center justify-center" aria-label="{{ label }}">
+    {% set custom_icon = settings['logo_icons_' ~ slug] %}
+    {% if custom_icon %}
+      <img src="{{ image_url(custom_icon, w=64, q=90, f='auto') }}" alt="" style="width: {{ icon_size }}px; height: {{ icon_size }}px;" class="object-contain" />
+    {% else %}
+      {{ svg_default | safe }}
+    {% endif %}
+    {% if badge %}
+      <span data-cart-badge hidden class="bg-destructive text-primary-foreground absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] leading-none">0</span>
+    {% endif %}
+  </a>
+{% endmacro %}
+
+{% set svg_user %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="{{ icon_size }}" height="{{ icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+{% endset %}
+
+{% set svg_user_round %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="{{ icon_size }}" height="{{ icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>
+  </svg>
+{% endset %}
+
+{% set svg_cart %}
+  {# Bag-shaped cart icon — handles arc up top, body below, with two
+     decorative dots on the handles. Matches the bottom-nav cart icon
+     so the visual language stays consistent across header + bottom nav. #}
+  <svg xmlns="http://www.w3.org/2000/svg" width="{{ icon_size }}" height="{{ icon_size }}" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936ZM6.1853 7.75C6.1853 7.92259 6.04539 8.0625 5.8728 8.0625C5.70021 8.0625 5.5603 7.92259 5.5603 7.75C5.5603 7.57741 5.70021 7.4375 5.8728 7.4375C6.04539 7.4375 6.1853 7.57741 6.1853 7.75ZM12.4353 7.75C12.4353 7.92259 12.2954 8.0625 12.1228 8.0625C11.9502 8.0625 11.8103 7.92259 11.8103 7.75C11.8103 7.57741 11.9502 7.4375 12.1228 7.4375C12.2954 7.4375 12.4353 7.57741 12.4353 7.75Z"/>
+  </svg>
+{% endset %}
+
+{% set svg_heart %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="{{ icon_size }}" height="{{ icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+  </svg>
+{% endset %}
+
+{% set search_radius = {'pill': '9999px', 'rounded': '8px', 'square': '0px'}[search_shape] %}
+{% macro icons_block() %}
+  <ul class="header-icons flex items-center" style="gap: {{ icons_gap }}px;">
+    <li class="search-slot {{ 'is-input-mode' if search_style == 'input' else '' }}">
+      {# Always render the search component so its dialog exists in the DOM #}
+      {% include 'components/header/search.jinja' %}
+      {% if search_style == 'input' %}
+        <button
+          type="button"
+          command="show-modal"
+          commandfor="search-dialog"
+          class="header-search-pill flex items-center gap-2 px-3 py-2 text-sm"
+          style="background-color: {{ search_bg }}; color: {{ search_text_color }}; border-radius: {{ search_radius }}; min-width: {{ search_min_width }}px;"
+          data-search-trigger
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <span class="opacity-70">{{ _('Search') }}</span>
+        </button>
+      {% endif %}
+    </li>
+
+    {% include 'components/header/region-selector.jinja' %}
+
+    <li class="hidden lg:flex items-center">
+      <button id="header-login-btn" type="button" onclick="typeof handleLoginAction==='function'&&handleLoginAction()" class="header-icon-link flex h-10 items-center gap-1.5 px-2" aria-label="{{ _('Login') }}">
+        {% if settings.logo_icons_login %}
+          {% set icon_url = settings.logo_icons_login %}
+          {% include 'components/header/_icon-img.jinja' %}
+        {% else %}{{ svg_user | safe }}{% endif %}
+        {% if account_label == 'icon_text' %}<span class="text-sm">{{ _('Login') }}</span>{% endif %}
+      </button>
+      <a id="header-profile-btn" href="{{ url_for('profile') }}" class="header-icon-link hidden h-10 items-center gap-1.5 px-2" aria-label="{{ _('Profile') }}">
+        {% if settings.logo_icons_profile %}
+          {% set icon_url = settings.logo_icons_profile %}
+          {% include 'components/header/_icon-img.jinja' %}
+        {% else %}{{ svg_user_round | safe }}{% endif %}
+        {% if account_label == 'icon_text' %}<span class="text-sm">{{ _('Account') }}</span>{% endif %}
+      </a>
+    </li>
+
+    {% if show_wishlist %}
+      <li>
+        <a href="{{ url_for('profile') }}#wishlist" class="header-icon-link flex size-10 items-center justify-center" aria-label="{{ _('Wishlist') }}">
+          {{ svg_heart | safe }}
+        </a>
+      </li>
+    {% endif %}
+
+    <li>
+      {% if cart_drawer %}
+        <button type="button" command="show-modal" commandfor="cart-drawer-dialog" class="header-icon-link relative flex size-10 items-center justify-center" aria-label="{{ _('Cart') }}">
+          {% if settings.logo_icons_cart %}
+            {% set icon_url = settings.logo_icons_cart %}
+            {% include 'components/header/_icon-img.jinja' %}
+          {% else %}{{ svg_cart | safe }}{% endif %}
+          <span data-cart-badge hidden class="bg-destructive text-primary-foreground absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] leading-none">0</span>
+        </button>
+      {% else %}
+        <a href="{{ url_for('cart_page') }}" class="header-icon-link relative flex size-10 items-center justify-center" aria-label="{{ _('Cart') }}">
+          {% if settings.logo_icons_cart %}
+            {% set icon_url = settings.logo_icons_cart %}
+            {% include 'components/header/_icon-img.jinja' %}
+          {% else %}{{ svg_cart | safe }}{% endif %}
+          <span data-cart-badge hidden class="bg-destructive text-primary-foreground absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] leading-none">0</span>
+        </a>
+      {% endif %}
+    </li>
+  </ul>
+{% endmacro %}
+
+{# ─── Render ─── #}
+{# Skip-to-content link for keyboard / screen-reader users (accessibility) #}
+<a href="#main" class="skip-to-content">{{ _('Skip to content') }}</a>
+
+<div class="header-wrapper {{ sticky_class }} {{ transparent_class }} {{ shrink_class }} {{ reveal_class }} {{ blur_class }} {{ drawer_only_class }}" data-header-wrapper>
+  {% include 'components/header-announcement-bar.jinja' %}
+
+  <header
+    class="site-header {{ border_class }}"
+    style="background-color: {{ bg_color }}; color: {{ fg_color }}; --header-bg: {{ bg_color }}; --header-fg: {{ fg_color }}; --nav-link: {{ nav_link_color }}; --nav-link-hover: {{ nav_link_hover }}; --nav-accent: {{ nav_hover_accent }}; --nav-speed: {{ nav_hover_speed }}ms; --header-h: {{ header_height }}px;"
+    data-nav-hover="{{ nav_hover_effect }}"
+  >
+    <div class="{{ container_class }} px-4 md:px-16">
+      {% if preset == 'logo_center_nav_below' %}
+        {# ─── Layout 3: Logo center, nav below ─── #}
+        <div class="flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          <div class="flex-1 flex items-center gap-2">
+            {% include 'components/header/mobile-drawer.jinja' %}
+          </div>
+          <div class="flex-1 flex justify-center">{{ logo_block() }}</div>
+          <div class="flex-1 flex justify-end">{{ icons_block() }}</div>
+        </div>
+        <div class="hidden lg:flex justify-center pb-3">{{ nav_block() }}</div>
+
+      {% elif preset == 'logo_left_nav_below' %}
+        {# ─── Layout 4: Logo left, nav below ─── #}
+        <div class="flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          <div class="flex items-center gap-4">
+            {% include 'components/header/mobile-drawer.jinja' %}
+            {{ logo_block() }}
+          </div>
+          {{ icons_block() }}
+        </div>
+        <div class="hidden lg:flex pb-3">{{ nav_block() }}</div>
+
+      {% elif preset == 'logo_center_nav_inline' %}
+        {# ─── Layout 2: Logo center, nav split inline ─── #}
+        <nav class="relative flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          <div class="flex items-center gap-4 flex-1">
+            {% include 'components/header/mobile-drawer.jinja' %}
+            <div class="hidden lg:block">{{ nav_block() }}</div>
+          </div>
+          <div class="flex-shrink-0">{{ logo_block() }}</div>
+          <div class="flex items-center justify-end gap-1 flex-1">{{ icons_block() }}</div>
+        </nav>
+
+      {% elif preset == 'logo_center_drawer' %}
+        {# ─── Layout 5: Logo center, drawer only (no inline nav) ─── #}
+        <div class="flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          <div class="flex-1">{% include 'components/header/mobile-drawer.jinja' %}</div>
+          <div class="flex-1 flex justify-center">{{ logo_block() }}</div>
+          <div class="flex-1 flex justify-end">{{ icons_block() }}</div>
+        </div>
+
+      {% elif preset == 'logo_center_drawer_nav_below' %}
+        {# ─── Layout 6: Drawer toggle (always) + logo center + nav row below ─── #}
+        <div class="flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          <div class="flex-1">{% include 'components/header/mobile-drawer.jinja' %}</div>
+          <div class="flex-1 flex justify-center">{{ logo_block() }}</div>
+          <div class="flex-1 flex justify-end">{{ icons_block() }}</div>
+        </div>
+        <div class="hidden lg:flex justify-center pb-3">{{ nav_block() }}</div>
+
+      {% else %}
+        {# ─── Layout 1 (default): Logo left, nav inline ─── #}
+        <nav class="relative flex items-center justify-between" style="min-height: {{ header_height }}px;">
+          {% include 'components/header/mobile-drawer.jinja' %}
+          <div class="flex items-center gap-8">
+            {{ logo_block() }}
+            <div class="hidden lg:block">{{ nav_block() }}</div>
+          </div>
+          {{ icons_block() }}
+        </nav>
+      {% endif %}
+    </div>
+    {# Highlights strip — rendered INSIDE the <header> as a sub-row,
+       so it inherits the header's bg + sticky + scroll treatments
+       and reads as part of the header itself. Capped at 1500px
+       inner width (independent of the chosen container preset
+       above), with a soft shadow instead of borders. #}
+    {% include 'components/header-highlights.jinja' %}
+  </header>
+</div>
+
+{% if cart_drawer %}
+  {% include 'components/header/cart-drawer.jinja' %}
+{% endif %}
+
+{% include 'components/toast.jinja' %}
+
+{# Only the merchant-tunable color tokens live here; the rest of the header's
+   styles are in assets/css/header.css (imported via assets/tailwindcss.css). #}
+<style>
+  :root {
+    --dropdown-bg:        {{ dropdown_bg }};
+    --dropdown-link:      {{ dropdown_link }};
+    --dropdown-hover:     {{ dropdown_hover }};
+    --drawer-bg:          {{ drawer_bg }};
+    --drawer-link:        {{ drawer_link }};
+    --drawer-link-hover:  {{ drawer_hover }};
+  }
+</style>
+
+<script type="module">
+  {
+    const wrapper = document.querySelector('[data-header-wrapper]');
+    if (wrapper) {
+      const hasShrink = wrapper.classList.contains('has-shrink');
+      const hasReveal = wrapper.classList.contains('has-scroll-reveal');
+      const hasBlur   = wrapper.classList.contains('has-scroll-blur');
+      let lastY = window.scrollY;
+
+      const onScroll = () => {
+        const y = window.scrollY;
+        const scrolledPast = y > 50;
+
+        if (hasShrink) wrapper.classList.toggle('is-shrunk', scrolledPast);
+        if (hasBlur)   wrapper.classList.toggle('is-scrolled', scrolledPast);
+
+        if (hasReveal) {
+          // Don't hide while at the very top
+          if (y < 100) {
+            wrapper.classList.remove('is-scroll-hidden');
+          } else if (y > lastY) {
+            wrapper.classList.add('is-scroll-hidden');     // scrolling down
+          } else {
+            wrapper.classList.remove('is-scroll-hidden');  // scrolling up
+          }
+        }
+
+        lastY = y;
+      };
+
+      if (hasShrink || hasReveal || hasBlur) {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      }
+    }
+
+    // Active link indicator: mark the nav link matching the current pathname
+    {% if active_link %}
+    {
+      const path = window.location.pathname.replace(/\/$/, '') || '/';
+      for (const a of document.querySelectorAll('.site-header .header-nav a[href]')) {
+        try {
+          const href = new URL(a.href, window.location.origin).pathname.replace(/\/$/, '') || '/';
+          if (href === path) {
+            a.classList.add('is-current');
+            a.setAttribute('aria-current', 'page');
+          }
+        } catch {}
+      }
+    }
+    {% endif %}
+  }
+</script>

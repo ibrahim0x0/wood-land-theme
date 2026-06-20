@@ -1,0 +1,282 @@
+{
+  "template": "sections/faqs.jinja",
+  "name": {
+    "ar": "الأسئلة الشائعة",
+    "en": "FAQs"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان",
+        "en": "Title"
+      },
+      "info": {
+        "ar": "مثال: \"الأسئلة الشائعة\" أو \"FAQs | الأسئلة الشائعة\".",
+        "en": "e.g. \"Frequently Asked Questions\" or \"FAQs | الأسئلة الشائعة\"."
+      },
+      "default": ""
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+
+    {
+      "id": "questions",
+      "type": "list",
+      "label": {
+        "ar": "الأسئلة",
+        "en": "Questions"
+      },
+      "info": {
+        "ar": "كل عنصر يحتوي على سؤال + جواب. الأمثل 5-12 سؤالاً (الأسئلة الكثيرة جداً تشتت العميل).",
+        "en": "Each entry has a question + answer. Sweet spot is 5–12 questions (too many overwhelms the visitor)."
+      },
+      "max_items": 30,
+      "settings": [
+        {
+          "id": "question",
+          "type": "text",
+          "label": {
+            "ar": "السؤال",
+            "en": "Question"
+          }
+        },
+        {
+          "id": "answer",
+          "type": "textarea",
+          "label": {
+            "ar": "الجواب",
+            "en": "Answer"
+          },
+          "info": {
+            "ar": "اضغط Enter لفصل الفقرات. النص العادي مدعوم — الروابط ووسوم HTML غير مسموحة لأسباب أمنية.",
+            "en": "Press Enter for line breaks. Plain text only — links and HTML tags are stripped for security."
+          }
+        }
+      ]
+    },
+    {
+      "id": "columns",
+      "type": "select",
+      "label": {
+        "ar": "── عدد الأعمدة (سطح المكتب)",
+        "en": "── Columns (desktop)"
+      },
+      "info": {
+        "ar": "على الجوال يظهر دائماً عمود واحد بغض النظر عن الإعداد.",
+        "en": "Mobile always shows one column regardless of this setting."
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": {
+            "ar": "عمود واحد",
+            "en": "1 column"
+          }
+        },
+        {
+          "value": "2",
+          "label": {
+            "ar": "عمودان (افتراضي)",
+            "en": "2 columns (default)"
+          }
+        }
+      ],
+      "default": "2"
+    },
+    {
+      "id": "single_open",
+      "type": "checkbox",
+      "label": {
+        "ar": "── سؤال واحد مفتوح في كل مرة",
+        "en": "── Only one question open at a time"
+      },
+      "info": {
+        "ar": "عند فتح سؤال يُغلق السؤال السابق تلقائياً (تأثير الأكورديون). متاح في المتصفحات الحديثة فقط؛ في المتصفحات القديمة تبقى جميع الأسئلة قابلة للفتح معاً.",
+        "en": "Opening a question auto-closes the previously open one (accordion behavior). Modern browsers only — older browsers fall back to letting any question stay open independently."
+      },
+      "default": false
+    },
+    {
+      "id": "first_open",
+      "type": "checkbox",
+      "label": {
+        "ar": "── السؤال الأول مفتوح افتراضياً",
+        "en": "── Open the first question by default"
+      },
+      "info": {
+        "ar": "يبدأ السؤال الأول مفتوحاً عند تحميل الصفحة. مفيد إذا كان أهم سؤال هو الأول في القائمة.",
+        "en": "First question starts expanded on page load. Useful when your most-asked question is at the top."
+      },
+      "default": false
+    },
+    {
+      "id": "icon_color",
+      "type": "color",
+      "label": {
+        "ar": "── لون أيقونة + / ×",
+        "en": "── Plus icon color"
+      },
+      "info": {
+        "ar": "لون علامة + (تتحول إلى × عند الفتح). اتركه فارغاً لاستخدام لون التمييز للقالب.",
+        "en": "Color of the + icon (rotates to × when expanded). Leave empty to use the theme accent color."
+      },
+      "default": ""
+    },
+    {
+      "id": "card_radius",
+      "type": "range",
+      "label": {
+        "ar": "── انحناء حواف البطاقة",
+        "en": "── Card corner radius"
+      },
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "── الخلفية",
+        "en": "── Background"
+      },
+      "options": [
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي",
+            "en": "Secondary"
+          }
+        },
+        {
+          "value": "warm",
+          "label": {
+            "ar": "كريمي دافئ",
+            "en": "Warm cream"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "background"
+    },
+    {
+      "id": "padding_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الداخلية",
+        "en": "── Vertical padding"
+      },
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "id": "margin_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الخارجية",
+        "en": "── Vertical margin"
+      },
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "border_top",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد علوي",
+        "en": "── Top border"
+      },
+      "default": false
+    },
+    {
+      "id": "border_bottom",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد سفلي",
+        "en": "── Bottom border"
+      },
+      "default": false
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

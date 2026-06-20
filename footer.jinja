@@ -1,0 +1,2032 @@
+{# ───────────────────────────────────────────────────────────────────
+   Footer
+
+   Layout (top → bottom):
+     1. Brand column        — logo, about-us, follow-us, social icons,
+                              optional iOS/Android app store badges,
+                              optional newsletter signup.
+     2. Link groups (1-6)   — merchant-defined column lists. Render
+                              as columns on desktop; collapse to
+                              <details> accordions on mobile when
+                              `mobile_accordion` is on.
+     3. Contact info        — email + address + phone, sourced from
+                              Vitrin's `store.settings.contact.*`
+                              (platform-managed, not theme-config).
+     4. Bottom strip        — copyright + grouped trust badges
+                              (shipping methods, payment methods,
+                              VAT cert, business center).
+
+   URL safety: all merchant-supplied URLs (link groups, social
+   custom links, newsletter action) pass through `safe_url` from
+   `_macros.jinja` to defeat `javascript:` / `data:` schemes.
+
+   Social icons: 5 primary platforms (Facebook/Instagram/X/
+   Snapchat/TikTok) wired to `store.settings.contact.*`. Additional
+   platforms via `settings.social_items` (LinkedIn/YouTube/Pinterest/
+   WhatsApp/Threads/Telegram + custom). All icons defined ONCE as
+   <symbol>s in a hidden SVG sprite at the top of the footer and
+   referenced via <use> — saves ~3KB of repeated path data.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% from 'components/_macros.jinja' import safe_url, country_visible %}
+
+{# ── Resolve settings up front so the body stays declarative ── #}
+{% set logo_height       = settings.logo_logo_height if settings.logo_logo_height is not none else 44 %}
+{% set bg                = settings.appearance_background    | default('secondary', true) %}
+{% set mobile_accordion  = settings.appearance_mobile_accordion if settings.appearance_mobile_accordion is not none else true %}
+{% set heading_size      = settings.appearance_heading_size   | default('sm', true) %}
+{% set heading_weight    = settings.appearance_heading_weight | default('medium', true) %}
+{% set frame_enabled     = settings.appearance_frame_enabled  if settings.appearance_frame_enabled  is not none else true %}
+{% set frame_color       = (settings.appearance_frame_color | trim) if settings.appearance_frame_color else '' %}
+{% set frame_radius      = settings.appearance_frame_radius   if settings.appearance_frame_radius   is not none else 24 %}
+{% set tagline           = (settings.appearance_tagline | trim) if settings.appearance_tagline else '' %}
+{% set col_align         = settings.appearance_column_alignment | default('start', true) %}
+
+{% set newsletter_hide   = settings.newsletter_newsletter_hide if settings.newsletter_newsletter_hide is not none else true %}
+{% set newsletter_title  = (settings.newsletter_newsletter_title       | trim) if settings.newsletter_newsletter_title else '' %}
+{% set newsletter_desc   = (settings.newsletter_newsletter_description | trim) if settings.newsletter_newsletter_description else '' %}
+{% set newsletter_ph     = (settings.newsletter_newsletter_placeholder | trim) if settings.newsletter_newsletter_placeholder else '' %}
+{% set newsletter_btn    = (settings.newsletter_newsletter_button_label| trim) if settings.newsletter_newsletter_button_label else '' %}
+{% set newsletter_action = safe_url((settings.newsletter_newsletter_action_url | trim) if settings.newsletter_newsletter_action_url else '') %}
+
+{% set is_rtl = session.locale.language.direction == 'rtl' %}
+
+{# ── Custom contact items + per-field visibility toggles ── #}
+{% set contact_items          = settings.contact_info_items or [] %}
+{% set show_email_field       = settings.contact_info_show_email if settings.contact_info_show_email is not none else true %}
+{% set show_address_field     = settings.contact_info_show_address if settings.contact_info_show_address is not none else true %}
+{% set show_phone_field       = settings.contact_info_show_phone if settings.contact_info_show_phone is not none else true %}
+{% set show_instagram_handle  = settings.contact_info_show_instagram_handle if settings.contact_info_show_instagram_handle is not none else true %}
+
+{# ── Working hours ── #}
+{% set hours_display  = settings.hours_display %}
+{% set hours_title    = (settings.hours_title | trim) if settings.hours_title else '' %}
+{% set hours_position = settings.hours_position | default('contact_col', true) %}
+{% set hours_lines    = settings.hours_lines or [] %}
+
+{# ── Footer trust-strip (highlights above frame) ── #}
+{% set fhl_display = settings.footer_highlights_display %}
+{% set fhl_points  = settings.footer_highlights_points or [] %}
+{% set fhl_style   = settings.footer_highlights_container_style | default('unified', true) %}
+
+{# ── Country auto-detection ──
+   Resolve the visitor's country from multiple sources, in priority:
+     1. session.locale.country.code   — explicit locale country object
+        (most authoritative; e.g., merchant's region picker on the
+        storefront sets this)
+     2. session.locale.code           — URL locale code "ar-SA" → "SA"
+        (visitor switched storefronts via the URL like /ar-sa/)
+     3. session.country               — IP/geolocation (the visitor's
+        physical location, not necessarily the storefront they chose)
+   Then match against the merchant's `countries_items` list with this
+   fallback chain: exact match → is_default row → first row.
+   Codes are uppercased + trimmed for case-insensitive matching. #}
+{% set _all_countries = settings.countries_items or [] %}
+{# Defensive locale parsing — try every reasonable property path
+   Zid/Vitrin might expose for the storefront's country. Listed in
+   priority order; first non-empty value wins.
+     session.locale.country.code   — country object exposing .code
+     session.locale.country        — country as a plain string
+     session.locale.code           — locale code like "ar-SA" → split
+     session.country_code          — direct country_code field
+     session.country               — IP/geolocation fallback #}
+{% set _locale_country_code = '' %}
+{% if session.locale %}
+  {% if session.locale.country and session.locale.country.code is defined %}
+    {% set _locale_country_code = session.locale.country.code %}
+  {% elif session.locale.country %}
+    {# country might be a plain string instead of an object #}
+    {% set _locale_country_code = session.locale.country %}
+  {% endif %}
+  {% if not _locale_country_code and session.locale.code and '-' in session.locale.code %}
+    {% set _locale_country_code = session.locale.code.split('-')[1] %}
+  {% endif %}
+{% endif %}
+{# Build the detected country from the same chain the country_visible
+   macro uses — keeps both code paths in lock-step. Critical: read
+   `session.country.code` (the OBJECT's .code property), not the
+   bare `session.country` object — coercing the object to string
+   produces a Python repr like "<Country>" that never matches a code. #}
+{% set _ns_dc = namespace(cc=(_locale_country_code or '')) %}
+{% if not _ns_dc.cc and request is defined and request and request.country %}
+  {% set _ns_dc.cc = request.country %}
+{% endif %}
+{% if not _ns_dc.cc and session.country_code %}
+  {% set _ns_dc.cc = session.country_code %}
+{% endif %}
+{% if not _ns_dc.cc and session.country and session.country.code is defined %}
+  {% set _ns_dc.cc = session.country.code %}
+{% endif %}
+{% if not _ns_dc.cc and store is defined and store and store.country_code %}
+  {% set _ns_dc.cc = store.country_code %}
+{% endif %}
+{% set _detected_country = (_ns_dc.cc | string | upper | trim) %}
+{# Case-insensitive match against the merchant's country list — the
+   merchant can type `sa`, `SA`, or `Sa` in the theme editor and we'll
+   still match against the uppercased detected country. Jinja's
+   `selectattr` does literal equality only, so we iterate with a
+   namespace to capture the first match. #}
+{% set _ns = namespace(matched=none) %}
+{% if _detected_country %}
+  {% for _c in _all_countries %}
+    {% if not _ns.matched and _c.code and (_c.code | string | upper | trim) == _detected_country %}
+      {% set _ns.matched = _c %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% set _country_matched = _ns.matched %}
+{% set _country_default = _all_countries | selectattr('is_default', 'equalto', true) | first %}
+{% set country_links_block = _country_matched or _country_default or (_all_countries | first) %}
+{% set country_was_detected = _country_matched is not none %}
+{% set country_show_hint = settings.countries_show_detection_hint %}
+{% set country_show_on = settings.countries_show_on | default('always', true) %}
+
+{# ── Cert logos row ── #}
+{% set certs_display = settings.certs_display %}
+{% set certs_title   = (settings.certs_title | trim) if settings.certs_title else '' %}
+{% set certs_logos   = settings.certs_logos or [] %}
+{% set certs_style   = settings.certs_style | default('grayscale', true) %}
+
+{# ── Helper: clean a social handle ──
+   If a merchant pastes a full URL (e.g. `https://facebook.com/myhandle`)
+   into a Zid contact-handle field instead of just the handle, we'd
+   otherwise produce `https://www.facebook.com/https://facebook.com/...`.
+   Strip the scheme and known prefixes so concatenation stays clean. #}
+{% macro normalize_handle(raw, prefix) %}
+{%- set h = (raw | trim) if raw else '' -%}
+{%- set h = h | replace('https://', '') | replace('http://', '') -%}
+{%- if prefix -%}
+{%- set h = h | replace(prefix, '') -%}
+{%- endif -%}
+{%- set h = h.lstrip('/') if h.startswith('/') else h -%}
+{%- set h = h.lstrip('@') if h.startswith('@') else h -%}
+{{- h -}}
+{% endmacro %}
+
+{# ── Working-hours block — rendered in either brand or contact column.
+   Single macro called twice (with the position guard) keeps the markup
+   in one place and the column-placement decision purely declarative. #}
+{% macro render_hours() %}
+  {% if hours_display and hours_lines %}
+    <div class="footer-hours">
+      <h3 class="footer-heading footer-hours__title">
+        {{ hours_title or _("Working hours") }}
+      </h3>
+      <ul class="footer-hours__list" role="list">
+        {% for line in hours_lines %}
+          {% if line.label or line.value %}
+            <li class="footer-hours__row">
+              <span class="footer-hours__label">{{ line.label }}</span>
+              <span class="footer-hours__value">{{ line.value }}</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+<footer
+  id="footer"
+  class="site-footer px-4 py-8 md:px-16 md:py-9"
+  data-bg="{{ bg }}"
+  data-heading-size="{{ heading_size }}"
+  data-heading-weight="{{ heading_weight }}"
+  data-col-align="{{ col_align }}"
+  {% if frame_enabled %}data-framed="true"{% endif %}
+  {% if mobile_accordion %}data-mobile-accordion="true"{% endif %}
+  style="
+    --footer-logo-height: {{ logo_height }}px;
+    --footer-frame-radius: {{ frame_radius }}px;
+    {% if frame_color %}--footer-frame-color: {{ frame_color }};{% endif %}
+  "
+>
+  {# ── SVG sprite — all social icons defined once, referenced
+     N times below via <use href="#footer-social-X">. Hidden via
+     `display:none` on the wrapping <svg>. The viewBox values are
+     each platform's standard logo box; some are 24×24, others
+     differ (Snapchat is 512×512, etc.). #}
+  <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+    <symbol id="footer-social-facebook" viewBox="0 0 24 24">
+      <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+    </symbol>
+    <symbol id="footer-social-instagram" viewBox="0 0 24 24">
+      <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+    </symbol>
+    <symbol id="footer-social-twitter" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z"/>
+    </symbol>
+    <symbol id="footer-social-snapchat" viewBox="0 0 512.016 512.016">
+      <path fill="currentColor" d="M500.459,375.368c-64.521-10.633-93.918-75.887-97.058-83.294c-0.06-0.145-0.307-0.666-0.375-0.819c-3.234-6.571-4.036-11.904-2.347-15.838c3.388-8.013,17.741-12.553,26.931-15.462c2.586-0.836,5.009-1.604,6.938-2.372c18.586-7.339,27.913-16.717,27.716-27.895c-0.179-8.866-7.134-17.007-17.434-20.651c-3.55-1.485-7.774-2.295-11.887-2.295c-2.842,0-7.066,0.401-11.102,2.287c-7.868,3.678-14.865,5.658-20.156,5.888c-2.355-0.094-4.139-0.486-5.427-0.922c0.162-2.79,0.35-5.658,0.529-8.585l0.094-1.493c2.193-34.807,4.915-78.123-6.673-104.081c-34.27-76.834-106.999-82.807-128.478-82.807l-10.018,0.094c-21.436,0-94.029,5.965-128.265,82.756c-11.614,26.018-8.866,69.316-6.664,104.115c0.213,3.422,0.427,6.758,0.614,10.01c-1.468,0.503-3.584,0.947-6.46,0.947c-6.161,0-13.542-1.997-21.931-5.922c-12.126-5.683-34.295,1.911-37.291,17.647c-1.63,8.516,1.801,20.796,27.383,30.908c1.988,0.785,4.489,1.587,7.561,2.56c8.576,2.722,22.929,7.27,26.325,15.266c1.681,3.951,0.879,9.284-2.662,16.512c-1.263,2.944-31.65,72.124-98.765,83.174c-6.963,1.143-11.93,7.322-11.537,14.353c0.111,1.954,0.563,3.917,1.399,5.897c5.641,13.193,27.119,22.349,67.55,28.766c0.887,2.295,1.92,7.006,2.509,9.737c0.853,3.9,1.749,7.927,2.97,12.1c1.229,4.224,4.881,11.307,15.445,11.307c3.575,0,7.714-0.811,12.211-1.681c6.468-1.271,15.309-2.995,26.274-2.995c6.084,0,12.416,0.546,18.825,1.604c12.092,2.005,22.699,9.506,35.004,18.202c18.116,12.809,34.586,22.605,67.524,22.605c0.87,0,1.732-0.026,2.577-0.085c1.22,0.06,2.449,0.085,3.695,0.085c28.851,0,54.246-7.62,75.494-22.63c11.742-8.311,22.835-16.162,34.935-18.176c6.426-1.058,12.766-1.604,18.85-1.604c10.513,0,18.901,1.348,26.385,2.816c5.06,0.998,9.02,1.476,12.672,1.476c7.373,0,12.8-4.053,14.874-11.127c1.195-4.113,2.091-8.021,2.961-12.015c0.461-2.125,1.57-7.211,2.509-9.66c39.851-6.34,60.203-15.138,65.835-28.297c0.845-1.894,1.34-3.9,1.476-6.033C512.372,382.707,507.422,376.529,500.459,375.368z"/>
+    </symbol>
+    <symbol id="footer-social-tiktok" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+    </symbol>
+    <symbol id="footer-social-linkedin" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+    </symbol>
+    <symbol id="footer-social-youtube" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </symbol>
+    <symbol id="footer-social-pinterest" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.029 12.017.029z"/>
+    </symbol>
+    <symbol id="footer-social-whatsapp" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.711.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+    </symbol>
+    <symbol id="footer-social-threads" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.781 3.631 2.695 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.74-1.757-.504-.586-1.279-.882-2.305-.89h-.029c-.825 0-1.945.227-2.659 1.288L7.06 7.21c.957-1.422 2.448-2.206 4.42-2.206h.043c3.296.02 5.262 2.05 5.458 5.59.111.046.22.094.329.143 1.527.717 2.644 1.806 3.235 3.144.825 1.865.901 4.91-1.584 7.343-1.902 1.86-4.32 2.7-7.317 2.717h-.067z"/>
+    </symbol>
+    <symbol id="footer-social-telegram" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    </symbol>
+    <symbol id="footer-social-custom" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </symbol>
+  </svg>
+
+  {# ── Trust strip above frame ──
+     USP / trust badges row that sits ABOVE the rounded frame inside
+     the footer. Reuses the shared highlights-render partial so the
+     visual treatment matches both the standalone Highlights section
+     and the header-level highlights — single source of truth. #}
+  {% if fhl_display and fhl_points %}
+    <div class="footer-trust-strip">
+      {% set hl = {
+        'points':           fhl_points,
+        'container_style':  fhl_style,
+        'item_radius':      12,
+        'background':       'transparent',
+        'show_on_mobile':   true,
+        'show_on_desktop':  true,
+        'is_lazy':          false,
+        'variant':          'footer'
+      } %}
+      {% set instance_id = 'footer-highlights' %}
+      {% include 'components/highlights-render.jinja' %}
+    </div>
+  {% endif %}
+
+  {# Frame wrapper — the rounded white card. When `frame_enabled` is
+     off, the frame element collapses (CSS sets transparent bg + no
+     border + zero padding) so existing flat-style stores aren't
+     visually disrupted. #}
+  <div class="footer-frame">
+  <div class="theme-container">
+    <div class="footer-grid">
+      {# ── Brand column ── #}
+      <div class="footer-brand-col">
+        {# Resolve logo sources ONCE here, then reuse — avoids running
+           the `default()` fallback chain twice when both desktop and
+           mobile fall back to the same image. The strip mark below
+           also reads `_logo_for_strip` so a single resolution covers
+           all logo references in the footer. #}
+        {% set _logo_desktop_src = settings.logo_logo_desktop | default(settings.logo_logo_mobile) | default(store.logo) %}
+        {% set _logo_mobile_src  = settings.logo_logo_mobile | default(settings.logo_logo_desktop) | default(store.logo) %}
+        {% if settings.logo_logo_desktop or settings.logo_logo_mobile %}
+          <img loading="lazy"
+            src="{{ image_url(_logo_desktop_src, w=320, q=90, f='auto') }}"
+            class="footer-logo footer-logo--desktop"
+            alt="{{ store.name }}"
+            width="320"
+            height="{{ logo_height | default(44) }}"
+            loading="lazy"
+            decoding="async"
+          />
+          <img loading="lazy"
+            src="{{ image_url(_logo_mobile_src, w=320, q=90, f='auto') }}"
+            class="footer-logo footer-logo--mobile"
+            alt="{{ store.name }}"
+            width="320"
+            height="{{ logo_height | default(44) }}"
+            loading="lazy"
+            decoding="async"
+          />
+        {% elif store.logo %}
+          <img loading="lazy"
+            src="{{ image_url(store.logo, w=320, q=90, f='auto') }}"
+            class="footer-logo"
+            alt="{{ store.name }}"
+            width="320"
+            height="{{ logo_height | default(44) }}"
+            loading="lazy"
+            decoding="async"
+          />
+        {% else %}
+          <h2 class="footer-store-name">{{ store.name }}</h2>
+        {% endif %}
+
+        {% if settings.about_us_about_us %}
+          <p class="footer-about">{{ settings.about_us_about_us | safe }}</p>
+        {% endif %}
+
+        {# ── About-us info items ──
+           Free-form list of label + value (+ optional image + URL) rows
+           that the merchant manages from the theme editor. Useful for
+           commercial register, tax number, certificates (organic /
+           halal / ISO), and any other credentials the merchant wants
+           to surface below the about description. Each item:
+             • If `url` is set → wrapped in <a target="_blank">
+             • If `image` is present → renders the image
+             • If `value` is present → renders the text value
+             • Both can coexist (label + image + caption)
+           Renders ABOVE the platform-pulled brand-trust block so
+           merchant-curated info gets visual priority. #}
+        {% set _info_items = settings.about_us_info_items or [] %}
+        {% if _info_items %}
+          <ul class="footer-about-info" role="list">
+            {% for item in _info_items %}
+              {% if item.label or item.value or item.image %}
+                {% set _has_link = item.url and (item.url | trim) %}
+                <li class="footer-about-info__item">
+                  {% if _has_link %}
+                    <a class="footer-about-info__inner"
+                       href="{{ safe_url(item.url) }}"
+                       target="_blank" rel="noopener noreferrer"
+                       {% if item.label %}aria-label="{{ item.label }}"{% endif %}>
+                  {% else %}
+                    <div class="footer-about-info__inner">
+                  {% endif %}
+                    {% if item.label and item.label | trim %}
+                      <span class="footer-about-info__label">{{ item.label }}</span>
+                    {% endif %}
+                    {% if item.value and item.value | trim %}
+                      <span class="footer-about-info__value">{{ item.value }}</span>
+                    {% endif %}
+                    {% if item.image %}
+                      <img class="footer-about-info__image"
+                           src="{{ image_url(item.image, w=240, q=90, f='auto') }}"
+                           alt="{{ item.label or '' }}"
+                           loading="lazy" decoding="async" />
+                    {% endif %}
+                  {% if _has_link %}
+                    </a>
+                  {% else %}
+                    </div>
+                  {% endif %}
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {# Social row moved out — now renders as its own column at the
+           end of the grid (see `.footer-social-col` below) so the
+           brand column stays focused on logo + about + commercial
+           identifiers, matching the screenshot's 4-column layout. #}
+        {% set social_extras = settings.social_items %}
+        {% set has_any_social = store.settings.contact.facebook
+                             or store.settings.contact.instagram
+                             or store.settings.contact.twitter
+                             or store.settings.contact.snapchat
+                             or store.settings.contact.tiktok
+                             or social_extras %}
+
+        {# ── Trust info inline in the brand column ──
+           Commercial register, VAT number, business center — all
+           rendered as small muted text below the about-us paragraph.
+           This matches the new framed-design spec where these
+           identifiers live in the brand column rather than competing
+           with payment methods in the bottom strip. #}
+        {% set _has_brand_trust =
+              store.settings.general.commercial_registration_number
+           or store.settings.general.tax_settings.tax_number
+           or store.settings.contact.business_center %}
+        {% if _has_brand_trust %}
+          <div class="footer-brand-trust">
+            {% if store.settings.general.commercial_registration_number %}
+              <div class="footer-brand-trust__item">
+                <h3 class="footer-heading footer-brand-trust__label">
+                  {{ _("The commercial register number:") }}
+                </h3>
+                <div class="footer-brand-trust__value">
+                  {{ store.settings.general.commercial_registration_number }}
+                </div>
+              </div>
+            {% endif %}
+            {% if store.settings.general.tax_settings.tax_number %}
+              <div class="footer-brand-trust__item">
+                <h3 class="footer-heading footer-brand-trust__label">
+                  {{ _("VAT number:") }}
+                </h3>
+                <div class="footer-brand-trust__value">
+                  {{ store.settings.general.tax_settings.tax_number }}
+                </div>
+              </div>
+            {% endif %}
+            {% if store.settings.contact.business_center %}
+              <a class="footer-brand-trust__cert"
+                 href="https://eauthenticate.saudibusiness.gov.sa/certificate-details/{{ store.settings.contact.business_center }}"
+                 target="_blank" rel="noopener noreferrer"
+                 aria-label="{{ _('Business Center') }}">
+                <img src="{{ image_url('images/business_center.png' | asset_url, w=108, q=85, f='auto') }}"
+                     alt="{{ _('Business Center') }}" loading="lazy" />
+                <span>{{ store.settings.contact.business_center }}</span>
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {# Working hours — rendered here when position == brand_col. #}
+        {% if hours_position == 'brand_col' %}
+          {{ render_hours() }}
+        {% endif %}
+
+        {# ── App store badges ── #}
+        {% if store.settings.general.one_signal.ios_app_id %}
+          <a href="https://apps.apple.com/app/id{{ store.settings.general.one_signal.ios_app_id }}"
+             target="_blank" rel="noopener noreferrer"
+             aria-label="{{ _('Download on the App Store') }}"
+             class="footer-app-badge">
+            <img src="{{ 'images/app-store-logo.svg' | asset_url }}"
+                 alt="Download on the App Store" loading="lazy" />
+          </a>
+        {% endif %}
+        {% if store.settings.general.one_signal.android_package_name %}
+          <a href="https://play.google.com/store/apps/details?id={{ store.settings.general.one_signal.android_package_name }}"
+             target="_blank" rel="noopener noreferrer"
+             aria-label="{{ _('Get it on Google Play') }}"
+             class="footer-app-badge">
+            <img src="{{ 'images/google-play-logo.svg' | asset_url }}"
+                 alt="Get it on Google Play" loading="lazy" />
+          </a>
+        {% endif %}
+
+        {# ── Newsletter form ──
+           Posts to merchant-configured action URL, falls back to
+           `/newsletter/subscribe` (typical Vitrin convention). The
+           form is a real <form> so it works without JS — Zid's
+           platform-side handler picks it up. Successful submissions
+           navigate to a thank-you state; failures are shown
+           inline by the platform. #}
+        {% if not newsletter_hide and (newsletter_title or newsletter_desc or newsletter_btn) %}
+          <div class="footer-newsletter">
+            {% if newsletter_title %}
+              <h3 class="footer-heading">{{ newsletter_title }}</h3>
+            {% endif %}
+            {% if newsletter_desc %}
+              <p class="footer-newsletter__desc">{{ newsletter_desc }}</p>
+            {% endif %}
+            <form class="footer-newsletter__form"
+                  method="post"
+                  action="{{ newsletter_action or '/newsletter/subscribe' }}">
+              <input type="email" name="email" required
+                     class="footer-newsletter__input"
+                     placeholder="{{ newsletter_ph or _('Enter your email') }}"
+                     aria-label="{{ newsletter_ph or _('Enter your email') }}" />
+              <button type="submit" class="footer-newsletter__btn">
+                {{ newsletter_btn or _('Subscribe') }}
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+
+      {# ── Link groups ──
+         When `mobile_accordion` is on, each group is a <details> on
+         mobile (collapsed by default) and reverts to an open block
+         on desktop via CSS. The shared element does double duty
+         without JS or duplicate markup. #}
+      {% for group in settings.link_groups_items or [] %}
+        {% if not group.hide and group.links %}
+          {% set group_id = 'footer-group-' ~ loop.index %}
+          {% if mobile_accordion %}
+            <details class="footer-group footer-group--collapsible" id="{{ group_id }}">
+              <summary class="footer-group__head">
+                {% if group.title %}
+                  <h3 class="footer-heading footer-group__title">{{ group.title }}</h3>
+                {% endif %}
+                <svg class="footer-group__chevron" viewBox="0 0 24 24" width="16" height="16"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </summary>
+              <ul class="footer-group__links" role="list">
+                {% for link in group.links %}
+                  <li class="footer-group__item">
+                    <a href="{{ safe_url(link.url) }}" class="footer-group__link">
+                      {{ link.title }}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </details>
+          {% else %}
+            <div class="footer-group" id="{{ group_id }}">
+              {% if group.title %}
+                <h3 class="footer-heading footer-group__title">{{ group.title }}</h3>
+              {% endif %}
+              <ul class="footer-group__links" role="list">
+                {% for link in group.links %}
+                  <li class="footer-group__item">
+                    <a href="{{ safe_url(link.url) }}" class="footer-group__link">
+                      {{ link.title }}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {# ── Country debug helper (opt-in via schema toggle) ──
+         When `countries_debug` is true, emit an HTML comment with
+         the actual session values so you can see which key carries
+         the country code on your storefront. View page source and
+         Ctrl-F "footer-country-debug" to find it.
+
+         Each interpolated value is sanitized:
+           1. `| string` coerces objects to text (avoids `<dict ..>`)
+           2. `| replace('-->', '-->')` (zero-width space inserted)
+              neutralizes accidental comment terminators in case any
+              value contains literal `-->`. Without this, malformed
+              session data could close the HTML comment early and
+              the rest of the comment would parse as live HTML. #}
+      {% if settings.countries_debug %}
+        {% set _dbg_country     = (session.country | string | replace('--', '-​-')) if session.country else '' %}
+        {% set _dbg_country_obj = (session.country.code | string | replace('--', '-​-')) if session.country and session.country.code is defined else '' %}
+        {% set _dbg_cc          = (session.country_code | string | replace('--', '-​-')) if session.country_code else '' %}
+        {% set _dbg_lc          = (session.locale.code | string | replace('--', '-​-')) if session.locale and session.locale.code else '' %}
+        {% set _dbg_lcc         = (session.locale.country | string | replace('--', '-​-')) if session.locale and session.locale.country else '' %}
+        {% set _dbg_lcc_obj     = (session.locale.country.code | string | replace('--', '-​-')) if session.locale and session.locale.country and session.locale.country.code is defined else '' %}
+        {% set _dbg_req_country = (request.country | string | replace('--', '-​-')) if request is defined and request and request.country else '' %}
+        {% set _dbg_store_cc    = (store.country_code | string | replace('--', '-​-')) if store is defined and store and store.country_code else '' %}
+        <!--
+        footer-country-debug
+        session.country              = "{{ _dbg_country }}"
+        session.country.code         = "{{ _dbg_country_obj }}"
+        session.country_code         = "{{ _dbg_cc }}"
+        session.locale.code          = "{{ _dbg_lc }}"
+        session.locale.country       = "{{ _dbg_lcc }}"
+        session.locale.country.code  = "{{ _dbg_lcc_obj }}"
+        request.country              = "{{ _dbg_req_country }}"
+        store.country_code           = "{{ _dbg_store_cc }}"
+        ── resolved ──
+        _locale_country_code         = "{{ _locale_country_code | replace('--', '-​-') }}"
+        _detected_country            = "{{ _detected_country | replace('--', '-​-') }}"
+        country_was_detected         = {{ country_was_detected }}
+        countries_in_list            = {{ _all_countries | length }} ({{ _all_countries | map(attribute='code') | map('string') | join(', ') | replace('--', '-​-') }})
+        country_links_block.code     = "{{ (country_links_block.code | string | replace('--', '-​-')) if country_links_block else '' }}"
+        -->
+      {% endif %}
+
+      {# ── Country-scoped link group ──
+         Renders the matched country's links as an additional grid
+         column. Mirrors the existing link_groups markup pattern
+         (mobile_accordion → <details>; desktop → <div>) so the
+         column behaves identically in both modes — same hover, same
+         spacing, same chevron. The country's flag + name acts as
+         the heading. The "Detected location" pill renders only when
+         `show_detection_hint` is on AND we actually matched against
+         the visitor's session.country (not when we fell back). #}
+      {% if country_links_block and country_links_block.links %}
+        {% set _country_id = 'footer-country-' ~ (country_links_block.code | lower) %}
+        {# `-` whitespace control on the set block + each tag strips
+           the indentation/newlines so the rendered <h3> doesn't have
+           a wall of leading spaces inside it. #}
+        {%- set _country_heading -%}
+          {%- if country_links_block.flag -%}<span class="footer-country__flag" aria-hidden="true">{{ country_links_block.flag }}</span> {% endif -%}
+          {{- country_links_block.name -}}
+          {%- if country_show_hint and country_was_detected %} <span class="footer-country__hint">{{ _("Detected location") }}</span>{% endif -%}
+        {%- endset -%}
+        {% set _country_visibility_class = 'is-mobile-only' if country_show_on == 'mobile_only' else '' %}
+        {% if mobile_accordion %}
+          <details class="footer-group footer-group--collapsible footer-group--country {{ _country_visibility_class }}" id="{{ _country_id }}">
+            <summary class="footer-group__head">
+              <h3 class="footer-heading footer-group__title">{{ _country_heading | safe }}</h3>
+              <svg class="footer-group__chevron" viewBox="0 0 24 24" width="16" height="16"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </summary>
+            <ul class="footer-group__links" role="list">
+              {% for link in country_links_block.links %}
+                <li class="footer-group__item">
+                  <a href="{{ safe_url(link.url) }}" class="footer-group__link">
+                    {{ link.title }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </details>
+        {% else %}
+          <div class="footer-group footer-group--country {{ _country_visibility_class }}" id="{{ _country_id }}">
+            <h3 class="footer-heading footer-group__title">{{ _country_heading | safe }}</h3>
+            <ul class="footer-group__links" role="list">
+              {% for link in country_links_block.links %}
+                <li class="footer-group__item">
+                  <a href="{{ safe_url(link.url) }}" class="footer-group__link">
+                    {{ link.title }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      {# ── Contact info column ──
+         Email, phone, address — all sourced from Vitrin's
+         `store.settings.contact.*` (platform-managed). The schema's
+         `contact_info_title` is the only theme-side override. #}
+      <div class="footer-contact-col">
+        <h3 class="footer-heading">
+          {% if settings.contact_info_title %}
+            {{ settings.contact_info_title }}
+          {% else %}
+            {{ _("Contact us") }}
+          {% endif %}
+        </h3>
+
+        {# Working hours — rendered here when position == contact_col (default). #}
+        {% if hours_position == 'contact_col' %}
+          {{ render_hours() }}
+        {% endif %}
+
+        {# ── Custom contact items ──
+           Merchant-defined label + value pairs (e.g. "للأسئلة والإستفسارات"
+           with phone "96551726070" below). Each item can have its own
+           icon (uploaded image) or fall back to a default SVG matching
+           the type. Phone/email/whatsapp values become tel:/mailto:/
+           wa.me links automatically. The block renders ABOVE the
+           platform-pulled email/address/phone so merchants can show
+           their preferred contact UX first.
+
+           Per-item country targeting: each item carries its own
+           `visibility_countries` + `visibility_mode` settings (same
+           shape as the section-level pair). The country_visible macro
+           runs per item so a merchant can ship a SA-only support phone
+           and a separate KW-only WhatsApp from the same list. Empty
+           country list = always visible (default). #}
+        {% if contact_items %}
+          {# Per-item debug — emits an HTML comment showing exactly
+             what country_visible returned for each contact item. Gated
+             by the SAME toggle as the country-links debug
+             (`countries_debug`) so a single switch covers both. View
+             page source and Ctrl-F "footer-contact-items-debug". #}
+          {% if settings.countries_debug %}
+            <!--
+            footer-contact-items-debug
+            (enabled via Footer → Links by Country → Debug mode)
+            ── detected visitor country ──
+            _detected_country            = "{{ _detected_country | replace('--', '-​-') }}"
+            (when empty, country_visible falls back to fail_open=true → returns "yes")
+            ── per-item visibility resolution ──
+            {% for item in contact_items %}
+              [{{ loop.index }}] label="{{ (item.label | string | replace('--', '-​-')) if item.label else '' }}" value="{{ (item.value | string | replace('--', '-​-')) if item.value else '' }}" countries="{{ (item.visibility_countries | string | replace('--', '-​-')) if item.visibility_countries else '' }}" mode="{{ (item.visibility_mode | string | replace('--', '-​-')) if item.visibility_mode else 'show_in (default)' }}" → {{ country_visible(item.visibility_countries, item.visibility_mode, _detected_country) | trim }}
+            {% endfor %}
+            -->
+          {% endif %}
+
+          {% set _ns_visible_items = namespace(any=false) %}
+          {% for item in contact_items %}
+            {% set _item_vis = country_visible(item.visibility_countries, item.visibility_mode, _detected_country) | trim %}
+            {% if item.value and item.value | trim and _item_vis == 'yes' %}
+              {% set _ns_visible_items.any = true %}
+            {% endif %}
+          {% endfor %}
+
+          {% if _ns_visible_items.any %}
+          <ul class="footer-contact-customs" role="list">
+            {% for item in contact_items %}
+              {% set _item_vis = country_visible(item.visibility_countries, item.visibility_mode, _detected_country) | trim %}
+              {% if item.value and item.value | trim and _item_vis == 'yes' %}
+                {% set _type = item.type | default('phone', true) %}
+                {% set _val = item.value | trim %}
+                {# Build the href based on type. `text` gets no link wrapper. #}
+                {% set _href = '' %}
+                {% if _type == 'phone' %}
+                  {% set _href = 'tel:' ~ _val %}
+                {% elif _type == 'whatsapp' %}
+                  {% set _href = 'https://wa.me/' ~ (_val | replace('+', '') | replace(' ', '') | replace('-', '')) %}
+                {% elif _type == 'email' %}
+                  {% set _href = 'mailto:' ~ _val %}
+                {% elif _type == 'url' %}
+                  {% set _href = safe_url(item.url or _val) %}
+                {% endif %}
+                <li class="footer-contact-custom {% if item.emphasized is sameas false %}{% else %}is-emphasized{% endif %}">
+                  <div class="footer-contact-custom__head">
+                    {% if item.icon %}
+                      <img src="{{ image_url(item.icon, w=48, q=90, f='auto') }}"
+                           alt="" aria-hidden="true"
+                           class="footer-contact-custom__icon footer-contact-custom__icon--img" />
+                    {% else %}
+                      {# Default icons by type — inline SVG so they pick up currentColor. #}
+                      <svg class="footer-contact-custom__icon" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                           stroke-linejoin="round" aria-hidden="true">
+                        {% if _type == 'phone' %}
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        {% elif _type == 'whatsapp' %}
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                        {% elif _type == 'email' %}
+                          <path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                        {% elif _type == 'url' %}
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        {% else %}
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 16v-4"/>
+                          <path d="M12 8h.01"/>
+                        {% endif %}
+                      </svg>
+                    {% endif %}
+                    {% if item.label and item.label | trim %}
+                      <span class="footer-contact-custom__label">{{ item.label }}</span>
+                    {% endif %}
+                  </div>
+                  {% if _href %}
+                    <a class="footer-contact-custom__value"
+                       href="{{ _href }}"
+                       {% if _type == 'whatsapp' or _type == 'url' %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                      {{ _val }}
+                    </a>
+                  {% else %}
+                    <span class="footer-contact-custom__value">{{ _val }}</span>
+                  {% endif %}
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+          {% endif %}{# /_ns_visible_items.any #}
+        {% endif %}
+
+        <ul class="footer-contact-list" role="list">
+          {% if show_email_field and store.settings.contact.email %}
+            <li class="footer-contact-item">
+              <svg class="footer-contact-icon" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+              </svg>
+              <a href="mailto:{{ store.settings.contact.email }}" class="footer-contact-link">
+                {{ store.settings.contact.email }}
+              </a>
+            </li>
+          {% endif %}
+
+          {% if show_address_field and store.settings.general.business_address.show_location %}
+            {% set _addr = store.settings.general.business_address %}
+            {% set _has_coords = _addr.latitude and _addr.longitude %}
+            {# Build the comma-list ONCE, no duplicated street.
+               Filter out empty parts so a missing district doesn't
+               leave dangling commas. #}
+            {% set _parts = [
+              _addr.city.country.name if _addr.city and _addr.city.country else '',
+              _addr.city.name if _addr.city else '',
+              _addr.district,
+              _addr.street
+            ] %}
+            {% set _addr_text = _parts | select | join(', ') %}
+            <li class="footer-contact-item">
+              <svg class="footer-contact-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M7.9996 2.13086C9.30577 2.13086 10.4522 2.58386 11.4576 3.50879C12.434 4.4071 12.9371 5.61569 12.9371 7.18945C12.9371 7.82097 12.7983 8.45471 12.5123 9.09375C12.215 9.75799 11.8413 10.3945 11.3912 11.0039C10.9351 11.6215 10.4395 12.1976 9.90488 12.7324C9.35805 13.2796 8.84891 13.7629 8.37753 14.1826L8.36679 14.1934C8.32475 14.2331 8.27727 14.2614 8.21933 14.2803C8.15285 14.3018 8.09124 14.3108 8.03476 14.3145L8.33554 14.042C9.81628 12.6987 10.933 11.4671 11.6656 10.3486C12.3942 9.2361 12.7974 8.17836 12.7975 7.18945C12.7975 5.77661 12.3398 4.58295 11.4049 3.65332C10.4781 2.73207 9.33225 2.27051 7.9996 2.27051C6.66712 2.27056 5.52183 2.73218 4.59531 3.65332C3.66042 4.58295 3.20273 5.7766 3.20273 7.18945C3.2028 8.18171 3.61692 9.24048 4.36288 10.3516C5.1093 11.4632 6.21347 12.6927 7.65976 14.0381L7.95761 14.3145C7.9014 14.311 7.84187 14.3022 7.7789 14.2812C7.7257 14.2635 7.68228 14.2365 7.64316 14.1982L7.63437 14.1904L7.6246 14.1816C7.15102 13.7622 6.6408 13.2792 6.09433 12.7324C5.55983 12.1977 5.06499 11.6214 4.60898 11.0039C4.15903 10.3946 3.78667 9.75773 3.49081 9.09375C3.20602 8.45464 3.06702 7.82125 3.06699 7.18945C3.06699 5.61533 3.57017 4.40708 4.5455 3.50879C5.54935 2.58417 6.69365 2.13095 7.9996 2.13086ZM7.99863 6.36914C8.19888 6.36917 8.35484 6.43397 8.49472 6.57324C8.63395 6.71188 8.69882 6.86674 8.69882 7.06641C8.69881 7.26662 8.63403 7.4214 8.4957 7.55957C8.35729 7.69778 8.20211 7.76268 8.00156 7.7627C7.85056 7.7627 7.72514 7.72653 7.61386 7.65039L7.50742 7.56055C7.37006 7.42371 7.30527 7.26986 7.30527 7.06934C7.30527 6.86807 7.37023 6.71193 7.50839 6.57227C7.64544 6.43393 7.79905 6.36914 7.99863 6.36914Z"
+                      fill="currentColor" stroke="currentColor"/>
+              </svg>
+              {# When coords are present, link to Google Maps. When
+                 absent, render as a plain <span> — eliminates the
+                 broken-<a>-with-no-href pattern from the original. #}
+              {% if _has_coords %}
+                <a class="footer-contact-link"
+                   target="_blank" rel="noopener noreferrer"
+                   href="https://maps.google.com/?q={{ _addr.latitude }},{{ _addr.longitude }}">
+                  {{ _addr_text }}
+                </a>
+              {% else %}
+                <span class="footer-contact-link">{{ _addr_text }}</span>
+              {% endif %}
+            </li>
+          {% endif %}
+
+          {% if show_phone_field and store.settings.contact.phone %}
+            <li class="footer-contact-item">
+              <svg class="footer-contact-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.74603 2.32227H5.07904C5.27395 2.32227 5.43696 2.38407 5.5683 2.50781C5.66741 2.60115 5.74396 2.71701 5.79779 2.85547L5.84369 3.00195L6.29193 5.0293V5.03027C6.31987 5.21923 6.31605 5.38671 6.28119 5.5332C6.24657 5.6787 6.1753 5.8033 6.06635 5.90723L6.06537 5.9082L4.38666 7.56348L4.37299 7.57715L4.38275 7.59375C4.66144 8.06209 4.95717 8.50007 5.26947 8.90723C5.50372 9.21266 5.75691 9.50762 6.03021 9.79102L6.31049 10.0703C6.71156 10.485 7.13012 10.8604 7.56635 11.1963C8.00303 11.5325 8.45889 11.8268 8.93353 12.0781L8.95013 12.0869L8.96381 12.0732L10.5663 10.4277H10.5673C10.6944 10.2898 10.8393 10.1968 11.0019 10.1484C11.1245 10.1121 11.2479 10.0985 11.372 10.1074L11.496 10.124L13.3984 10.5439V10.5449C13.6027 10.6013 13.7668 10.7049 13.8915 10.8555C14.0162 11.006 14.079 11.1811 14.079 11.3809V13.6553C14.0789 13.8903 13.9994 14.0852 13.8417 14.2412C13.6839 14.3974 13.4896 14.4756 13.2578 14.4756C11.9569 14.4755 10.6328 14.1623 9.2851 13.5361C7.93722 12.9099 6.687 12.021 5.5351 10.8691C4.38343 9.71744 3.49366 8.46726 2.86615 7.11816C2.23857 5.76899 1.92572 4.44479 1.92572 3.14648C1.92579 2.91163 2.00418 2.71613 2.16107 2.55859C2.31789 2.401 2.51231 2.32227 2.74603 2.32227Z"
+                      fill="currentColor" stroke="currentColor" stroke-width="0.05"/>
+              </svg>
+              <a href="tel:{{ store.settings.contact.phone }}" class="footer-contact-link">
+                {{ store.settings.contact.phone }}
+              </a>
+            </li>
+          {% endif %}
+
+          {# Show the Instagram handle (or any primary social handle)
+             as a clickable contact-style row — matches the screenshot's
+             `wood.landx` line in the contact column. #}
+          {% if show_instagram_handle and store.settings.contact.instagram %}
+            <li class="footer-contact-item">
+              <svg class="footer-contact-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <use href="#footer-social-instagram"/>
+              </svg>
+              <a href="https://www.instagram.com/{{ normalize_handle(store.settings.contact.instagram, 'instagram.com/') | trim }}"
+                 target="_blank" rel="noopener noreferrer"
+                 class="footer-contact-link">
+                {{ normalize_handle(store.settings.contact.instagram, 'instagram.com/') | trim }}
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      {# ── Social column ──
+         Dedicated column for the social-icon row. Renders only when
+         the merchant has at least one social handle. Sits last in
+         the grid so on desktop the layout reads brand → links →
+         contact → social (right-to-left in RTL) — matches the
+         screenshot. #}
+      {% if has_any_social %}
+        <div class="footer-social-col">
+          <h3 class="footer-heading">
+            {% if settings.social_title %}
+              {{ settings.social_title }}
+            {% elif store.settings.contact.title %}
+              {{ store.settings.contact.title }}
+            {% else %}
+              {{ _("Follow us") }}
+            {% endif %}
+          </h3>
+          <ul class="footer-social-list" role="list">
+            {# Primary 5 — Vitrin platform-managed contact handles. #}
+            {% if store.settings.contact.facebook %}
+              <li>
+                <a href="https://www.facebook.com/{{ normalize_handle(store.settings.contact.facebook, 'facebook.com/') | trim }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="footer-social-link" aria-label="{{ _('Facebook') }}">
+                  <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-facebook"/></svg>
+                </a>
+              </li>
+            {% endif %}
+            {% if store.settings.contact.instagram %}
+              <li>
+                <a href="https://www.instagram.com/{{ normalize_handle(store.settings.contact.instagram, 'instagram.com/') | trim }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="footer-social-link" aria-label="{{ _('Instagram') }}">
+                  <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-instagram"/></svg>
+                </a>
+              </li>
+            {% endif %}
+            {% if store.settings.contact.twitter %}
+              <li>
+                <a href="https://twitter.com/{{ normalize_handle(store.settings.contact.twitter, 'twitter.com/') | trim }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="footer-social-link" aria-label="{{ _('X (Twitter)') }}">
+                  <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-twitter"/></svg>
+                </a>
+              </li>
+            {% endif %}
+            {% if store.settings.contact.snapchat %}
+              <li>
+                <a href="https://www.snapchat.com/add/{{ normalize_handle(store.settings.contact.snapchat, 'snapchat.com/add/') | trim }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="footer-social-link" aria-label="{{ _('Snapchat') }}">
+                  <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-snapchat"/></svg>
+                </a>
+              </li>
+            {% endif %}
+            {% if store.settings.contact.tiktok %}
+              <li>
+                <a href="https://www.tiktok.com/@{{ normalize_handle(store.settings.contact.tiktok, 'tiktok.com/@') | trim }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="footer-social-link" aria-label="{{ _('TikTok') }}">
+                  <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-tiktok"/></svg>
+                </a>
+              </li>
+            {% endif %}
+
+            {% if social_extras %}
+              {% for item in social_extras %}
+                {% set href = safe_url(item.url) %}
+                {% if href and href != '#' %}
+                  {% set platform = item.platform | default('custom') %}
+                  <li>
+                    <a href="{{ href }}" target="_blank" rel="noopener noreferrer"
+                       class="footer-social-link" aria-label="{{ platform | capitalize }}">
+                      <svg class="footer-social-icon" aria-hidden="true"><use href="#footer-social-{{ platform }}"/></svg>
+                    </a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+
+    {# ── Certification logos row ──
+       Small horizontal logo strip inside the frame, above the bottom
+       payments row. Useful for natural-product / health stores
+       wanting to display organic / halal / ISO badges. Renders only
+       when at least one logo is configured. Logos with a URL become
+       clickable; without one render as a static <img>. #}
+    {% if certs_display and certs_logos %}
+      <div class="footer-certs" data-cert-style="{{ certs_style }}">
+        {% if certs_title %}
+          <h4 class="footer-certs__title">{{ certs_title }}</h4>
+        {% endif %}
+        <ul class="footer-certs__list" role="list">
+          {% for cert in certs_logos %}
+            {% if cert.image %}
+              <li class="footer-certs__item">
+                {% if cert.url %}
+                  <a class="footer-certs__link"
+                     href="{{ safe_url(cert.url) }}"
+                     target="_blank" rel="noopener noreferrer"
+                     aria-label="{{ cert.label or '' }}"
+                     title="{{ cert.label or '' }}">
+                    <img src="{{ image_url(cert.image, w=200, h=120, q=90, f='auto') }}"
+                         alt="{{ cert.label or '' }}" loading="lazy" decoding="async" />
+                  </a>
+                {% else %}
+                  <img class="footer-certs__img"
+                       src="{{ image_url(cert.image, w=200, h=120, q=90, f='auto') }}"
+                       alt="{{ cert.label or '' }}"
+                       title="{{ cert.label or '' }}"
+                       loading="lazy" decoding="async" />
+                {% endif %}
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {# ── In-frame bottom row ──
+       Sits INSIDE the rounded frame, separated from the columns
+       above by a horizontal hairline divider. Carries payment
+       methods + tagline. Matches the screenshot's structure where
+       the bottom row is part of the framed card, not a separate
+       strip floating below it.
+
+       Shipping methods, VAT cert, and an inline store mark all
+       render alongside payments since they're visually small
+       badge tiles. #}
+    {% set _shipping = store.settings.checkout.shipping_methods or [] %}
+    {% set _payment  = store.settings.checkout.payment_methods or [] %}
+    {# Note: `store.settings.branding.copyrights` deliberately excluded
+       from the gating condition. That platform value contains the
+       "صنع بواسطة zid" link, and including it here would render an
+       empty strip wrapper just to host that one branding fallback.
+       The strip now only renders when there's real merchant content. #}
+    {% set _has_strip_content = _shipping or _payment
+                              or store.settings.general.tax_settings.is_certificate_visible
+                              or tagline %}
+    {% if _has_strip_content %}
+      <div class="footer-strip footer-strip--inframe">
+        <div class="footer-strip__row">
+          <div class="footer-strip__badges">
+            {% for shipping_method in _shipping %}
+              <a class="footer-strip__badge" href="/shipping-and-payment"
+                 aria-label="{{ shipping_method.name }}">
+                <img src="{{ image_url(shipping_method.icon, w=72, h=48, q=100) }}"
+                     alt="{{ shipping_method.name }}"
+                     width="72" height="48"
+                     loading="lazy" decoding="async" />
+              </a>
+            {% endfor %}
+
+            {% for payment_method in _payment %}
+              <a class="footer-strip__badge" href="/shipping-and-payment"
+                 aria-label="{{ payment_method.name }}">
+                <img src="{{ image_url(payment_method.icon, w=72, h=48, q=100) }}"
+                     alt="{{ payment_method.name }}"
+                     width="72" height="48"
+                     loading="lazy" decoding="async" />
+              </a>
+            {% endfor %}
+
+            {% if store.settings.general.tax_settings.is_certificate_visible %}
+              {% set _vat_href = store.settings.general.tax_settings.tax_registration_certificate %}
+              {% if _vat_href %}
+                <a class="footer-strip__badge"
+                   href="{{ safe_url(_vat_href) }}"
+                   target="_blank" rel="noopener noreferrer"
+                   aria-label="{{ _('VAT Certificate') }}">
+                  <img src="{{ image_url('images/vat-certificate.png' | asset_url, w=108, q=85, f='auto') }}"
+                       alt="{{ _('VAT Certificate') }}"
+                       width="72" height="48"
+                       loading="lazy" decoding="async" />
+                </a>
+              {% else %}
+                <span class="footer-strip__badge"
+                      aria-label="{{ _('VAT Certificate') }}">
+                  <img src="{{ image_url('images/vat-certificate.png' | asset_url, w=108, q=85, f='auto') }}"
+                       alt="{{ _('VAT Certificate') }}"
+                       width="72" height="48"
+                       loading="lazy" decoding="async" />
+                </span>
+              {% endif %}
+            {% endif %}
+
+            {# Optional small store-mark inline with payments. #}
+            {% set _strip_logo = settings.logo_logo_desktop | default(store.logo) %}
+            {% if _strip_logo %}
+              <img class="footer-strip__mark"
+                   src="{{ image_url(_strip_logo, w=120, q=90, f='auto') }}"
+                   alt="{{ store.name }}"
+                   width="120" height="32"
+                   loading="lazy" decoding="async" />
+            {% endif %}
+          </div>
+
+          {# Tagline renders ONLY when the merchant has explicitly set
+             one via the theme editor. The previous fallback to
+             `store.settings.branding.copyrights` was removed because
+             that platform-supplied value contains a "صنع بواسطة zid"
+             branding link, which most merchants want to suppress.
+             If a future merchant wants the platform branding back,
+             they can paste it into the appearance.tagline field
+             themselves — opt-in instead of opt-out. #}
+          {% if tagline %}
+            <div class="footer-strip__tagline">
+              {{ tagline }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>{# /theme-container #}
+  </div>{# /footer-frame #}
+</footer>
+
+<style>
+  /* ===========================================================
+     SECTION CONTAINER — `[data-bg]` token system + base layout.
+     Selectors target `.site-footer` (set on the <footer> element)
+     and use `[data-*]` attributes for variants — no descendant-
+     combinator bug because .site-footer IS the element.
+     The framed-design overrides come AFTER the bg tokens so the
+     frame can re-color the strip independently of the section bg.
+     =========================================================== */
+  .site-footer {
+    color: var(--foreground);
+    /* Reset the section-level Tailwind padding when frame is on —
+       padding moves into the frame so the frame visually defines
+       the inner edges, and the bottom strip stretches edge-to-edge. */
+    padding: 0;
+  }
+
+  /* Section background — each `data-bg` variant sets the
+     `--footer-bg-top` var. Unframed footers use it as a normal solid
+     bg; framed footers paint it via a ::before pseudo so the
+     yellow ::after layer can sit ABOVE the cream and BELOW the
+     frame (z-index:-1 on a pseudo would otherwise drop behind the
+     parent's own background-color and disappear). */
+  .site-footer[data-bg="secondary"]  { --footer-bg-top: var(--secondary); }
+  .site-footer[data-bg="background"] { --footer-bg-top: var(--background); }
+  .site-footer[data-bg="warm"]       { --footer-bg-top: #FFFDF8; }
+  .site-footer[data-bg="dark"]       { --footer-bg-top: var(--foreground); color: var(--background); }
+  .site-footer[data-bg="primary"]    { --footer-bg-top: var(--primary);    color: var(--primary-foreground); }
+  .site-footer:not([data-framed="true"]) {
+    background: var(--footer-bg-top);
+  }
+
+  /* ===========================================================
+     FRAMED DESIGN
+     ----------------------------------------------------------
+     `.footer-frame` is the rounded white card with the warm
+     accent border. When `data-framed="true"` is set on the
+     footer, the frame gets its visual treatment; otherwise it
+     collapses to a transparent passthrough so flat-style layouts
+     still work.
+
+     `--footer-frame-color` defaults to a warm amber (close to the
+     honey-store screenshot — #F4B73B) but the merchant can
+     override via the schema's color picker. `currentColor`
+     fallbacks ensure the frame works on dark themes too. */
+  .site-footer .footer-frame {
+    /* No-op when frame is off (default flat look). */
+    padding: 2rem 1rem;
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-frame { padding: 2.5rem 2rem; }
+  }
+
+  /* Framed mode: white rounded card sits on the section bg with a
+     yellow border. The yellow accent is a full-width 50%-height
+     layer painted on the FOOTER element itself (see ::after rule
+     below) — sits behind everything via z-index:-1, so the frame
+     card's own white bg covers it where they overlap and the yellow
+     only shows in the bottom-half margin area around the frame. */
+  /* Three-layer stack via explicit positive z-indexes (avoids the
+     negative-z-index gotcha where pseudos drop behind the parent's
+     own background-color). All three layers live in the footer's
+     own stacking context (anchored by position: relative).
+       z:0  ::before  — cream / section bg, full footer height
+       z:1  ::after   — yellow accent, bottom 50% of footer
+       z:2  frame     — white rounded card on top
+     Where the frame overlaps the yellow region, the frame's white
+     bg covers it; the yellow only shows in the bottom-half margin
+     area around the frame. */
+  .site-footer[data-framed="true"] {
+    position: relative;
+    background: transparent;
+  }
+  .site-footer[data-framed="true"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--footer-bg-top);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .site-footer[data-framed="true"]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 50%;
+    background: var(--footer-frame-color, #F4B73B);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .site-footer[data-framed="true"] .footer-frame {
+    position: relative;
+    z-index: 2;
+    background: var(--background);
+    /* Reset text color inside the white card so dark/primary section
+       bg variants don't invert text into invisibility on the frame. */
+    color: var(--foreground);
+    border: 1px solid var(--footer-frame-color, #F4B73B);
+    border-radius: var(--footer-frame-radius, 24px);
+    /* Frame sits flush with the footer's bottom edge — no bottom
+       margin. Yellow shows in the side strips (margin-inline) of
+       the bottom half, plus everywhere above the frame in the top
+       half (cream). */
+    margin-block-start: 1.5rem;
+    margin-block-end: 0;
+    margin-inline: 1rem;
+    padding: 2rem 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .site-footer[data-framed="true"] .footer-frame {
+      margin-block-start: 2rem;
+      margin-block-end: 0;
+      margin-inline: 2rem;
+      padding: 3rem 2.5rem;
+    }
+  }
+
+  /* ===========================================================
+     BOTTOM STRIP
+     ----------------------------------------------------------
+     Sits below the frame. Renders payment methods, optional
+     shipping methods, optional VAT cert, the store mark, and
+     the merchant's tagline. The yellow accent at the very
+     bottom is a 12px solid border on the strip's bottom edge —
+     stretches to viewport width so the page footer ends with
+     a clean color stripe (matches the screenshot signature). */
+  /* ── In-frame bottom strip ──
+     Sits INSIDE the rounded frame, separated from the columns
+     above by a hairline divider. Renders payment methods + tagline
+     as a horizontal row (column on mobile). Inherits the frame's
+     white bg + dark text — no extra color treatment needed. */
+  .site-footer .footer-strip--inframe {
+    margin-block-start: 1.5rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-strip--inframe {
+      margin-block-start: 2rem;
+      padding-block-start: 1.5rem;
+    }
+  }
+
+  .site-footer .footer-strip__row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-strip__row {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      text-align: start;
+    }
+  }
+
+  .site-footer .footer-strip__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .site-footer .footer-strip__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+  }
+  .site-footer .footer-strip__badge img {
+    height: 28px;
+    width: auto;
+    max-width: 56px;
+    object-fit: contain;
+    display: block;
+  }
+  .site-footer .footer-strip__mark {
+    height: 32px;
+    width: auto;
+    max-width: 100px;
+    object-fit: contain;
+    margin-inline-start: 0.5rem;
+  }
+  .site-footer .footer-strip__tagline {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 65%, transparent);
+    flex-shrink: 0;
+  }
+
+  /* ===========================================================
+     GRID — auto-fit columns; first column is brand (250-360px),
+     rest of columns flex via auto-fit minmax.
+     =========================================================== */
+  .site-footer .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2.5rem;
+    }
+  }
+
+  /* ===========================================================
+     COLUMN ALIGNMENT
+     ----------------------------------------------------------
+     `data-col-align="center"` (default) centers all column
+     content — matches the framed-design screenshot where
+     headings, text, and social icons all anchor to column
+     centerline. `start` keeps content flush to the inline-start
+     edge (the original layout).
+     =========================================================== */
+  .site-footer[data-col-align="center"] .footer-grid > * {
+    text-align: center;
+    align-items: center;
+  }
+  .site-footer[data-col-align="start"] .footer-grid > * {
+    text-align: start;
+    align-items: flex-start;
+  }
+  /* Center the contact-list and brand-trust block too — these are
+     flex-column containers nested inside non-flex grid items, so
+     the grid-level `align-items` doesn't reach them. */
+  .site-footer[data-col-align="center"] .footer-contact-list,
+  .site-footer[data-col-align="center"] .footer-brand-trust,
+  .site-footer[data-col-align="center"] .footer-brand-trust__item {
+    align-items: center;
+  }
+  .site-footer[data-col-align="start"] .footer-contact-list,
+  .site-footer[data-col-align="start"] .footer-brand-trust,
+  .site-footer[data-col-align="start"] .footer-brand-trust__item {
+    align-items: flex-start;
+  }
+
+  /* ===========================================================
+     BRAND COLUMN
+     =========================================================== */
+  .site-footer .footer-brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* ── Trust info inline in the brand column ──
+     Commercial register, VAT number, business center cert.
+     Each line is a small label + value stack. The whole block
+     lives below the about-us paragraph so the brand column
+     reads: logo → about → identifiers → app badges → newsletter. */
+  .site-footer .footer-brand-trust {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-block-start: 0.5rem;
+  }
+  .site-footer .footer-brand-trust__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .site-footer .footer-brand-trust__label {
+    font-size: 0.8125rem;
+    /* Plain dark text matches the screenshot — the commercial register
+       label reads as a regular small heading, not a colored highlight. */
+    color: inherit;
+    opacity: 0.75;
+  }
+  .site-footer .footer-brand-trust__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: inherit;
+    letter-spacing: 0.02em;
+  }
+  .site-footer .footer-brand-trust__cert {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: inherit;
+    text-decoration: none;
+    margin-block-start: 0.25rem;
+  }
+  .site-footer .footer-brand-trust__cert img {
+    height: 32px;
+    width: auto;
+    max-width: 64px;
+    object-fit: contain;
+  }
+  .site-footer .footer-brand-trust__cert span {
+    font-size: 0.6875rem;
+    opacity: 0.7;
+  }
+  .site-footer[data-col-align="start"] .footer-brand-trust__cert {
+    align-items: flex-start;
+  }
+
+  /* ===========================================================
+     WORKING HOURS BLOCK
+     ----------------------------------------------------------
+     Two-column row per line: day-label on the start, hours value
+     on the end. The block can sit in either the brand or contact
+     column — `flex-direction: column` so multiple lines stack.
+     =========================================================== */
+  .site-footer .footer-hours {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+  }
+  .site-footer .footer-hours__title {
+    margin: 0;
+  }
+  .site-footer .footer-hours__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .site-footer .footer-hours__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+  .site-footer .footer-hours__label {
+    color: inherit;
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+  .site-footer .footer-hours__value {
+    color: inherit;
+    font-weight: 600;
+    text-align: end;
+  }
+  /* Keep the start/end split readable when col-align="center" — the
+     block stays a clean key-value list (don't centre each row's
+     internal spacing or the alignment falls apart). */
+  .site-footer[data-col-align="center"] .footer-hours {
+    align-items: stretch;
+  }
+
+  /* ===========================================================
+     FOOTER TRUST STRIP (above frame)
+     ----------------------------------------------------------
+     Slot for the highlights-render partial. We give it horizontal
+     margins matching the frame's so it visually aligns. The partial
+     itself controls inner styling.
+     =========================================================== */
+  .site-footer .footer-trust-strip {
+    position: relative;
+    z-index: 2;
+    margin: 1rem;
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-trust-strip { margin: 1.5rem 2rem 0; }
+  }
+  /* Variant=footer override on the highlights partial — same rules
+     as the header variant: no borders, soft shadow. Re-declared here
+     so the trust-strip works whether or not the header-highlights
+     partial has loaded. (The `[data-variant="header"]` selector in
+     highlights-render.jinja covers the same case for the header
+     instance — this footer rule is parallel for the footer instance.) */
+  .site-footer .section-highlights[data-variant="footer"] {
+    margin-block: 0;
+  }
+  .site-footer .section-highlights[data-variant="footer"] .highlights-grid--unified {
+    border: 0;
+    background: var(--background);
+    box-shadow:
+      0 2px 8px -2px color-mix(in srgb, currentColor 12%, transparent),
+      0 1px 2px      color-mix(in srgb, currentColor 8%,  transparent);
+  }
+  .site-footer .section-highlights[data-variant="footer"]
+    .highlights-grid--unified .highlights-item + .highlights-item {
+    border-inline-start: 0;
+  }
+  .site-footer .section-highlights[data-variant="footer"] .highlights-grid--cards .highlights-item {
+    border: 0;
+    background: var(--background);
+    box-shadow:
+      0 2px 8px -2px color-mix(in srgb, currentColor 12%, transparent),
+      0 1px 2px      color-mix(in srgb, currentColor 8%,  transparent);
+  }
+
+  /* ===========================================================
+     CERTIFICATION LOGOS ROW
+     ----------------------------------------------------------
+     Sits inside the frame above the bottom payments strip.
+     Logos default to grayscale + 70% opacity, flip to full color
+     on hover. Switching `data-cert-style="color"` shows logos in
+     full color always.
+     =========================================================== */
+  .site-footer .footer-certs {
+    margin-block-start: 1.25rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+    text-align: center;
+  }
+  .site-footer .footer-certs__title {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    opacity: 0.7;
+    color: inherit;
+  }
+  .site-footer .footer-certs__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .site-footer .footer-certs__item {
+    display: inline-flex;
+  }
+  .site-footer .footer-certs__link,
+  .site-footer .footer-certs__img,
+  .site-footer .footer-certs__link img {
+    display: block;
+  }
+  .site-footer .footer-certs__link img,
+  .site-footer .footer-certs__img {
+    height: 40px;
+    max-width: 100px;
+    width: auto;
+    object-fit: contain;
+    transition: filter 200ms ease, opacity 200ms ease;
+  }
+  /* Grayscale style — soft monochrome by default, full color on hover. */
+  .site-footer .footer-certs[data-cert-style="grayscale"] .footer-certs__link img,
+  .site-footer .footer-certs[data-cert-style="grayscale"] .footer-certs__img {
+    filter: grayscale(1);
+    opacity: 0.7;
+  }
+  .site-footer .footer-certs[data-cert-style="grayscale"] .footer-certs__link:hover img,
+  .site-footer .footer-certs[data-cert-style="grayscale"] .footer-certs__item:hover .footer-certs__img {
+    filter: grayscale(0);
+    opacity: 1;
+  }
+
+  .site-footer .footer-logo {
+    display: block;
+    width: auto;
+    height: var(--footer-logo-height, 44px);
+    max-width: 100%;
+    object-fit: contain;
+  }
+  /* When logo_height is 0 (sentinel for "natural size"), fall back
+     to the image's intrinsic dimensions. Achieved with the picture/
+     img pair: both desktop and mobile classes; one is hidden per
+     viewport. */
+  .site-footer[style*="--footer-logo-height: 0px"] .footer-logo {
+    height: auto;
+  }
+  .site-footer .footer-logo--desktop { display: block; }
+  .site-footer .footer-logo--mobile  { display: none; }
+  @media (max-width: 767px) {
+    .site-footer .footer-logo--desktop { display: none; }
+    .site-footer .footer-logo--mobile  { display: block; }
+  }
+  .site-footer .footer-store-name {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin: 0;
+  }
+  .site-footer .footer-about {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    text-wrap: pretty; /* better than `balance` for paragraphs */
+    margin: 0;
+  }
+
+  /* ===========================================================
+     ABOUT-US INFO ITEMS
+     ----------------------------------------------------------
+     Merchant-managed credentials list below the about paragraph.
+     Each item stacks: label → value → image (any subset). When
+     the item has a `url`, the whole inner block becomes a
+     clickable link with a subtle hover. Items separate vertically
+     by a 0.75rem gap so multiple credentials breathe.
+     =========================================================== */
+  .site-footer .footer-about-info {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .site-footer .footer-about-info__item {
+    margin: 0;
+    padding: 0;
+  }
+  .site-footer .footer-about-info__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 180ms ease;
+  }
+  .site-footer a.footer-about-info__inner:hover {
+    opacity: 0.75;
+  }
+  .site-footer .footer-about-info__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.7;
+    line-height: 1.3;
+  }
+  .site-footer .footer-about-info__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    /* Tabular numerals so register/tax numbers align consistently. */
+    font-variant-numeric: tabular-nums;
+  }
+  .site-footer .footer-about-info__image {
+    height: 56px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    margin-block-start: 0.25rem;
+  }
+  /* Center alignment when col-align="center" — matches the rest of
+     the brand column's centering. */
+  .site-footer[data-col-align="center"] .footer-about-info__inner {
+    align-items: center;
+    text-align: center;
+  }
+
+  /* ===========================================================
+     SECTION HEADINGS — three sizes / three weights via data-attrs
+     on the footer root. Cascades to all `.footer-heading` elements.
+     =========================================================== */
+  .site-footer .footer-heading {
+    margin: 0;
+    color: inherit;
+    line-height: 1.3;
+  }
+  .site-footer[data-heading-size="sm"] .footer-heading { font-size: 0.875rem; }
+  .site-footer[data-heading-size="md"] .footer-heading { font-size: 1rem; }
+  .site-footer[data-heading-size="lg"] .footer-heading { font-size: 1.125rem; }
+
+  .site-footer[data-heading-weight="medium"]   .footer-heading { font-weight: 500; }
+  .site-footer[data-heading-weight="semibold"] .footer-heading { font-weight: 600; }
+  .site-footer[data-heading-weight="bold"]     .footer-heading { font-weight: 700; }
+
+  /* ===========================================================
+     SOCIAL COLUMN
+     ----------------------------------------------------------
+     Dedicated column for the social-icon row. Lives at the end
+     of the grid, so on desktop the layout reads brand → links →
+     contact → social (right-to-left in RTL).
+     =========================================================== */
+  .site-footer .footer-social-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* ===========================================================
+     SOCIAL ICONS
+     ----------------------------------------------------------
+     Small rounded-corner squares with a warm-yellow tinted
+     background and the icon in the frame's accent color —
+     matches the design where icons sit in subtle pill chips
+     rather than as bare glyphs. Hover bumps the tint and
+     darkens the icon slightly.
+     =========================================================== */
+  .site-footer .footer-social-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+  .site-footer[data-col-align="start"] .footer-social-list {
+    justify-content: flex-start;
+  }
+  .site-footer .footer-social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--footer-frame-color, #F4B73B) 14%, transparent);
+    color: var(--footer-frame-color, #F4B73B);
+    transition: background 200ms ease, transform 200ms ease, color 200ms ease;
+  }
+  .site-footer .footer-social-link:hover {
+    background: color-mix(in srgb, var(--footer-frame-color, #F4B73B) 22%, transparent);
+    color: color-mix(in srgb, var(--footer-frame-color, #F4B73B) 70%, var(--foreground));
+    transform: translateY(-1px);
+  }
+  .site-footer .footer-social-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ===========================================================
+     APP STORE BADGES
+     =========================================================== */
+  .site-footer .footer-app-badge {
+    display: inline-block;
+  }
+  .site-footer .footer-app-badge img {
+    height: 44px;
+    width: auto;
+  }
+
+  /* ===========================================================
+     NEWSLETTER
+     =========================================================== */
+  .site-footer .footer-newsletter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+  }
+  .site-footer .footer-newsletter__desc {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.85;
+  }
+  .site-footer .footer-newsletter__form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .site-footer .footer-newsletter__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+    padding: 0 12px;
+    background: color-mix(in srgb, currentColor 5%, transparent);
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: var(--radius, 4px);
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+  .site-footer .footer-newsletter__input:focus {
+    border-color: color-mix(in srgb, currentColor 40%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .site-footer .footer-newsletter__input::placeholder {
+    color: color-mix(in srgb, currentColor 50%, transparent);
+  }
+  .site-footer .footer-newsletter__btn {
+    flex-shrink: 0;
+    height: 40px;
+    padding: 0 18px;
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    border: 0;
+    border-radius: var(--button-radius, var(--radius, 4px));
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 180ms ease, transform 100ms ease;
+  }
+  .site-footer .footer-newsletter__btn:hover { opacity: 0.92; }
+  .site-footer .footer-newsletter__btn:active { transform: scale(0.97); }
+
+  /* ===========================================================
+     LINK GROUPS
+     ============================================================
+     Two render modes:
+       1. <details> on mobile when accordion mode is on (default)
+       2. Always-open <div> when accordion mode is off.
+     Mobile behavior uses the <details> open/close natively;
+     desktop forces the <details> to render as if always open. */
+  .site-footer .footer-group {
+    display: block;
+  }
+  .site-footer .footer-group__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    padding: 0.5rem 0;
+    user-select: none;
+  }
+  .site-footer .footer-group__head::-webkit-details-marker { display: none; }
+  .site-footer .footer-group__head::marker { content: ""; }
+  .site-footer .footer-group__chevron {
+    transition: transform 200ms ease;
+    flex-shrink: 0;
+    margin-inline-start: 0.5rem;
+  }
+  .site-footer details.footer-group--collapsible[open] .footer-group__chevron {
+    transform: rotate(180deg);
+  }
+  .site-footer .footer-group__title {
+    flex: 1;
+    margin: 0;
+  }
+
+  /* ===========================================================
+     COUNTRY-SCOPED LINK GROUP
+     ----------------------------------------------------------
+     A regular footer-group with a country flag inline-prefixing
+     the heading and an optional "Detected location" pill. Inherits
+     all the .footer-group styling (mobile accordion, hover, etc.).
+     =========================================================== */
+  .site-footer .footer-country__flag {
+    display: inline-block;
+    margin-inline-end: 0.4rem;
+    /* Slightly bigger than body text so the emoji reads clearly. */
+    font-size: 1.1em;
+    line-height: 1;
+    vertical-align: -0.05em;
+  }
+  .site-footer .footer-country__hint {
+    display: inline-block;
+    margin-inline-start: 0.5rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    /* Don't inherit the bold heading weight. */
+    letter-spacing: 0;
+    vertical-align: middle;
+  }
+  /* Country group is mobile-first by default — country-specific
+     legal/support links are most relevant when the user is browsing
+     on the go. Desktop/tablet has plenty of room for the full
+     merchant-configured link groups, so the country block hides
+     above 768px when `show_on == 'mobile_only'`. Toggle to "All
+     devices" in the schema to keep it visible everywhere. */
+  @media (min-width: 768px) {
+    .site-footer .footer-group--country.is-mobile-only {
+      display: none;
+    }
+  }
+  .site-footer .footer-group__links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-block-start: 0.5rem;
+  }
+  .site-footer .footer-group__item {
+    padding-block: 0.4rem;
+  }
+  .site-footer .footer-group__link {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: opacity 180ms ease;
+  }
+  .site-footer .footer-group__link:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+  }
+
+  /* Desktop: collapsible groups are always open and the chevron +
+     summary disclosure are hidden — heading reads as a static
+     column title. Mobile keeps the disclosure interactive. */
+  @media (min-width: 768px) {
+    .site-footer details.footer-group--collapsible {
+      /* Force the details to always show its content on desktop.
+         `open` would be the simplest, but mutating the DOM from CSS
+         is impossible — instead we rely on `display: contents` on
+         the summary so the whole element renders in flow as if not
+         a details. */
+    }
+    .site-footer details.footer-group--collapsible > .footer-group__head {
+      cursor: default;
+      pointer-events: none; /* desktop doesn't need to toggle */
+    }
+    .site-footer details.footer-group--collapsible .footer-group__chevron {
+      display: none;
+    }
+    /* Force the contents to render even when [open] isn't set —
+     details elements hide content by default. We need the content
+     visible always on desktop. The reliable cross-browser approach
+     is to override the `details > :not(summary)` hiding via
+     `display: block`. Modern browsers do this through the
+     `::details-content` pseudo, but support is partial; explicit
+     rule on the children is safer. */
+    .site-footer details.footer-group--collapsible > *:not(summary) {
+      display: block !important;
+    }
+  }
+
+  /* ===========================================================
+     CUSTOM CONTACT ITEMS
+     ----------------------------------------------------------
+     Each item: small muted label on top, emphasized value below
+     (clickable when type is phone/email/whatsapp/url). Optional
+     icon sits inline with the label so the eye scans top→down:
+            [icon] LABEL
+            VALUE
+     The `is-emphasized` class bumps the value's font-size + weight
+     for primary contact numbers; without it, the value matches the
+     standard contact-link size.
+     =========================================================== */
+  .site-footer .footer-contact-customs {
+    list-style: none;
+    margin: 0 0 1rem;
+    /* Top padding gives the custom items breathing room from the
+       section heading above (or the working-hours block when present). */
+    padding: 1rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+  .site-footer .footer-contact-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .site-footer .footer-contact-custom__head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .site-footer .footer-contact-custom__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .site-footer .footer-contact-custom__icon--img {
+    object-fit: contain;
+  }
+  .site-footer .footer-contact-custom__label {
+    font-weight: 500;
+  }
+  .site-footer .footer-contact-custom__value {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+    /* Use logical properties so the indent flips for RTL automatically. */
+    padding-inline-start: 1.4rem;
+    transition: opacity 180ms ease;
+    /* Tabular numerals for phone numbers — keeps digit widths
+       consistent so the eye can compare numbers cleanly. */
+    font-variant-numeric: tabular-nums;
+  }
+  .site-footer a.footer-contact-custom__value:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+  }
+  .site-footer .footer-contact-custom.is-emphasized .footer-contact-custom__value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  /* RTL center alignment — when col-align="center", the label+icon
+     row centers and the value below also centers. */
+  .site-footer[data-col-align="center"] .footer-contact-custom {
+    align-items: center;
+  }
+  .site-footer[data-col-align="center"] .footer-contact-custom__value {
+    padding-inline-start: 0;
+  }
+
+  /* ===========================================================
+     CONTACT INFO
+     =========================================================== */
+  .site-footer .footer-contact-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-block-start: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .site-footer .footer-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .site-footer .footer-contact-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+  }
+  .site-footer .footer-contact-link {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  .site-footer a.footer-contact-link:hover {
+    text-decoration: underline;
+  }
+
+  /* (`.footer-bottom`, `.footer-copyright`, `.footer-trust*` rules
+     were removed — those classes are no longer in the rendered
+     markup; the in-frame `.footer-strip` replaced them. Removed
+     ~85 lines of unused CSS. */
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-footer .footer-social-link,
+    .site-footer .footer-newsletter__btn,
+    .site-footer .footer-newsletter__input,
+    .site-footer .footer-group__chevron {
+      transition: none;
+    }
+  }
+</style>
+
+{# ── Mobile-accordion / desktop-open sync ──
+   Modern browsers (Chrome 132+ for example) implement `<details>` with
+   an internal ::details-content pseudo that uses `content-visibility:
+   hidden` when [open] isn't set — which can't be overridden via the
+   children's CSS. So forcing the content visible on desktop via
+   `display: block !important` doesn't actually work in those browsers
+   (the wrapping pseudo is still hidden, collapsing the <ul> to 0 px).
+
+   Reliable fix: add the `[open]` attribute itself on desktop, remove
+   it on mobile. Keeps native <details> mechanics intact in both modes.
+   The matchMedia listener re-syncs on resize so the user gets correct
+   behavior whether they load on desktop and resize down, or vice
+   versa. Idempotent — running multiple times is safe.
+
+   The initial sync is deferred via requestAnimationFrame so the
+   querySelectorAll + setAttribute work happens AFTER the browser's
+   first paint commit, eliminating the synchronous forced-reflow
+   that Lighthouse attributed ~270 ms of TBT to. #}
+<script>
+  (function () {
+    var mq = window.matchMedia('(min-width: 768px)');
+    var sync = function () {
+      var details = document.querySelectorAll(
+        '.site-footer details.footer-group--collapsible'
+      );
+      if (!details.length) return;
+      var setOpen = mq.matches;
+      // Batch attribute mutations inside rAF — keeps them out of the
+      // current frame's layout, avoiding forced-reflow attribution.
+      requestAnimationFrame(function () {
+        for (var i = 0; i < details.length; i++) {
+          if (setOpen) details[i].setAttribute('open', '');
+          else details[i].removeAttribute('open');
+        }
+      });
+    };
+    sync();
+    if (mq.addEventListener) mq.addEventListener('change', sync);
+    else if (mq.addListener) mq.addListener(sync);
+  })();
+</script>

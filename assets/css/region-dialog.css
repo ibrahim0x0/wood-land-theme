@@ -1,0 +1,220 @@
+/* ============================================================================
+   Region settings dialog — Shopify-style overrides
+   ----------------------------------------------------------------------------
+   The dialog is rendered by the Zid Kit Components runtime (MUI-based React).
+   We can't touch its JSX, but its stable `.Mui*` class names are public API.
+   These rules mirror the cart-drawer primitives (same radius, same button
+   lift, same primary-tinted focus ring) so the region dialog feels like the
+   rest of the theme instead of a MUI default.
+
+   Emotion `.css-<hash>` class names change between kit versions, so we only
+   target `.Mui*` here.
+   ============================================================================ */
+
+/* ---------- Backdrop ---------- */
+.MuiDialog-root .MuiBackdrop-root {
+  background-color: rgb(0 0 0 / 0.45) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ---------- Paper ---------- */
+.MuiDialog-paper {
+  font-family: var(--font-family) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 24px 60px -16px rgb(0 0 0 / 0.22),
+    0 8px 20px -8px rgb(0 0 0 / 0.10) !important;
+  overflow: hidden;
+}
+
+.MuiDialog-paperWidthMd { max-width: 560px !important; }
+
+/* ---------- Header ---------- */
+.MuiDialogTitle-root {
+  padding: 1.5rem 1.75rem 0.75rem !important;
+}
+
+.MuiDialogTitle-root,
+.MuiDialogTitle-root .MuiTypography-root {
+  font-family: var(--font-family) !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--foreground) !important;
+}
+
+/* ---------- Body ---------- */
+.MuiDialogContent-root {
+  padding: 0.5rem 1.75rem 1.5rem !important;
+}
+
+.MuiDialogContent-root .MuiTypography-body1 {
+  color: color-mix(in srgb, var(--foreground) 62%, transparent) !important;
+  font-family: var(--font-family) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  margin-bottom: 1.25rem !important;
+}
+
+/* ---------- Inputs (match .drawer-coupon-input) ---------- */
+.MuiDialog-paper .MuiInputLabel-root {
+  font-family: var(--font-family) !important;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent) !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.MuiDialog-paper .MuiInputLabel-root.Mui-focused {
+  color: var(--primary) !important;
+}
+
+.MuiDialog-paper .MuiOutlinedInput-root {
+  font-family: var(--font-family) !important;
+  background-color: var(--background) !important;
+  border-radius: 10px !important;
+  font-size: 0.9375rem !important;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.MuiDialog-paper .MuiOutlinedInput-notchedOutline {
+  border-color: color-mix(in srgb, var(--foreground) 18%, transparent) !important;
+  transition: border-color 180ms ease;
+}
+
+.MuiDialog-paper .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: color-mix(in srgb, var(--foreground) 35%, transparent) !important;
+}
+
+.MuiDialog-paper .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--primary) !important;
+  border-width: 1px !important;
+}
+
+.MuiDialog-paper .MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.MuiDialog-paper .MuiSelect-select {
+  color: var(--foreground) !important;
+  padding: 0.8125rem 0.875rem !important;
+  font-family: var(--font-family) !important;
+  font-weight: 500;
+}
+
+.MuiDialog-paper .MuiSelect-icon {
+  color: color-mix(in srgb, var(--foreground) 55%, transparent) !important;
+}
+
+/* Input grid — a touch more gap for breathing room. */
+.MuiDialog-paper .MuiGrid-container.css-1q1uqyx,
+.MuiDialog-paper .MuiGrid-container {
+  row-gap: 1rem !important;
+}
+
+/* ---------- Footer ---------- */
+.MuiDialogActions-root {
+  padding: 1rem 1.75rem 1.5rem !important;
+  gap: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
+  background: color-mix(in srgb, var(--foreground) 2%, transparent);
+}
+
+/* ---------- Primary button — mirrors .drawer-checkout-btn ---------- */
+.MuiDialogActions-root .MuiButton-containedPrimary {
+  font-family: var(--font-family) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 8rem !important;
+  padding: 0.8125rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1 !important;
+  text-transform: none !important;
+  color: var(--primary-foreground) !important;
+  background: var(--primary) !important;
+  border: 1px solid var(--primary) !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 4px 12px -4px color-mix(in srgb, var(--primary) 40%, transparent) !important;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease !important;
+}
+
+.MuiDialogActions-root .MuiButton-containedPrimary:hover {
+  background-color: var(--primary) !important;
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 20px -6px color-mix(in srgb, var(--primary) 50%, transparent) !important;
+}
+
+.MuiDialogActions-root .MuiButton-containedPrimary:active {
+  transform: translateY(0) !important;
+}
+
+.MuiDialogActions-root .MuiButton-containedPrimary:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent) !important;
+}
+
+.MuiDialogActions-root .MuiButton-containedPrimary:disabled {
+  opacity: 0.5 !important;
+  box-shadow: none !important;
+}
+
+/* MUI's ripple overlay darkens the primary fill — suppress so our solid color holds. */
+.MuiDialogActions-root .MuiButton-containedPrimary .MuiTouchRipple-root {
+  opacity: 0.15;
+}
+
+/* ---------- Select popover (country/language dropdowns) ---------- */
+.MuiPopover-paper {
+  font-family: var(--font-family) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 16px 40px -12px rgb(0 0 0 / 0.18),
+    0 4px 10px -4px rgb(0 0 0 / 0.08) !important;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.MuiPopover-paper .MuiMenuItem-root {
+  font-family: var(--font-family) !important;
+  font-size: 0.9375rem !important;
+  padding: 0.625rem 1rem !important;
+  color: var(--foreground) !important;
+  transition: background-color 120ms ease;
+}
+
+.MuiPopover-paper .MuiMenuItem-root:hover {
+  background-color: color-mix(in srgb, var(--foreground) 5%, transparent) !important;
+}
+
+.MuiPopover-paper .MuiMenuItem-root.Mui-selected {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+  color: var(--primary) !important;
+  font-weight: 600;
+}
+
+.MuiPopover-paper .MuiMenuItem-root.Mui-selected:hover {
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+}
+
+/* ---------- RTL ---------- */
+[dir="rtl"] .MuiDialog-paper .MuiSelect-icon {
+  right: auto !important;
+  left: 7px !important;
+}

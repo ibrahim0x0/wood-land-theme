@@ -1,0 +1,76 @@
+{# ──────────────────────────────────────────────────────────────────────────
+   Floating product video — a small draggable, pinned video.
+
+   Driven by Layout Settings → Product Videos → "Floating videos"
+   (global `product_floating_list`, exposed in layout.jinja). Shows the first
+   row whose `product_ref` (product URL / handle / name) matches the current
+   product. Drag / expand / mute lives in
+   assets/js/features/product-floating-video.js.
+   ────────────────────────────────────────────────────────────────────────── #}
+{% if product_floating_enabled and product_floating_list %}
+  {% set _fv = namespace(src='') %}
+  {% for _row in product_floating_list %}
+    {% set _s = _row.video_url or _row.video %}
+    {# A row targets products via the "all products" toggle, or a `product_ref`
+       naming the product by URL / handle / name (or a pasted URL containing the
+       id/slug — list several for a group). Keep the first matching row. #}
+    {% set _ref = _row.product_ref | string | trim %}
+    {% if _fv.src == '' and _s %}
+      {% if _row.all_products %}
+        {% set _fv.src = _s %}
+      {% elif _ref %}
+        {% set _pid  = product.id | string %}
+        {% set _slug = product.slug | string %}
+        {# Space-stripped, lowercased name match (see testimonials partial). #}
+        {% set _refn  = _ref | replace(' ', '') | lower %}
+        {% set _namen = product.name | string | replace(' ', '') | lower %}
+        {# Lowercased ref + URL-encoded slug, so a pasted address-bar URL with
+           percent-encoded Arabic still matches the slug. #}
+        {% set _refl    = _ref | lower %}
+        {% set _slugenc = _slug | urlencode | lower %}
+        {% if _ref == _pid or _ref == _slug or (_namen and _refn == _namen) %}{% set _fv.src = _s %}
+        {% elif _pid in _ref or (_slug and _slug in _ref) or (_slugenc and _slugenc in _refl) %}{% set _fv.src = _s %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if _fv.src %}
+    <div id="wdl-pop-video" class="is-collapsed" data-floating-video>
+      {% raw %}<style>
+        #wdl-pop-video{position:fixed;z-index:2147483000;bottom:12px;left:12px;border-radius:15px;overflow:hidden;background:#000;box-shadow:0 8px 30px rgb(0 0 0 / .35);cursor:grab;aspect-ratio:9/16;will-change:transform;transform:translate3d(0,0,0);touch-action:none;user-select:none;-webkit-user-select:none}
+        #wdl-pop-video.is-collapsed{height:267px}
+        #wdl-pop-video.is-expanded{height:420px}
+        #wdl-pop-video.is-hidden{display:none!important}
+        #wdl-pop-video.is-dragging{cursor:grabbing;transition:none!important}
+        #wdl-pop-video.is-snapping{transition:left .3s cubic-bezier(.25,.8,.25,1),bottom .3s cubic-bezier(.25,.8,.25,1)}
+        @media (min-width:601px) and (max-width:1024px){#wdl-pop-video.is-collapsed{height:300px}#wdl-pop-video.is-expanded{height:420px}}
+        @media (min-width:1025px){#wdl-pop-video.is-collapsed{height:356px}#wdl-pop-video.is-expanded{height:600px}}
+        #wdl-pop-video video{width:auto;height:100%;aspect-ratio:9/16;object-fit:cover;display:block;pointer-events:none}
+        #wdl-pop-video .wdl-pv__btn{position:absolute;border-radius:50%;background:rgb(0 0 0 / .58);width:28px;height:28px;padding:0;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s,transform .15s}
+        #wdl-pop-video .wdl-pv__btn:hover{background:rgb(0 0 0 / .8)}
+        #wdl-pop-video .wdl-pv__btn:active{transform:scale(.9)}
+        #wdl-pop-video .wdl-pv__btn svg{width:18px;height:18px;fill:#fff;pointer-events:none}
+        #wdl-pop-video .wdl-pv__close{top:8px;inset-inline-start:8px}
+        #wdl-pop-video .wdl-pv__expand{top:8px;inset-inline-end:8px}
+        #wdl-pop-video .wdl-pv__mute{bottom:8px;inset-inline-end:8px}
+      </style>{% endraw %}
+
+      <video autoplay loop playsinline webkit-playsinline muted src="{{ _fv.src }}"></video>
+
+      <button class="wdl-pv__btn wdl-pv__close" type="button" aria-label="{{ _('Close') }}">
+        <svg viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>
+      </button>
+
+      <button class="wdl-pv__btn wdl-pv__expand" type="button" aria-label="{{ _('Expand') }}">
+        <svg class="wdl-pv__ico-expand" viewBox="0 0 256 256"><path d="M216,48V96a8,8,0,0,1-16,0V67.31l-50.34,50.35a8,8,0,0,1-11.32-11.32L188.69,56H160a8,8,0,0,1,0-16h48A8,8,0,0,1,216,48ZM106.34,138.34,56,188.69V160a8,8,0,0,0-16,0v48a8,8,0,0,0,8,8H96a8,8,0,0,0,0-16H67.31l50.35-50.34a8,8,0,0,0-11.32-11.32Z"/></svg>
+        <svg class="wdl-pv__ico-collapse" style="display:none" viewBox="0 0 256 256"><path d="M148,96V48a8,8,0,0,1,16,0V76.69l50.34-50.35a8,8,0,0,1,11.32,11.32L175.31,88H204a8,8,0,0,1,0,16H156A8,8,0,0,1,148,96ZM37.66,218.34,88,168v28a8,8,0,0,0,16,0V148a8,8,0,0,0-8-8H48a8,8,0,0,0,0,16H76.69L26.34,206.34a8,8,0,0,0,11.32,12Z"/></svg>
+      </button>
+
+      <button class="wdl-pv__btn wdl-pv__mute" type="button" aria-label="{{ _('Mute') }}">
+        <svg class="wdl-pv__ico-muted" viewBox="0 0 256 256"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L73.55,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V175.09l42.08,46.29a8,8,0,1,0,11.84-10.76ZM32,96H72v64H32ZM144,207.64,88,164.09V95.89l56,61.6Zm42-63.77a24,24,0,0,0,0-31.72,8,8,0,1,1,12-10.57,40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.59Zm-80.16-76a8,8,0,0,1,1.4-11.23l39.85-31A8,8,0,0,1,160,32v74.83a8,8,0,0,1-16,0V48.36l-26.94,21A8,8,0,0,1,105.84,67.91ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></svg>
+        <svg class="wdl-pv__ico-unmuted" style="display:none" viewBox="0 0 256 256"><path d="M155.51,24.81a8,8,0,0,0-8.42.88L77.25,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V32A8,8,0,0,0,155.51,24.81ZM32,96H72v64H32ZM144,207.64,88,164.09V91.91l56,43.55Zm42-63.77a24,24,0,0,0,0-31.72,8,8,0,1,1,12-10.57,40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.59ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></svg>
+      </button>
+    </div>
+  {% endif %}
+{% endif %}

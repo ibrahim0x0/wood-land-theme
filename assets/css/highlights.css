@@ -1,0 +1,240 @@
+/* ───────────────────────────────────────────────────────────────────
+   Highlights — shared styles for the Highlights / trust-strip module.
+
+   These rules used to live as an inline <style> block inside
+   components/highlights-render.jinja. Each instance of the partial
+   (header strip + standalone Highlights section + footer trust strip)
+   was emitting the same ~10KB of CSS verbatim — up to 30KB per page.
+
+   Now that these rules live in a single stylesheet imported via
+   tailwindcss.css, every page pays the cost exactly once. Per-instance
+   variation (the `--highlights-radius` custom property) still ships
+   inline on the section element via `style="--highlights-radius:..."`.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* Small breathing room above and below so the strip doesn't crash
+   into the surrounding sections. `margin-block` sets both start
+   (top) and end (bottom) in one line — logical properties stay
+   correct in RTL. */
+.section-highlights {
+  margin-block: 16px;
+}
+
+/* Visibility helpers — mirror Tailwind's `hidden md:block` /
+   `md:hidden` semantics in raw CSS so they work even if the
+   Tailwind purger is aggressive. */
+.section-highlights.is-hidden-mobile {
+  display: none;
+}
+@media (min-width: 768px) {
+  .section-highlights.is-hidden-mobile {
+    display: block;
+  }
+  .section-highlights.is-hidden-desktop {
+    display: none;
+  }
+}
+
+.highlights-grid {
+  display: grid;
+  align-items: stretch;
+}
+
+.highlights-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 18px;
+  min-width: 0;
+}
+
+.highlights-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+/* Inline fallback icon (no uploaded image) — primary-colored via
+   currentColor on its stroke, with a gentle staggered bob. */
+.highlights-icon--default {
+  color: var(--primary);
+  animation: hl-icon-bob 2.6s ease-in-out infinite;
+}
+@keyframes hl-icon-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+/* Stagger the bob across items for a soft left-to-right wave. */
+.highlights-item:nth-child(2) .highlights-icon--default { animation-delay: 0.25s; }
+.highlights-item:nth-child(3) .highlights-icon--default { animation-delay: 0.5s; }
+.highlights-item:nth-child(4) .highlights-icon--default { animation-delay: 0.75s; }
+@media (prefers-reduced-motion: reduce) {
+  .highlights-icon--default { animation: none; }
+}
+
+.highlights-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  /* Center within the text column so single-line titles align with
+     the icon's vertical midpoint and two-line titles still read as
+     a single block. */
+  text-align: center;
+}
+
+.highlights-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.highlights-description {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* ===========================================================
+   STYLE: unified — single rounded container with thin vertical
+   dividers between items. Matches the "pill / trust-bar" pattern
+   common in MENA storefronts.
+   =========================================================== */
+.highlights-grid--unified {
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: var(--highlights-radius);
+  background: var(--background);
+  overflow: hidden;
+}
+.highlights-grid--unified .highlights-item + .highlights-item {
+  border-inline-start: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+/* ===========================================================
+   STYLE: cards — each item is its own bordered card.
+   =========================================================== */
+.highlights-grid--cards {
+  gap: 12px;
+}
+.highlights-grid--cards .highlights-item {
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-radius: var(--highlights-radius);
+  background: var(--background);
+}
+
+/* ===========================================================
+   STYLE: bare — no decoration, just spacing.
+   =========================================================== */
+.highlights-grid--bare {
+  gap: 12px;
+}
+
+/* ===========================================================
+   VARIANT: header — used by components/header-highlights.jinja
+   when the strip is rendered INSIDE the <header> tag.
+   Differences from the section variant:
+     • Container max-width: 1500px (vs. 1440px theme-container)
+     • Outer borders removed; soft shadow takes their place
+     • Internal dividers (unified style) removed for a cleaner
+       shadow-only look — items separated by spacing alone
+     • Tighter vertical margin (6px) so the strip integrates
+       with the header row instead of feeling like a section
+   =========================================================== */
+.highlights-header-container {
+  max-width: 700px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+/* Mobile: edge-to-edge — drop the inline padding so the strip spans the
+   full viewport width. */
+@media (max-width: 767px) {
+  .highlights-header-container {
+    padding-inline: 0;
+  }
+}
+@media (min-width: 768px) {
+  .highlights-header-container {
+    padding-inline: 32px;
+  }
+}
+
+.section-highlights[data-variant="header"] {
+  margin-block: 6px;
+}
+/* Unified style — drop the shadow for a clean, flat trust row, and use a
+   light hairline outer border (≈ #eee). The thin internal vertical
+   dividers from the base unified rule are kept (they separate the items
+   as in the reference). */
+.section-highlights[data-variant="header"] .highlights-grid--unified {
+  border: 1px solid var(--border-light);
+  box-shadow: none;
+}
+/* Cards style — per-item shadow instead of per-item border. */
+.section-highlights[data-variant="header"] .highlights-grid--cards .highlights-item {
+  border: 0;
+  box-shadow:
+    0 2px 8px -2px color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+/* Bare style — no decoration anyway, leave as-is. */
+
+/* ── Desktop layout: items distributed evenly in one row ── */
+@media (min-width: 768px) {
+  .section-highlights[data-item-count="1"] .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-highlights[data-item-count="2"] .highlights-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .section-highlights[data-item-count="3"] .highlights-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .section-highlights[data-item-count="4"] .highlights-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Mobile layout ── */
+@media (max-width: 767px) {
+  .section-highlights[data-item-count="1"] .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-highlights[data-item-count="2"] .highlights-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .section-highlights[data-item-count="3"] .highlights-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .section-highlights[data-item-count="4"] .highlights-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* 3-up mobile: keep icon | text horizontal but tighten everything
+     so the row doesn't overflow on ~360px screens. */
+  .section-highlights[data-item-count="3"] .highlights-item {
+    gap: 6px;
+    padding: 10px 6px;
+  }
+  .section-highlights[data-item-count="3"] .highlights-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .section-highlights[data-item-count="3"] .highlights-title {
+    font-size: 12px;
+  }
+  .section-highlights[data-item-count="3"] .highlights-description {
+    font-size: 10px;
+  }
+
+  /* Unified + 4 items on mobile: 2×2 grid still reads as one
+     container — rows 3&4 get a top border, item 3 loses the
+     inline-start divider. */
+  .section-highlights[data-item-count="4"][data-style="unified"] .highlights-item:nth-child(n + 3) {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+  .section-highlights[data-item-count="4"][data-style="unified"] .highlights-item:nth-child(3) {
+    border-inline-start: 0;
+  }
+}

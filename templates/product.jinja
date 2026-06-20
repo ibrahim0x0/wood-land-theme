@@ -1,0 +1,922 @@
+{% extends "layout.jinja" %}
+
+{% block title %}{{ product.name }} – {{ store.name }}{% endblock %}
+
+{% block content %}
+  {# Breadcrumb Section — hidden per request. #}
+  <section class="px-4 py-6 md:px-16 hidden">
+    <div class="theme-container">
+      {% if product.categories and product.categories|length > 0 %}
+        {% set category = product.categories[0] %}
+        {%
+          with
+          items=[
+            {'href': url_for('home'), 'label': _("Home")},
+            {'href': url_for("category_details", category_id=category.id or "a", slug=category.slug or category.id), 'label': category.name},
+            {'label': product.name}
+          ]
+        %}
+          {% include 'components/ui/breadcrumb.jinja' %}
+        {% endwith %}
+      {% else %}
+        {%
+          with
+          items=[
+            {'href': url_for('home'), 'label': _("Home")},
+            {'label': product.name}
+          ]
+        %}
+          {% include 'components/ui/breadcrumb.jinja' %}
+        {% endwith %}
+      {% endif %}
+    </div>
+  </section>
+
+  {# Product Main Section #}
+  <section class="px-4 pb-6 md:px-16 md:pb-16">
+    <div class="theme-container">
+      <style>
+        /* #product-main-section has three grid cells now: #header (title +
+           category + price), the gallery, and the details. grid-template-areas
+           puts the header ABOVE the gallery on mobile, and at the top of the
+           right column (gallery spanning on the left) on desktop. */
+        #product-main-section {
+          grid-template-areas:
+            "head"
+            "gallery"
+            "urgency"
+            "details";
+        }
+        #product-main-section > #header { grid-area: head; }
+        #product-main-section > .product-gallery-column { grid-area: gallery; }
+        #product-main-section > [data-product-urgency] { grid-area: urgency; }
+        #product-main-section > .product-details-column { grid-area: details; }
+        @media (min-width: 1024px) {
+          #product-main-section {
+            grid-template-areas:
+              "gallery head"
+              "gallery urgency"
+              "gallery details";
+          }
+        }
+
+        /* Top breathing room above the title/price block. */
+        #header {
+          margin-top: 1rem;
+        }
+        /* Title / category / price typography. */
+        #header h1 {
+          font-size: 22px;
+          font-weight: 900;
+        }
+        #header .wl-pd-cat {
+          font-size: 13px;
+          font-weight: 500;
+          text-decoration: underline;
+        }
+        #header [data-product-price] {
+          font-size: 27px;
+          font-weight: 900;
+        }
+      </style>
+
+      {# 2-Column Layout: Gallery + Details #}
+      <div
+        id="product-main-section"
+        class="grid grid-cols-1 gap-6 lg:grid-cols-2"
+      >
+        {# Left Column: Product Gallery #}
+        <div class="product-gallery-column">
+          {% with product=product,gallery_id="product-gallery" %}
+            {% include 'components/products/product-gallery.jinja' %}
+          {% endwith %}
+        </div>
+
+        {# Product info header — its own grid cell so it can sit ABOVE the
+           gallery on mobile (grid-template-areas in the <style> above); stays
+           at the top of the right column on desktop. #}
+        <div
+          id="header"
+          class="space-y-4"
+        >
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <h1 class="text-foreground text-lg md:text-xl font-semibold">{{ product.name }}</h1>
+                {# Only render stars when there's a real rating — a 0/none
+                   average would otherwise show five empty grey stars. #}
+                {% if store.settings.products.reviews_enabled and product.rating and product.rating.average and product.rating.average > 0 %}
+                  <div class="flex items-center gap-2">
+                    {% with rating=product.rating.average %}
+                      {% include 'components/rating-stars.jinja' %}
+                    {% endwith %}
+                    <a
+                      href="#reviews"
+                      class="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    >
+                      {{ _("See reviews") }}
+                    </a>
+                  </div>
+                {% endif %}
+
+                {# Category eyebrow — links to the product's primary category. #}
+                {% if product.categories and product.categories|length > 0 %}
+                  {% set _pcat = product.categories[0] %}
+                  <a
+                    href="{{ url_for('category_details', category_id=_pcat.id or 'a', slug=_pcat.slug or _pcat.id) }}"
+                    class="text-primary inline-block text-sm font-semibold transition-opacity hover:opacity-80 wl-pd-cat"
+                  >
+                    {{ _pcat.name }}
+                  </a>
+                {% endif %}
+              </div>
+
+              {# Wishlist heart — sits by the title (top corner), always visible. #}
+              {% with product_id=product.id, class="border-input rounded-full border shrink-0" %}
+                {% include 'components/products/wishlist-button.jinja' %}
+              {% endwith %}
+            </div>
+            {# Price Section #}
+            <div class="flex flex-wrap items-center justify-between gap-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                {# Current Price (sale or regular) #}
+                <p
+                  class="text-lg font-semibold"
+                  data-product-price
+                >
+                  {{ product.formatted_sale_price if product.formatted_sale_price else product.formatted_price }}
+                </p>
+                {# Savings row — configurable "was" label (Product Page → old-price
+                   label) + struck old price + discount badge, grouped together.
+                   The group's visibility follows [data-product-price-old]'s
+                   `.hidden` (toggled by variants.js on variant change) via the
+                   CSS :has() rule in components.css, so it shows only on sale. #}
+                <span class="wl-pd-tawfer">
+                  <span class="wl-was">{{ pdp_was_label }}</span>
+                  {# Old Price (if on sale) #}
+                  <span
+                    class="wl-pd-price-old line-through {{ 'hidden' if not product.formatted_sale_price }}"
+                    data-product-price-old
+                  >
+                    {{ product.formatted_price if product.formatted_sale_price else '' }}
+                  </span>
+                  {# Discount Badge #}
+                  <span
+                    class="wl-discount-glass {{ 'hidden' if not (product.discount_percentage and product.discount_percentage > 0) }}"
+                    data-product-discount
+                  >
+                    {% if product.discount_percentage and product.discount_percentage > 0 %}{{ product.discount_percentage }}%{% endif %}
+                  </span>
+                </span>
+                {# Quick share — native share sheet on mobile, scrolls to the
+                   share row as a fallback (see script at the bottom). #}
+                <button
+                  type="button"
+                  data-share-btn
+                  class="text-muted-foreground hover:text-primary ms-1 transition-colors"
+                  aria-label="{{ _('Share product') }}"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+        </div>
+
+        {# ── Urgency / social-proof — its own grid cell so it sits AFTER the
+           gallery on mobile (grid-template-areas in the <style> above). #}
+        <div class="space-y-2.5" data-product-urgency>
+              <div class="product-info-header">
+                {# Limited-quantity meter — always shown as a decorative urgency
+                   cue at a fixed fill (not tied to actual stock). #}
+                <div class="wl-limited">
+                  <div class="wl-limited-row">
+                    <span class="wl-limited-dot" aria-hidden="true"></span>
+                    <span class="wl-limited-txt">{{ _("Limited quantity") }}</span>
+                    {# Remaining-count urgency cue. Real remaining stock for
+                       finite-stock products; for unlimited-stock products (which
+                       report no quantity) it falls back to a small, stable
+                       per-product number derived from the id so the cue still
+                       shows. Hidden when out of stock. #}
+                    {% if product.in_stock %}
+                      {% set _stock_left = product.quantity if (product.quantity and not product.is_infinite) else (product.id[0:4] | int(0, 16)) % 25 + 6 %}
+                      <span class="wl-limited-left">باقي {{ _stock_left }} فقط</span>
+                    {% endif %}
+                  </div>
+                  <div
+                    class="wl-limited-bar"
+                    role="progressbar"
+                    aria-label="{{ _('Limited quantity') }}"
+                    aria-valuenow="18"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <span class="wl-limited-fill" style="width:18%"></span>
+                  </div>
+                </div>
+
+                {# In-stock indicator #}
+                <p
+                  id="product-stock-status"
+                  class="product-stock-status {{ 'product-stock-status--available' if product.in_stock else 'product-stock-status--unavailable' }}"
+                  data-label-available="{{ _('In stock') }}"
+                  data-label-unavailable="{{ _('Out of stock') }}"
+                >
+                  <span class="product-stock-status-dot" aria-hidden="true"></span>
+                  <span class="product-stock-status-label">{{ _("In stock") if product.in_stock else _("Out of stock") }}</span>
+                </p>
+              </div>
+
+              {# Live viewers — count populated client-side (script at bottom). #}
+              <p class="live-viewers hidden items-center gap-1.5 text-sm" data-live-viewers>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span><span class="live-viewers__count" data-viewers-count>0</span> {{ _("people are viewing this now — order before it sells out!") }}</span>
+              </p>
+            </div>
+
+        {# Right Column: Product Details (everything below the header). #}
+        <div class="product-details-column flex flex-col gap-4">
+          {# Short Description — hidden (full description shows in the
+             #additional-info section below). #}
+          {% if product.short_description %}
+            <div class="hidden prose prose-sm max-w-none">{{ product.short_description|safe }}</div>
+          {% endif %}
+
+          <form
+            id="product-form"
+            class="space-y-4"
+          >
+            <input
+              type="hidden"
+              name="product_id"
+              id="product-id"
+              value="{{ product.selected_product.id }}"
+            />
+            {# Parent product id — REQUIRED by the platform's variant system.
+               productOptionListItemClicked() reads this to fetch the matching
+               variant; without it, option clicks do nothing. #}
+            <input
+              type="hidden"
+              id="product-parent-id"
+              value="{{ product.id }}"
+            />
+
+            {# Custom Input Fields #}
+            {% with product=product %}
+              {% include 'components/products/custom-input-fields.jinja' %}
+            {% endwith %}
+            {# Product Options (if available) #}
+            {% if product.has_options or product.has_fields %}
+              {% with options=product.options, product=product, style='list' %}
+                {% include 'components/products/product-options.jinja' %}
+              {% endwith %}
+            {% endif %}
+
+            {# Dynamic Bundle Product Selection #}
+            {% if product.product_class == 'dynamic_bundle' %}
+              {% include 'vitrin:products/bundle-products.jinja' %}
+            {% endif %}
+
+            {# Action Buttons #}
+            <div
+              class="flex flex-col gap-3 pt-2"
+              data-product-actions
+            >
+              {# In Stock State #}
+              <div
+                class="{{ 'hidden' if not product.in_stock }} flex flex-wrap items-center gap-2"
+                data-in-stock
+              >
+                {# Quantity stepper — inline with Add to cart, with label.
+                   Visibility is governed by [data-in-stock]. #}
+                <div class="shrink-0 flex items-center gap-2" data-quantity-wrapper>
+                  <label for="product-quantity" class="text-foreground text-sm font-medium">{{ _('Quantity') }}</label>
+                  {% with id='product-quantity', quantity=1, min=1, max=product.quantity if not product.is_infinite else none, sync_target='sticky-qty' %}
+                    {% include 'components/ui/quantity-input.jinja' %}
+                  {% endwith %}
+                </div>
+
+                {# Add to Cart Button — fills the rest of the row next to qty. #}
+                <button
+                  type="button"
+                  data-add-to-cart-form="product-form"
+                  data-success-text="{{ _('Added!') }}"
+                  class="btn btn-filled btn-lg grow"
+                >
+                  {# Shopping-bag icon — matches the product card + sticky CTA. #}
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936ZM6.1853 7.75C6.1853 7.92259 6.04539 8.0625 5.8728 8.0625C5.70021 8.0625 5.5603 7.92259 5.5603 7.75C5.5603 7.57741 5.70021 7.4375 5.8728 7.4375C6.04539 7.4375 6.1853 7.57741 6.1853 7.75ZM12.4353 7.75C12.4353 7.92259 12.2954 8.0625 12.1228 8.0625C11.9502 8.0625 11.8103 7.92259 11.8103 7.75C11.8103 7.57741 11.9502 7.4375 12.1228 7.4375C12.2954 7.4375 12.4353 7.57741 12.4353 7.75Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                  {{ _("Add to cart") }}
+                </button>
+
+                {# Buy Now Button (opt-in via Layout Settings → Product Page).
+                   Uses Vitrin's built-in `zidProductBuyNow()` JS — skips the
+                   cart and goes directly to the checkout flow. The button is
+                   styled with `btn-outline` so it complements (doesn't compete
+                   with) the primary "Add to cart". When the merchant turns
+                   this off (default) the markup is omitted entirely. #}
+                {% if pdp_show_buy_now %}
+                  {# Buy Now button — calls window.zidProductBuyNow()
+                     defined in `assets/js/features/buy-now.js`, which
+                     uses the documented `window.zid.cart.buyNow()` API.
+                     See: docs.zid.dev/themes-developer-guide/features/
+                          checkout-as-a-popup #}
+                  {% set _buy_now_text = pdp_buy_now_label or _("Buy Now") %}
+                  <button
+                    type="button"
+                    onclick="zidProductBuyNow()"
+                    aria-label="{{ _buy_now_text }}"
+                    class="btn btn-outlined btn-lg basis-full product-buy-now-btn"
+                  >
+                    <svg
+                      class="buy-now-icon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      {# Wallet icon — visually distinct from the cart icon
+                         so the two buttons aren't easily confused. #}
+                      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+                    </svg>
+                    <span
+                      class="buy-now-progress d-none"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    {{ _buy_now_text }}
+                  </button>
+                {% endif %}
+              </div>
+
+              {# Out of Stock State #}
+              <div
+                class="{{ 'hidden' if product.in_stock }} flex flex-col gap-3"
+                data-out-of-stock
+              >
+                {# Disabled Add to Cart Button #}
+                <button
+                  type="button"
+                  disabled
+                  class="btn btn-lg bg-secondary text-muted-foreground w-full cursor-not-allowed border border-transparent"
+                >
+                  {{ _("Add to cart") }}
+                </button>
+
+                {# Notify Me — full width (wishlist now lives by the title). #}
+                <button
+                  type="button"
+                  class="btn btn-filled btn-lg w-full"
+                  data-notify-me-btn
+                  command="show-modal"
+                  commandfor="notify-me-dialog"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                  </svg>
+                  {{ _("Notify me when available") }}
+                </button>
+              </div>
+            </div>
+
+            {# Product description — moved here (directly under the action
+               buttons) from the "Features & details" disclosure below.
+               `data-product-description` so the quick-view popover keeps
+               hiding it (quick-view.css) and stays compact. #}
+            {% if product.description %}
+              <div
+                data-product-description
+                {% if pdp_desc_image_first %}data-desc-image-first="true"{% endif %}
+                class="prose prose-theme prose-sm max-w-none"
+              >{{ product.description|safe }}</div>
+            {% endif %}
+
+            {# Secure-payment trust strip — reuses the bundled badge from the
+               cart drawer. Hidden inside the quick-view popover (see
+               quick-view.css) to keep that compact. #}
+            <div class="pdp-trust border-border-light flex flex-wrap items-center justify-center gap-2 border-t pt-4">
+              <span class="text-muted-foreground text-sm">{{ _('Secure payments') }}</span>
+              <img
+                src="{{ 'images/cart-secure-payments.svg' | asset_url }}"
+                alt="{{ _('Secure payments') }}"
+                class="h-auto max-h-10 max-w-full w-auto"
+                loading="lazy"
+              />
+            </div>
+
+            {% include 'vitrin:products/loyalty_points_widget.jinja' %}
+            {% include 'vitrin:products/payment_widgets.jinja' %}
+
+            {# Apple Pay Quick Checkout — PDP placement: sells the single
+               selected product without affecting the cart. Renders only
+               when enabled in Layout Settings → Product Page. Template
+               must appear once per page; see Zid docs:
+               docs.zid.dev/themes-developer-guide/features/
+               apple-pay-quick-checkout #}
+            {% if pdp_show_apple_pay %}
+              {% include 'vitrin:checkout/apple-pay-quick-checkout.jinja' %}
+            {% endif %}
+
+            {# Social Share Links #}
+            <div class="border-border-light flex items-center gap-4 border-t pt-4">
+              <span class="text-sm text-muted">{{ _("Share product") }}:</span>
+              <div class="flex items-center gap-3">
+                {# WhatsApp #}
+                <a
+                  href="https://api.whatsapp.com/send?text={{ _('Check Out this Product') }}: {{ product.name }} {{ product.html_url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground transition-colors hover:text-[#25D366]"
+                  aria-label="{{ _('Share on WhatsApp') }}"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+                    />
+                  </svg>
+                </a>
+                {# Twitter/X #}
+                <a
+                  href="https://twitter.com/intent/tweet?text={{ product.name }}: {{ product.html_url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="{{ _('Share on Twitter') }}"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                    />
+                  </svg>
+                </a>
+                {# Facebook #}
+                <a
+                  href="https://www.facebook.com/sharer/sharer.php?u={{ product.html_url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground transition-colors hover:text-[#1877F2]"
+                  aria-label="{{ _('Share on Facebook') }}"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
+                    />
+                  </svg>
+                </a>
+                {# Copy Link #}
+                <button
+                  type="button"
+                  class="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="{{ _('Copy link') }}"
+                  onclick='navigator.clipboard.writeText(&apos;{{ product.html_url }}&apos;); this.innerHTML = &apos;<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>&apos;; setTimeout(() => this.innerHTML = &apos;<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>&apos;, 2000);'
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {# Product code / SKU — at the end of the product details. #}
+            <span
+              class="text-muted-foreground text-sm {{ 'hidden' if not product.sku }}"
+              data-product-sku-wrapper
+            >
+              {{ 'رمز المنتج' if session.lang == 'ar' else 'SKU' }} : <span data-product-sku>{{ product.sku }}</span>
+            </span>
+          </form>
+        </div>
+
+        {# Notify Me Dialog - inside product-main-section for quick view support #}
+        {% with product=product %}
+          {% include 'components/products/notify-me-dialog.jinja' %}
+        {% endwith %}
+      </div>
+      <div
+        id="additional-info"
+        class="mt-6 flex flex-col gap-4"
+      >
+        {% set has_weight = product.selected_product and product.selected_product.weight and product.selected_product.weight.value %}
+        {% set has_metafields = product and product.metafields and store and store.settings.products.is_metafields_enabled and product.metafields|length > 0 %}
+        {% set has_description = product.description %}
+
+        {# Features & Details Disclosure #}
+        {% if has_weight or has_metafields %}
+          <div>
+            <button
+              type="button"
+              command="--toggle"
+              commandfor="features-details"
+              class="bg-secondary group flex w-full items-center justify-between gap-3 rounded px-4 py-2"
+              aria-expanded="false"
+            >
+              <span class="text-foreground text-sm font-medium">{{ _("Features & details") }}</span>
+              <span
+                class="text-foreground inline-flex size-10 shrink-0 items-center justify-center rounded p-2.5"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  class="transition-transform duration-200 group-aria-expanded:rotate-180"
+                >
+                  <path
+                    d="M11.999 8.70312C12.0929 8.70312 12.1689 8.73142 12.249 8.81152L17.1924 13.7559C17.2744 13.8378 17.3008 13.9117 17.3008 13.999C17.3008 14.0863 17.2743 14.1602 17.1924 14.2422C17.1143 14.3202 17.0374 14.3506 16.9365 14.3506C16.8359 14.3505 16.7596 14.32 16.6816 14.2422L16.6807 14.2412L12.3516 9.9375L11.998 9.58594L7.31738 14.2666C7.23964 14.3443 7.17341 14.3662 7.09277 14.3633C6.99851 14.3598 6.91711 14.3282 6.83105 14.2422C6.75294 14.1641 6.72266 14.0872 6.72266 13.9863C6.72267 13.8854 6.75294 13.8086 6.83105 13.7305L11.75 8.81152C11.83 8.73152 11.9054 8.7032 11.999 8.70312Z"
+                    fill="currentColor"
+                    stroke="currentColor"
+                  ></path>
+                </svg>
+              </span>
+            </button>
+            <el-disclosure
+              id="features-details"
+              hidden
+              class="transition duration-200 data-closed:opacity-0"
+            >
+              <div class="mt-4 flex flex-col gap-4 px-4 pb-4">
+                {# Weight #}
+                <div
+                  class="{{ 'hidden' if not has_weight }} flex items-center gap-2"
+                  data-product-weight-wrapper
+                >
+                  <dt class="text-muted-foreground text-sm">{{ _("Weight") }}:</dt>
+                  <dd
+                    class="text-foreground text-sm"
+                    data-product-weight
+                  >
+                    {% if has_weight %}
+                      {{ product.selected_product.weight.value }}
+                      {{ product.selected_product.weight.unit }}
+                    {% endif %}
+                  </dd>
+                </div>
+
+                {# Metafields #}
+                {% if has_metafields %}
+                  {% with entity=product %}
+                    {% include 'components/shared/metafields.jinja' %}
+                  {% endwith %}
+                {% endif %}
+
+                {# Product description moved to directly under the action
+                   buttons (see product-details-column above). #}
+              </div>
+            </el-disclosure>
+          </div>
+        {% endif %}
+
+        {# Bundle Offer Details Section - Disclosure with Carousel #}
+        {% if product.bundle_offer and product.bundle_offer.products and product.bundle_offer.products.results %}
+          <div>
+            <button
+              type="button"
+              command="--toggle"
+              commandfor="bundle-offer-products"
+              class="bg-secondary group flex w-full items-center justify-between gap-3 rounded px-4 py-2"
+              aria-expanded="false"
+            >
+              <div class="flex flex-col items-start gap-1">
+                <div class="flex items-center gap-3">
+                  <span class="text-foreground text-sm font-medium">{{ product.bundle_offer.name }}</span>
+                  <span class="badge badge-outlined text-destructive border-destructive">
+                    {{ product.bundle_offer.products.results|length }} {{ _("Products") }}
+                  </span>
+                </div>
+                {% if product.bundle_offer.description %}
+                  <p class="text-sm text-muted text-start">{{ product.bundle_offer.description }}</p>
+                {% endif %}
+              </div>
+              <span
+                class="text-foreground inline-flex size-10 shrink-0 items-center justify-center rounded p-2.5"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  class="transition-transform duration-200 group-aria-expanded:rotate-180"
+                >
+                  <path
+                    d="M11.999 8.70312C12.0929 8.70312 12.1689 8.73142 12.249 8.81152L17.1924 13.7559C17.2744 13.8378 17.3008 13.9117 17.3008 13.999C17.3008 14.0863 17.2743 14.1602 17.1924 14.2422C17.1143 14.3202 17.0374 14.3506 16.9365 14.3506C16.8359 14.3505 16.7596 14.32 16.6816 14.2422L16.6807 14.2412L12.3516 9.9375L11.998 9.58594L7.31738 14.2666C7.23964 14.3443 7.17341 14.3662 7.09277 14.3633C6.99851 14.3598 6.91711 14.3282 6.83105 14.2422C6.75294 14.1641 6.72266 14.0872 6.72266 13.9863C6.72267 13.8854 6.75294 13.8086 6.83105 13.7305L11.75 8.81152C11.83 8.73152 11.9054 8.7032 11.999 8.70312Z"
+                    fill="currentColor"
+                    stroke="currentColor"
+                  ></path>
+                </svg>
+              </span>
+            </button>
+            <el-disclosure
+              id="bundle-offer-products"
+              hidden
+              class="transition duration-200 data-closed:opacity-0"
+            >
+              <div class="mt-4 px-4 pb-4">
+                {%
+                  with
+                  products=product.bundle_offer.products.results,
+                  carousel_id="bundle-offer-carousel"
+                %}
+                  {% include 'components/products/products-carousel.jinja' %}
+                {% endwith %}
+              </div>
+            </el-disclosure>
+          </div>
+        {% endif %}
+
+        {# Grouped Products (products bundled together) #}
+        {% if product.group_products %}
+          {% include 'components/products/grouped-product.jinja' %}
+        {% endif %}
+
+        {# Product Options Disclosure #}
+        {% if product.variants and product.variants|length > 0 %}
+          {# Filter in-stock variants #}
+          {% set in_stock_variants = [] %}
+          {% for variant in product.variants %}
+            {% if variant.in_stock %}
+              {% set temp = in_stock_variants.append(variant) %}
+            {% endif %}
+          {% endfor %}
+
+          {% if in_stock_variants|length > 0 %}
+            <div>
+              <button
+                type="button"
+                command="--toggle"
+                commandfor="product-options"
+                class="bg-secondary group flex w-full items-center justify-between gap-3 rounded px-4 py-2"
+                aria-expanded="false"
+              >
+                <span class="text-foreground text-sm font-medium">{{ _("Product options") }}</span>
+                <span
+                  class="text-foreground inline-flex size-10 shrink-0 items-center justify-center rounded p-2.5"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    class="transition-transform duration-200 group-aria-expanded:rotate-180"
+                  >
+                    <path
+                      d="M11.999 8.70312C12.0929 8.70312 12.1689 8.73142 12.249 8.81152L17.1924 13.7559C17.2744 13.8378 17.3008 13.9117 17.3008 13.999C17.3008 14.0863 17.2743 14.1602 17.1924 14.2422C17.1143 14.3202 17.0374 14.3506 16.9365 14.3506C16.8359 14.3505 16.7596 14.32 16.6816 14.2422L16.6807 14.2412L12.3516 9.9375L11.998 9.58594L7.31738 14.2666C7.23964 14.3443 7.17341 14.3662 7.09277 14.3633C6.99851 14.3598 6.91711 14.3282 6.83105 14.2422C6.75294 14.1641 6.72266 14.0872 6.72266 13.9863C6.72267 13.8854 6.75294 13.8086 6.83105 13.7305L11.75 8.81152C11.83 8.73152 11.9054 8.7032 11.999 8.70312Z"
+                      fill="currentColor"
+                      stroke="currentColor"
+                    ></path>
+                  </svg>
+                </span>
+              </button>
+              <el-disclosure
+                id="product-options"
+                hidden
+                class="transition duration-200 data-closed:opacity-0"
+              >
+                {# Calculate split point (left column gets more if odd) #}
+                {% set total_variants = in_stock_variants | length %}
+                {% set left_count = ((total_variants + 1) / 2) | int %}
+                <div class="mt-4 grid grid-cols-1 gap-6 px-4 pb-4 md:grid-cols-2">
+                  {# Left Column #}
+                  <div class="flex flex-col gap-4">
+                    {% for variant in in_stock_variants[:left_count] %}
+                      {% include 'components/products/product-variant.jinja' %}
+                    {% endfor %}
+                  </div>
+
+                  {# Right Column #}
+                  <div class="flex flex-col gap-4">
+                    {% for variant in in_stock_variants[left_count:] %}
+                      {% include 'components/products/product-variant.jinja' %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </el-disclosure>
+            </div>
+          {% endif %}
+        {% endif %}
+
+      </div>
+
+      {# ── Reviews + Questions tabs ─────────────────────────────────
+         The reviews section and the FAQ/questions are combined into one
+         tabbed block. Tab switching is handled by the inline script below.
+         When reviews are disabled, only the questions tab renders. #}
+      <div class="pdp-tabs" data-pdp-tabs>
+        <div class="pdp-tabs__list" role="tablist" aria-label="{{ _('Reviews and questions') }}">
+          <button type="button" role="tab" class="pdp-tabs__tab" data-pdp-tab="questions" aria-selected="true">
+            {{ _("FAQ") }}
+          </button>
+          {% if store.settings.products.reviews_enabled %}
+            <button type="button" role="tab" class="pdp-tabs__tab" data-pdp-tab="reviews" aria-selected="false">
+              {{ _("Customer reviews") }}
+            </button>
+          {% endif %}
+        </div>
+
+        <div class="pdp-tabs__panel" role="tabpanel" data-pdp-panel="questions">
+          <div class="flex flex-col gap-4">
+            {# Trigger → opens the centered question modal (question-form.jinja). #}
+            <button
+              type="button"
+              class="btn btn-filled btn-md self-start"
+              command="show-modal"
+              commandfor="question-dialog"
+            >
+              {{ _('Ask your question') }}
+            </button>
+            {% with questions=product.questions %}
+              {% include 'components/products/product-questions.jinja' %}
+            {% endwith %}
+            {% include 'components/products/question-form.jinja' %}
+          </div>
+        </div>
+
+        {% if store.settings.products.reviews_enabled %}
+          <div class="pdp-tabs__panel hidden" role="tabpanel" data-pdp-panel="reviews">
+            <div id="reviews">
+              {% with product=product, store=store, session=session %}
+                {% include 'components/products/product-reviews.jinja' %}
+              {% endwith %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      {% raw %}<style>
+        .pdp-tabs { margin-top: 1.5rem; }
+        .pdp-tabs__list {
+          display: flex;
+          gap: 1.25rem;
+          border-bottom: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+        }
+        .pdp-tabs__tab {
+          appearance: none;
+          background: transparent;
+          border: 0;
+          border-bottom: 2px solid transparent;
+          margin-bottom: -1px;
+          padding: 0.625rem 0.125rem;
+          font-family: inherit;
+          font-size: 1rem;
+          font-weight: 600;
+          color: color-mix(in srgb, var(--foreground) 55%, transparent);
+          cursor: pointer;
+          transition: color 160ms ease, border-color 160ms ease;
+        }
+        .pdp-tabs__tab:hover { color: var(--foreground); }
+        .pdp-tabs__tab[aria-selected="true"] {
+          color: var(--foreground);
+          border-bottom-color: var(--primary);
+        }
+        .pdp-tabs__panel { padding-top: 1rem; }
+        /* The reviews tab already names the section — drop its in-panel title. */
+        .pdp-tabs__panel[data-pdp-panel="reviews"] #reviews h2:first-of-type { display: none; }
+      </style>
+      <script>
+        (function () {
+          var root = document.querySelector("[data-pdp-tabs]");
+          if (!root) return;
+          var tabs = root.querySelectorAll("[data-pdp-tab]");
+          var panels = root.querySelectorAll("[data-pdp-panel]");
+          tabs.forEach(function (tab) {
+            tab.addEventListener("click", function () {
+              var key = tab.getAttribute("data-pdp-tab");
+              tabs.forEach(function (t) { t.setAttribute("aria-selected", t === tab ? "true" : "false"); });
+              panels.forEach(function (p) { p.classList.toggle("hidden", p.getAttribute("data-pdp-panel") !== key); });
+            });
+          });
+        })();
+      </script>{% endraw %}
+
+    </div>
+  </section>
+
+  {# Customer video testimonials — full-width band; only when configured for
+     this product in Layout Settings → Product Videos. Rendered OUTSIDE the
+     `.theme-container` above so its background spans the page edge-to-edge
+     (the carousel inside stays centered via its own max-width). #}
+  {% include 'components/products/product-video-testimonials.jinja' %}
+
+  {# Floating draggable product video — only for configured products.
+     position:fixed, so its DOM placement is irrelevant. #}
+  {% include 'components/products/product-floating-video.jinja' %}
+
+  {# Related Products Section #}
+  {% if product.related_products and product.related_products|length > 0 %}
+    <section class="px-4 pb-6 md:px-16 md:pb-16">
+      <div class="theme-container">
+        <div class="mt-12">
+          {%
+            with
+            products=product.related_products,
+            title=_("You may also like"),
+            carousel_id="related-products"
+          %}
+            {% include 'components/products/products-carousel.jinja' %}
+          {% endwith %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {# Sticky Product Actions - shows when scrolling past the main add-to-cart button #}
+  {% with product=product %}
+    {% include 'components/products/sticky-product-actions.jinja' %}
+  {% endwith %}
+
+
+
+  <script src="{{ 'js/question-form.js' | asset_url }}" defer></script>
+
+  {# Live-viewers social proof + native share. Kept inline + self-contained;
+     does not run inside the quick-view popover (injected HTML doesn't execute
+     inline scripts), which is fine — the block stays hidden there. #}
+  <script>
+    (function () {
+      var live = document.querySelector('[data-live-viewers]');
+      if (live) {
+        var countEl = live.querySelector('[data-viewers-count]');
+        var rand = function (min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
+        // Restart the CSS pulse on the count each time it changes.
+        var repulse = function () {
+          countEl.style.animation = 'none';
+          void countEl.offsetWidth; // force reflow
+          countEl.style.animation = '';
+        };
+        var n = rand(18, 74);
+        countEl.textContent = n;
+        live.classList.remove('hidden');
+        live.classList.add('flex');
+        setInterval(function () {
+          n = Math.max(12, Math.min(90, n + rand(-3, 4)));
+          countEl.textContent = n;
+          repulse();
+        }, 5000);
+      }
+
+      var shareBtn = document.querySelector('[data-share-btn]');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
+          if (navigator.share) {
+            navigator.share({ title: document.title, url: location.href }).catch(function () {});
+          } else {
+            var row = document.querySelector('.product-details-column .border-t.pt-4');
+            if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      }
+    })();
+  </script>
+{% endblock %}

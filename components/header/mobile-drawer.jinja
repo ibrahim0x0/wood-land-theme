@@ -1,0 +1,594 @@
+{# Simple mobile navigation drawer #}
+{# Minimal layout: brand + close, a plain text menu, then a footer with the   #}
+{# core actions (cart, login, country) and social links.                      #}
+{# Colors come from the global theme tokens so the drawer always matches      #}
+{# whatever palette the merchant picks.                                       #}
+
+{% from 'components/_macros.jinja' import safe_url, menu_href %}
+
+{% set md_search         = settings.mobile_drawer_search           | default(false) %}
+{% set md_animate        = settings.mobile_drawer_animate          | default(true) %}
+{% set cart_drawer       = settings.cart_drawer                    | default(true) %}
+
+{% set md_ig = settings.mobile_drawer_social_instagram %}
+{% set md_wa = settings.mobile_drawer_social_whatsapp  %}
+{% set md_tw = settings.mobile_drawer_social_twitter   %}
+{% set md_tt = settings.mobile_drawer_social_tiktok    %}
+{% set md_social_any = md_ig or md_wa or md_tw or md_tt %}
+
+{% set multiple_countries = store.countries | length > 1 %}
+{% set multiple_languages = store.languages | length > 1 %}
+{% set show_country = multiple_countries and not safeget(settings, "header_hide_country", false) %}
+{% set show_language = multiple_languages and not safeget(settings, "header_hide_language", false) %}
+{% set show_region = show_country or show_language %}
+
+<el-dialog
+        id="mobile-drawer-dialog"
+        class="group contents">
+  <button
+    command="show-modal"
+    commandfor="mobile-drawer"
+    class="text-foreground relative h-10 w-10 p-2 group-data-[transition]:pointer-events-none focus:outline-none lg:hidden"
+    aria-label="{{ _('Toggle menu') }}"
+  >
+    <span aria-hidden="true" class="absolute inset-0 m-auto block h-0.5 w-5 transform bg-current transition duration-500 ease-in-out group-data-[closed]:-translate-y-1.5 group-data-[enter]:rotate-45 group-data-[leave]:!rotate-0 group-[:not([open])]:-translate-y-1.5 group-[[open]]:rotate-45"></span>
+    <span aria-hidden="true" class="absolute inset-0 m-auto block h-0.5 w-5 transform bg-current transition duration-500 ease-in-out group-data-[enter]:opacity-0 group-data-[leave]:!opacity-100 group-[[open]]:opacity-0"></span>
+    <span aria-hidden="true" class="absolute inset-0 m-auto block h-0.5 w-5 transform bg-current transition duration-500 ease-in-out group-data-[closed]:translate-y-1.5 group-data-[enter]:-rotate-45 group-data-[leave]:!-rotate-0 group-[:not([open])]:translate-y-1.5 group-[[open]]:-rotate-45"></span>
+  </button>
+  <dialog
+    id="mobile-drawer"
+    aria-labelledby="drawer-title"
+    class="mobile-drawer-glass fixed top-0 right-0 bottom-0 left-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent not-open:hidden backdrop:bg-transparent"
+  >
+    <el-dialog-backdrop
+      class="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-500 ease-in-out data-closed:opacity-0"
+    ></el-dialog-backdrop>
+    <div tabindex="0" class="absolute inset-0 focus:outline-none">
+      <el-dialog-panel
+        class="group/dialog-panel mobile-drawer-panel relative block size-full transform transition duration-300 ease-out data-closed:opacity-0"
+        data-animate="{{ 'true' if md_animate else 'false' }}"
+      >
+        <div class="mobile-drawer-inner relative flex h-full flex-col">
+          {# ─── HEADER ─── #}
+          <header class="mobile-drawer-header">
+            <button type="button" command="close" commandfor="mobile-drawer" class="mobile-drawer-close" aria-label="{{ _('Close') }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <a href="/" id="drawer-title" class="mobile-drawer-brand">
+              {% if settings.logo_mobile or settings.logo_desktop or store.logo %}
+                {% set _logo = settings.logo_mobile or settings.logo_desktop or store.logo %}
+                <img src="{{ image_url(_logo, w=200, q=90, f='auto') }}" alt="{{ store.name }}" class="mobile-drawer-brand__img"/>
+              {% else %}
+                <span>{{ store.name }}</span>
+              {% endif %}
+            </a>
+          </header>
+          {# Header DOM order is close then brand, but CSS `order` flips them so
+             the brand sits at the leading edge (right in RTL / left in LTR) and
+             the X at the trailing edge — matching the reference layout. #}
+
+          {% if md_search %}
+            {# Opens the theme's live-search dialog (see components/header/search.jinja).
+               We close the mobile drawer first so the search dialog lands on top. #}
+            <button
+              type="button"
+              command="show-modal"
+              commandfor="search-dialog"
+              onclick="document.getElementById('mobile-drawer-dialog')?.hide?.();"
+              class="mobile-drawer-search"
+              aria-label="{{ _('Search products, categories…') }}"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span class="mobile-drawer-search__placeholder">{{ _('Search products, categories…') }}</span>
+            </button>
+          {% endif %}
+
+          {# ─── SCROLL AREA ─── #}
+          <div class="mobile-drawer-scroll">
+            {# ─── Navigation Menu — plain text rows ─── #}
+            <nav class="mobile-drawer-menu">
+              {% for menu in store.settings.menus.main_menu.items %}
+                {% if menu.items | length > 0 %}
+                  <details class="group w-full">
+                    <summary class="mobile-drawer-item mobile-drawer-summary">
+                      <span class="mobile-drawer-item__label">{{ menu.label }}</span>
+                      <svg class="mobile-drawer-item__chev mobile-drawer-item__chev--expand" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </summary>
+                    <div class="mobile-drawer-sub">
+                      {% for submenu in menu.items %}
+                        {% if submenu.items | length > 0 %}
+                          <details class="group/sub w-full">
+                            <summary class="mobile-drawer-subitem mobile-drawer-summary">
+                              <span>{{ submenu.label }}</span>
+                              <svg class="mobile-drawer-item__chev mobile-drawer-item__chev--expand" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                              </svg>
+                            </summary>
+                            <div class="mobile-drawer-sub mobile-drawer-sub--nested">
+                              <a href="{{ menu_href(submenu.url, submenu.resource_type) }}" class="mobile-drawer-subitem mobile-drawer-subitem--all">
+                                {{ _("All") }} {{ submenu.label }}
+                              </a>
+                              {% for subsubmenu in submenu.items %}
+                                <a href="{{ menu_href(subsubmenu.url, subsubmenu.resource_type) }}" class="mobile-drawer-subitem">
+                                  {{ subsubmenu.label }}
+                                </a>
+                              {% endfor %}
+                            </div>
+                          </details>
+                        {% else %}
+                          <a href="{{ menu_href(submenu.url, submenu.resource_type) }}" class="mobile-drawer-subitem">
+                            {{ submenu.label }}
+                          </a>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% else %}
+                  <a href="{{ menu_href(menu.url, menu.resource_type) }}" class="mobile-drawer-item">
+                    <span class="mobile-drawer-item__label">{{ menu.label }}</span>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            </nav>
+          </div>{# /scroll #}
+
+          {# ─── FOOTER ─── #}
+          <div class="mobile-drawer-footer">
+            <ul class="mobile-drawer-quick">
+              {# Cart #}
+              <li>
+                {% if cart_drawer %}
+                  <button type="button" command="show-modal" commandfor="cart-drawer-dialog"
+                          onclick="document.getElementById('mobile-drawer-dialog')?.hide?.();"
+                          class="mobile-drawer-quick__row">
+                    <svg class="mobile-drawer-quick__icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936Z"/>
+                    </svg>
+                    <span class="mobile-drawer-quick__label">{{ _('Cart') }}</span>
+                    <span data-cart-badge hidden class="mobile-drawer-quick__badge">0</span>
+                  </button>
+                {% else %}
+                  <a href="{{ url_for('cart_page') }}" class="mobile-drawer-quick__row">
+                    <svg class="mobile-drawer-quick__icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936Z"/>
+                    </svg>
+                    <span class="mobile-drawer-quick__label">{{ _('Cart') }}</span>
+                    <span data-cart-badge hidden class="mobile-drawer-quick__badge">0</span>
+                  </a>
+                {% endif %}
+              </li>
+
+              {# Login (logged out) #}
+              <li id="mobile-login-btn">
+                <button type="button"
+                        onclick="document.getElementById('mobile-drawer-dialog')?.hide?.(); typeof handleLoginAction==='function'&&handleLoginAction()"
+                        class="mobile-drawer-quick__row">
+                  <svg class="mobile-drawer-quick__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span class="mobile-drawer-quick__label">{{ _('Login') }}</span>
+                </button>
+              </li>
+
+              {# Account + Logout (logged in) — toggled by assets/js/features/layout.js #}
+              <li id="mobile-logged-in-links" class="hidden">
+                <a href="{{ url_for('profile') }}" class="mobile-drawer-quick__row">
+                  <svg class="mobile-drawer-quick__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>
+                  </svg>
+                  <span class="mobile-drawer-quick__label">{{ _('Account') }}</span>
+                </a>
+                <button type="button" onclick="window.zid?.customer?.logout?.()" class="mobile-drawer-quick__logout" aria-label="{{ _('Log out') }}" title="{{ _('Log out') }}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                </button>
+              </li>
+
+              {# Country / region #}
+              {% if show_region %}
+                <li>
+                  <button type="button"
+                          onclick="document.getElementById('mobile-drawer-dialog')?.hide?.(); typeof zidOpenRegionSettingDialog==='function'&&zidOpenRegionSettingDialog()"
+                          class="mobile-drawer-quick__row">
+                    {% if settings.logo_icons_globe %}
+                      {% set icon_url = settings.logo_icons_globe %}
+                      {% set icon_size = 20 %}
+                      {% include 'components/header/_icon-img.jinja' %}
+                    {% else %}
+                      <svg class="mobile-drawer-quick__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>
+                      </svg>
+                    {% endif %}
+                    <span class="mobile-drawer-quick__label">{{ _('Country') }}</span>
+                    <span class="mobile-drawer-quick__value">
+                      {% if show_country and session.country %}
+                        {% if session.country.code %}
+                          <img class="mobile-drawer-quick__flag" src="https://flagcdn.com/24x18/{{ session.country.code | lower }}.png" alt="" loading="lazy"/>
+                        {% endif %}
+                        <span class="nav-country-text">{{ session.country.name }}</span>
+                      {% elif show_language %}
+                        <span>{{ session.lang | upper }}</span>
+                      {% endif %}
+                      <svg class="mobile-drawer-quick__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+                    </span>
+                  </button>
+                </li>
+              {% endif %}
+            </ul>
+
+            {% if md_social_any %}
+              <div class="mobile-drawer-social-wrap">
+                <span class="mobile-drawer-social-label">{{ _('Follow us') }}</span>
+                <div class="mobile-drawer-social">
+                  {% if md_tt %}
+                    <a href="{{ safe_url(md_tt) }}" target="_blank" rel="noopener noreferrer" class="mobile-drawer-social__btn" aria-label="TikTok">
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg>
+                    </a>
+                  {% endif %}
+                  {% if md_ig %}
+                    <a href="{{ safe_url(md_ig) }}" target="_blank" rel="noopener noreferrer" class="mobile-drawer-social__btn" aria-label="Instagram">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37zM17.5 6.5h.01"/></svg>
+                    </a>
+                  {% endif %}
+                  {% if md_wa %}
+                    <a href="{{ safe_url(md_wa) }}" target="_blank" rel="noopener noreferrer" class="mobile-drawer-social__btn" aria-label="WhatsApp">
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51-.17-.01-.37-.01-.57-.01s-.52.07-.8.37c-.27.3-1.05 1.02-1.05 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.2 5.08 4.5.71.3 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.12-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.5 15.25L2 22l4.9-1.4A10 10 0 1 0 12 2z"/></svg>
+                    </a>
+                  {% endif %}
+                  {% if md_tw %}
+                    <a href="{{ safe_url(md_tw) }}" target="_blank" rel="noopener noreferrer" class="mobile-drawer-social__btn" aria-label="X / Twitter">
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>{# /footer #}
+        </div>{# /inner #}
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+
+<style>
+  /* ============================================================================
+     Simple mobile drawer — theme-aware (uses --primary/--foreground/--background)
+     ============================================================================ */
+
+  .mobile-drawer-panel {
+    width: 100%;
+    max-width: 420px;
+    transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+    transform: none !important;
+  }
+
+  /* Force a light surface for the drawer regardless of the merchant's theme
+     tokens so the drawer stays legible even on stores that ship a dark
+     --background globally. */
+  .mobile-drawer-inner {
+    --background: #ffffff;
+    --foreground: #0b0a09;
+    position: relative;
+    background: #ffffff;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--foreground) 6%, transparent),
+      0 30px 80px -20px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    color: var(--foreground);
+  }
+
+  /* ─── Header ─── */
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1.25rem;
+  }
+  .mobile-drawer-brand {
+    order: 0;
+    display: inline-flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--foreground);
+    text-decoration: none;
+  }
+  .mobile-drawer-brand__img {
+    max-height: 40px;
+    width: auto;
+    object-fit: contain;
+  }
+  .mobile-drawer-close {
+    order: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-inline-end: -0.5rem;
+    background: transparent;
+    border: 0;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: opacity 180ms ease, transform 120ms ease;
+  }
+  .mobile-drawer-close:hover { opacity: 0.65; }
+  .mobile-drawer-close:active { transform: scale(0.92); }
+
+  /* ─── Search trigger (opens live-search dialog) ─── */
+  .mobile-drawer-search {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: calc(100% - 2.5rem);
+    margin: 0.25rem 1.25rem 0;
+    padding: 0.75rem 1rem;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    border-radius: 0;
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-align: start;
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+  }
+  .mobile-drawer-search:hover,
+  .mobile-drawer-search:focus-visible {
+    background: color-mix(in srgb, var(--foreground) 7%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    color: var(--foreground);
+    outline: none;
+  }
+  .mobile-drawer-search svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .mobile-drawer-search__placeholder {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* ─── Scroll area ─── */
+  .mobile-drawer-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.5rem 1.25rem 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 20%, transparent) transparent;
+  }
+  .mobile-drawer-scroll::-webkit-scrollbar { width: 4px; }
+  .mobile-drawer-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--foreground) 20%, transparent);
+    border-radius: 10px;
+  }
+
+  /* ─── Menu items — plain text rows ─── */
+  .mobile-drawer-menu {
+    display: flex;
+    flex-direction: column;
+  }
+  .mobile-drawer-item,
+  .mobile-drawer-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem 0.25rem;
+    background: transparent;
+    border: 0;
+    color: var(--foreground);
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    list-style: none;
+    transition: color 180ms ease;
+  }
+  .mobile-drawer-summary::-webkit-details-marker { display: none; }
+  .mobile-drawer-item:hover,
+  .mobile-drawer-summary:hover { color: var(--primary); }
+  .mobile-drawer-item:active,
+  .mobile-drawer-summary:active { opacity: 0.7; }
+
+  .mobile-drawer-item__label { flex: 1; min-width: 0; }
+  .mobile-drawer-item__chev {
+    margin-inline-start: auto;
+    width: 16px; height: 16px;
+    opacity: 0.4;
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    transition: opacity 200ms ease, transform 250ms ease;
+    flex-shrink: 0;
+  }
+  .mobile-drawer-item:hover .mobile-drawer-item__chev,
+  .mobile-drawer-summary:hover .mobile-drawer-item__chev { opacity: 1; }
+  details[open] > .mobile-drawer-summary .mobile-drawer-item__chev--expand { transform: rotate(90deg); }
+  [dir="rtl"] details[open] > .mobile-drawer-summary .mobile-drawer-item__chev--expand { transform: rotate(-90deg); }
+
+  /* ─── Sub-items ─── */
+  .mobile-drawer-sub {
+    padding: 0 0 0.25rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+  }
+  [dir="rtl"] .mobile-drawer-sub { padding: 0 0.75rem 0.25rem 0; }
+  .mobile-drawer-sub--nested {
+    margin-inline-start: 0.5rem;
+  }
+  .mobile-drawer-subitem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.25rem;
+    color: color-mix(in srgb, var(--foreground) 72%, transparent);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 180ms ease;
+  }
+  .mobile-drawer-subitem:hover { color: var(--primary); }
+  .mobile-drawer-subitem--all { font-weight: 600; color: var(--foreground); }
+
+  /* ─── Footer ─── */
+  .mobile-drawer-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem 1.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  }
+  .mobile-drawer-quick {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .mobile-drawer-quick > li:not(.hidden) { display: flex; align-items: center; }
+  .mobile-drawer-quick__row {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.25rem;
+    background: transparent;
+    border: 0;
+    color: var(--primary);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 160ms ease;
+  }
+  .mobile-drawer-quick__row:hover { opacity: 0.75; }
+  .mobile-drawer-quick__row:active { opacity: 0.6; }
+  .mobile-drawer-quick__icon { width: 20px; height: 20px; flex-shrink: 0; }
+  .mobile-drawer-quick__label { white-space: nowrap; }
+  .mobile-drawer-quick__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9999px;
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  /* Current country / language sits at the trailing edge */
+  .mobile-drawer-quick__value {
+    margin-inline-start: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .mobile-drawer-quick__flag {
+    width: 22px;
+    height: auto;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+  .mobile-drawer-quick__chev { flex-shrink: 0; opacity: 0.6; }
+  [dir="rtl"] .mobile-drawer-quick__chev { transform: rotate(180deg); }
+  /* Logout collapses to an icon-only button next to Account */
+  .mobile-drawer-quick__logout {
+    flex: 0 0 auto;
+    width: 38px; height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    cursor: pointer;
+    transition: color 160ms ease;
+  }
+  .mobile-drawer-quick__logout:hover { color: var(--primary); }
+  .mobile-drawer-quick__logout svg { width: 18px; height: 18px; }
+  /* Mirror the exit arrow so it points toward the (RTL) leading edge. */
+  [dir="rtl"] .mobile-drawer-quick__logout svg { transform: scaleX(-1); }
+
+  /* ─── Social row ─── */
+  .mobile-drawer-social-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  }
+  .mobile-drawer-social-label {
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  }
+  .mobile-drawer-social { display: flex; gap: 0.5rem; }
+  .mobile-drawer-social__btn {
+    width: 38px; height: 38px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease;
+  }
+  .mobile-drawer-social__btn svg { width: 16px; height: 16px; }
+  .mobile-drawer-social__btn:hover {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+
+  /* ─── Staggered entry animation (snappy) ─── */
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > * {
+    animation: mobile-drawer-slide-in 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(1) { animation-delay: 40ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(2) { animation-delay: 65ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(3) { animation-delay: 90ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(4) { animation-delay: 115ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(5) { animation-delay: 140ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(6) { animation-delay: 165ms; }
+  dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > *:nth-child(n+7) { animation-delay: 190ms; }
+
+  @keyframes mobile-drawer-slide-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  [dir="rtl"] dialog[open] .mobile-drawer-panel[data-animate="true"] .mobile-drawer-menu > * {
+    animation-name: mobile-drawer-slide-in-rtl;
+  }
+  @keyframes mobile-drawer-slide-in-rtl {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-drawer-close,
+    .mobile-drawer-item,
+    .mobile-drawer-summary,
+    .mobile-drawer-quick__row,
+    .mobile-drawer-social__btn,
+    .mobile-drawer-panel {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>

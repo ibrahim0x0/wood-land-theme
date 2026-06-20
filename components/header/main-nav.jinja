@@ -1,0 +1,262 @@
+{% from 'components/_macros.jinja' import menu_href %}
+
+{# Icons #}
+{% set chevron_down %}
+  <svg
+    class="size-4"
+    viewBox="0 0 16 16"
+    fill="none"
+  >
+    <path
+      d="M4 6L8 10L12 6"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+{% endset %}
+
+
+{% set chevron_right %}
+  <svg
+    class="size-4 rtl:rotate-180"
+    viewBox="0 0 16 16"
+    fill="none"
+  >
+    <path
+      d="M6 4L10 8L6 12"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+{% endset %}
+
+{# Configuration: Max visible items before "More" dropdown #}
+{% set max_visible_items = 6 %}
+{% set all_menu_items = store.settings.menus.main_menu.items %}
+{% set total_items = all_menu_items | length %}
+{% set has_overflow = total_items > max_visible_items %}
+
+{# Split items into visible and overflow #}
+{% set visible_items = all_menu_items[:max_visible_items] if has_overflow else all_menu_items %}
+{% set overflow_items = all_menu_items[max_visible_items:] if has_overflow else [] %}
+
+{# Macro: Render a single menu item (for reuse in visible and overflow) #}
+{% macro render_menu_item(menu, index, in_overflow=false) %}
+  {% if menu.items | length > 0 %}
+    {# Check if any submenu has level 3 items #}
+    {% set has_level3 = namespace(value=false) %}
+    {% for submenu in menu.items %}
+      {% if submenu.items | length > 0 %}
+        {% set has_level3.value = true %}
+      {% endif %}
+    {% endfor %}
+
+    {% if has_level3.value %}
+      {# 3-level menu: Use el-popover as parent so nested el-dropdown works #}
+      {% set menu_popover_id = 'menu-popover-' ~ index ~ '-' ~ range(1000, 9999) | random %}
+      {% if in_overflow %}
+        {# In overflow dropdown: render as nested dropdown #}
+        <el-dropdown class="block w-full">
+          <button
+            class="text-foreground text-sm hover:bg-secondary data-[state=open]:bg-secondary flex w-full cursor-default items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-start outline-none"
+          >
+            {{ menu.label }}
+            {{ chevron_right }}
+          </button>
+          <el-menu
+            anchor="{{ 'left start' if session.lang == 'ar' else 'right start' }}"
+            popover
+            class="border-border-light bg-background min-w-48 rounded border p-1 shadow-lg transition transition-discrete [--anchor-gap:2px] data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in data-closed:ltr:translate-x-1 data-closed:rtl:-translate-x-1"
+          >
+            {% for submenu in menu.items %}
+              {% if submenu.items | length > 0 %}
+                {# Level 2 with Level 3 #}
+                <div class="text-sm font-medium px-2 py-1">{{ submenu.label }}</div>
+                {% for subsubmenu in submenu.items %}
+                  <a
+                    href="{{ menu_href(subsubmenu.url, subsubmenu.resource_type) }}"
+                    class="text-foreground text-sm hover:bg-secondary flex w-full items-center rounded-sm px-2 py-1.5 ps-4"
+                  >
+                    {{ subsubmenu.label }}
+                  </a>
+                {% endfor %}
+              {% else %}
+                <a
+                  href="{{ menu_href(submenu.url, submenu.resource_type) }}"
+                  class="text-foreground text-sm hover:bg-secondary flex w-full items-center rounded-sm px-2 py-1.5"
+                >
+                  {{ submenu.label }}
+                </a>
+              {% endif %}
+            {% endfor %}
+          </el-menu>
+        </el-dropdown>
+      {% else %}
+        {# Top level with deep menu → mega menu panel.
+           Flat multi-column layout avoids the nested dropdown UX (which
+           requires two hover steps to reach level-3 items) in favor of a
+           single wide panel where every level-3 link is visible at once. #}
+        <div class="relative inline-block">
+          <button
+            type="button"
+            popovertarget="{{ menu_popover_id }}"
+            class="text-foreground text-sm flex items-center gap-1 py-2 hover:underline"
+          >
+            {{ menu.label }}
+            {{ chevron_down }}
+          </button>
+          <el-popover
+            id="{{ menu_popover_id }}"
+            popover
+            anchor="bottom"
+            class="mega-menu transition transition-discrete [--anchor-gap:6px] data-closed:translate-y-2 data-closed:opacity-0 data-enter:duration-220 data-enter:ease-out data-leave:duration-160 data-leave:ease-in"
+          >
+            <div class="mega-menu__grid">
+              {% for submenu in menu.items %}
+                <div class="mega-menu__col">
+                  {% if submenu.items | length > 0 %}
+                    {# Column heading is the Level-2 label; if Level-2 also
+                       has its own landing page (resource), make it a link. #}
+                    {% set level2_href = menu_href(submenu.url, submenu.resource_type) %}
+                    {% if level2_href != '#' %}
+                      <a href="{{ level2_href }}" class="mega-menu__heading">
+                        {{ submenu.label }}
+                      </a>
+                    {% else %}
+                      <div class="mega-menu__heading">{{ submenu.label }}</div>
+                    {% endif %}
+                    <ul class="mega-menu__list">
+                      {% for subsubmenu in submenu.items %}
+                        <li>
+                          <a
+                            href="{{ menu_href(subsubmenu.url, subsubmenu.resource_type) }}"
+                            class="mega-menu__link"
+                          >
+                            {{ subsubmenu.label }}
+                          </a>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    {# Level-2 without children: promote to heading link so
+                       the column still feels intentional. #}
+                    <a
+                      href="{{ menu_href(submenu.url, submenu.resource_type) }}"
+                      class="mega-menu__heading mega-menu__heading--solo"
+                    >
+                      {{ submenu.label }}
+                    </a>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </el-popover>
+        </div>
+      {% endif %}
+    {% else %}
+      {# 2-level menu: Use el-dropdown #}
+      {% if in_overflow %}
+        {# In overflow: nested dropdown #}
+        <el-dropdown class="block w-full">
+          <button
+            class="text-foreground text-sm hover:bg-secondary data-[state=open]:bg-secondary flex w-full cursor-default items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-start outline-none"
+          >
+            {{ menu.label }}
+            {{ chevron_right }}
+          </button>
+          <el-menu
+            anchor="{{ 'left start' if session.lang == 'ar' else 'right start' }}"
+            popover
+            class="border-border-light bg-background min-w-48 rounded border p-1 shadow-lg transition transition-discrete [--anchor-gap:2px] data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in data-closed:ltr:translate-x-1 data-closed:rtl:-translate-x-1"
+          >
+            {% for submenu in menu.items %}
+              <a
+                href="{{ menu_href(submenu.url, submenu.resource_type) }}"
+                class="text-foreground text-sm hover:bg-secondary flex w-full items-center rounded-sm px-2 py-1.5"
+              >
+                {{ submenu.label }}
+              </a>
+            {% endfor %}
+          </el-menu>
+        </el-dropdown>
+      {% else %}
+        {# Top level: regular dropdown #}
+        <el-dropdown class="inline-block">
+          <button class="text-foreground text-sm flex items-center gap-1 py-2 hover:underline">
+            {{ menu.label }}
+            {{ chevron_down }}
+          </button>
+          <el-menu
+            anchor="bottom"
+            popover
+            class="border-border-light bg-background min-w-48 rounded border p-1 shadow-lg transition transition-discrete [--anchor-gap:4px] data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
+          >
+            {% for submenu in menu.items %}
+              <a
+                href="{{ menu_href(submenu.url, submenu.resource_type) }}"
+                class="text-foreground text-sm hover:bg-secondary flex w-full items-center rounded-sm px-2 py-1.5"
+              >
+                {{ submenu.label }}
+              </a>
+            {% endfor %}
+          </el-menu>
+        </el-dropdown>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    {# No children: simple link #}
+    {% if in_overflow %}
+      <a
+        href="{{ menu_href(menu.url, menu.resource_type) }}"
+        class="text-foreground text-sm hover:bg-secondary flex w-full items-center rounded-sm px-2 py-1.5"
+      >
+        {{ menu.label }}
+      </a>
+    {% else %}
+      <a
+        href="{{ menu_href(menu.url, menu.resource_type) }}"
+        class="text-foreground text-sm py-2 hover:underline"
+      >
+        {{ menu.label }}
+      </a>
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{# Main Navigation #}
+<ul class="hidden items-center gap-6 lg:flex">
+  {# Render visible items #}
+  {% for menu in visible_items %}
+    <li>{{ render_menu_item(menu, loop.index) }}</li>
+  {% endfor %}
+
+  {# "More" dropdown for overflow items - uses el-popover to prevent auto-close on nested clicks #}
+  {% if has_overflow %}
+    <li>
+      <div class="relative inline-block">
+        <button
+          type="button"
+          popovertarget="more-menu-popover"
+          class="text-foreground text-sm flex items-center gap-1 py-2 hover:underline"
+        >
+          {{ _("More") }}
+          {{ chevron_down }}
+        </button>
+        <el-popover
+          id="more-menu-popover"
+          popover
+          anchor="bottom"
+          class="border-border-light bg-background max-w-64 min-w-48 rounded border p-1 shadow-lg transition transition-discrete [--anchor-gap:4px] data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
+        >
+          {% for menu in overflow_items %}
+            {{ render_menu_item(menu, loop.index + max_visible_items, true) }}
+          {% endfor %}
+        </el-popover>
+      </div>
+    </li>
+  {% endif %}
+</ul>

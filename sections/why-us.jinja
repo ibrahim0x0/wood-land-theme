@@ -1,0 +1,486 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Why Choose Us — trust-builder section with two columns:
+     • Bullet points (icon + text), 2-col on mobile / 1-col on desktop
+     • Hexagonal honeycomb gallery (5 absolute-positioned hex images)
+
+   Originally a hand-rolled JS-injected section; converted to a proper
+   Vitrin section so merchants edit it in the editor instead of code.
+
+   Layout:
+     • Mobile (<992px): gallery on top (small hex constellation),
+       points below in 2-column flex grid
+     • Desktop (≥992px): points and gallery side-by-side, gallery
+       in a fixed 500×480 hex constellation
+
+   The hex grid uses hardcoded pixel positions tuned for hexagon-
+   shaped PNG images at the specified sizes. Merchants who upload
+   non-hexagonal images will get visible bounding boxes — the schema
+   info string warns about this. We deliberately don't try to mask
+   into hexagons here because PNG hexagons give crisper edges than
+   CSS clip-path on raster images.
+
+   Heading colors: this section delegates the heading to the shared
+   `components/products/section-heading.jinja` partial. Eyebrow and
+   subtitle colors are now controlled GLOBALLY via Layout Settings →
+   Section Headings (eyebrow_color / subtitle_color). The settings
+   apply theme-wide so all sections stay visually consistent. There
+   are no per-section color overrides here anymore.
+
+   `points` (not `items`) — `settings.items` collides with Jinja's
+   built-in `dict.items()` method on empty lists.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set points       = settings.points %}
+{% set count        = points | length if points else 0 %}
+{% set images       = settings.gallery_images %}
+{% set image_count  = images | length if images else 0 %}
+{% set is_rtl       = session.locale.language.direction == 'rtl' %}
+{% set bg           = settings.background      | default('warm', true) %}
+{% set animate      = settings.enable_animation | default(true) %}
+{% set padding_y    = settings.padding_y if settings.padding_y is not none else 50 %}
+{% set margin_y     = settings.margin_y  if settings.margin_y  is not none else 30 %}
+{% set border_top   = settings.border_top    | default(false) %}
+{% set border_bot   = settings.border_bottom | default(false) %}
+{% set is_lazy      = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-why{% if count == 0 and image_count == 0 %} section-why--empty{% endif %}{% if animate %} section-why--animate{% endif %} px-4 md:px-16"
+  data-bg="{{ bg }}"
+  data-border-top="{{ 'true' if border_top else 'false' }}"
+  data-border-bottom="{{ 'true' if border_bot else 'false' }}"
+  style="
+    --why-padding-y: {{ padding_y }}px;
+    --why-margin-y: {{ margin_y }}px;
+  "
+>
+  {# `theme-container` is the theme's standard max-width wrapper
+     (1440px, centered). Using it here matches the inset-width every
+     other section uses (Highlights, Testimonials, Partners, etc.)
+     so this section sits flush with its peers in the page rhythm.
+     The `px-4 md:px-16` utilities on the section provide horizontal
+     edge padding before the contained content. #}
+  <div class="theme-container">
+    {% if (settings.title and settings.title | trim) or settings.subtitle or settings.eyebrow %}
+      {# Shared heading partial — style + alignment + icon + colors
+         all inherit from Layout Settings → Section Headings unless
+         this section overrides via the `heading_style` select.
+         Keeps the section visually aligned with Highlights /
+         Testimonials / Partners — change the global heading style
+         once and every section follows. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      {% with
+        eyebrow=settings.eyebrow,
+        title=settings.title,
+        subtitle=settings.subtitle,
+        heading_style=_hs,
+        heading_alignment=heading_alignment_default,
+        heading_icon=heading_icon_default
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    {% endif %}
+
+    {% if count == 0 and image_count == 0 %}
+      {# Empty-state placeholder — same pattern as the marquee /
+         testimonials sections. Renders so the editor has a target,
+         and so the merchant sees the section was added even without
+         content yet. #}
+      <div class="why-empty-state">
+        <span class="why-empty-hint">
+          {{ 'أضف نقاطًا وصورًا للمعرض السداسي من إعدادات القسم' if is_rtl else 'Add points and gallery images from the section settings' }}
+        </span>
+      </div>
+    {% else %}
+      <div class="why-content">
+        {# ── Points column ── #}
+        {% if count > 0 %}
+          <div class="why-points-col">
+            <ul class="why-points">
+              {% for point in points %}
+                {# Skip wholly-empty rows. A merchant who adds a row
+                   but doesn't fill in either field shouldn't get a
+                   blank `<li>` taking layout space + an animation
+                   slot. The macro renders only when at least one
+                   field has content. #}
+                {% set _has_text = point.text and point.text | trim %}
+                {% if point.icon or _has_text %}
+                  <li
+                    class="why-point"
+                    {% if animate %}style="animation-delay: {{ 0.5 + loop.index0 * 0.1 }}s"{% endif %}
+                  >
+                    {% if point.icon %}
+                      <div class="why-point__icon-wrap">
+                        <img
+                          src="{{ image_url(point.icon, w=160, q=90, f='auto') }}"
+                          alt=""
+                          aria-hidden="true"
+                          class="why-point__icon"
+                          {% if is_lazy %}loading="lazy"{% endif %}
+                          decoding="async"
+                        />
+                      </div>
+                    {% endif %}
+                    {% if _has_text %}
+                      <div class="why-point__text">{{ point.text }}</div>
+                    {% endif %}
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        {# ── Hex gallery column ──
+           `loop.index` is intentionally used for `pos-N` so that a
+           blank row (no image uploaded) preserves its position slot
+           in the constellation. Merchants who delete the 2nd row
+           shift everything up; merchants who leave it blank keep
+           the gap exactly there. The schema info documents this. #}
+        {% if image_count > 0 %}
+          <div class="why-gallery-col">
+            <div class="why-hex-grid">
+              {% for img in images %}
+                {% if img.image %}
+                  <div
+                    class="why-hex why-hex--pos-{{ loop.index }}"
+                    {% if animate %}style="animation-delay: {{ loop.index0 * 0.15 }}s"{% endif %}
+                  >
+                    <img
+                      src="{{ image_url(img.image, w=480, q=90, f='auto') }}"
+                      alt=""
+                      aria-hidden="true"
+                      class="why-hex__img"
+                      {% if is_lazy %}loading="lazy"{% endif %}
+                      decoding="async"
+                    />
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  /* ===========================================================
+     SECTION CONTAINER
+     ----------------------------------------------------------
+     Selector note: the section element is BOTH `[section-id]`
+     AND `.section-why` — they live on the same element. So we
+     use `[section-id="..."]` (already unique per instance) as
+     the selector for section-level rules. The previous form
+     `[section-id="..."] .section-why` (with a space) is a
+     descendant combinator and matches NOTHING because the
+     section isn't a descendant of itself — it WAS the section.
+     This was a quiet bug before; all section-level styling
+     (padding, margin, background, borders) was silently dead.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] {
+    padding-block: var(--why-padding-y, 50px);
+    margin-block: var(--why-margin-y, 30px);
+    overflow: hidden;
+  }
+
+  /* Background tokens. `warm` is the default cream `#FFFDF8`
+     suited to honey / natural-product brands (the original visual
+     this section was built for). The other tokens map to the
+     theme's palette so the section blends with stores that use a
+     different aesthetic. */
+  [section-id="{{ sectionId }}"][data-bg="warm"]        { background: #FFFDF8; }
+  [section-id="{{ sectionId }}"][data-bg="background"]  { background: var(--background); }
+  [section-id="{{ sectionId }}"][data-bg="secondary"]   { background: var(--secondary); }
+  [section-id="{{ sectionId }}"][data-bg="transparent"] { background: transparent; }
+
+  [section-id="{{ sectionId }}"][data-border-top="true"] {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] {
+    border-block-end: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  }
+
+  /* Heading is rendered by the shared `components/products/
+     section-heading.jinja` partial — its own styles (font size,
+     alignment, eyebrow/subtitle color, icon) are owned by that
+     partial and respect the global "Section Headings" settings
+     under Layout Settings → Section Headings (including the new
+     theme-wide eyebrow_color / subtitle_color overrides). We only
+     need to space the heading from the content below. */
+  [section-id="{{ sectionId }}"] .theme-container > :first-child {
+    margin-block-end: 40px;
+  }
+
+  /* ===========================================================
+     CONTENT WRAPPER — switches between mobile-stacked and
+     desktop-side-by-side at the 992px breakpoint. The original
+     used a hard breakpoint here; we preserve it because the
+     hex-grid pixel layout is tuned for two specific sizes
+     (mobile 360×238, desktop 500×480) and intermediate sizes
+     would look awkward.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .why-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+
+  /* ===========================================================
+     POINTS LIST — 2-column on mobile, single column on desktop.
+     Mobile: each point is a vertical icon-above-text card.
+     Desktop: each point is a horizontal icon-beside-text row.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .why-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  [section-id="{{ sectionId }}"] .why-point__icon-wrap {
+    flex-shrink: 0;
+  }
+  [section-id="{{ sectionId }}"] .why-point__icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  [section-id="{{ sectionId }}"] .why-point__text {
+    color: var(--foreground);
+    font-weight: 700;
+  }
+
+  /* ===========================================================
+     HEX GALLERY — 5 absolutely-positioned hexagons in a
+     honeycomb pattern. Sizes and positions are hardcoded for two
+     breakpoints because the hex constellation is a designed
+     composition, not a fluid grid. The merchant uploads hexagon-
+     shaped PNGs (transparent corners) and CSS `object-fit:
+     contain` keeps the artwork crisp at the rendered size.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .why-hex {
+    position: absolute;
+  }
+  [section-id="{{ sectionId }}"] .why-hex__img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.1));
+  }
+  /* Desktop hover lift on individual hexagons. */
+  @media (min-width: 992px) {
+    [section-id="{{ sectionId }}"] .why-hex {
+      transition: transform 300ms ease;
+    }
+    [section-id="{{ sectionId }}"] .why-hex:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  /* ── Mobile layout (<992px) ── */
+  @media (max-width: 991px) {
+    /* Gallery on top, points below. Source order has points first
+       (semantically primary content) so we use `order` to flip the
+       visual stack on mobile. */
+    [section-id="{{ sectionId }}"] .why-gallery-col { order: 1; margin-block-end: 20px; }
+    [section-id="{{ sectionId }}"] .why-points-col  { order: 2; }
+
+    [section-id="{{ sectionId }}"] .why-hex-grid {
+      position: relative;
+      width: 360px;
+      height: 238px;
+      margin-inline: auto;
+    }
+    [section-id="{{ sectionId }}"] .why-hex { width: 135px; }
+    /* Honeycomb pattern: top row of 3, bottom row of 2 staggered
+       between the top row's gaps. Coordinates tuned so the hexes
+       interlock without visible gaps when the artwork is properly
+       hexagon-shaped. */
+    [section-id="{{ sectionId }}"] .why-hex--pos-1 { top: 5px;   left: -17px; }
+    [section-id="{{ sectionId }}"] .why-hex--pos-2 { top: 1px;   left: 237px; }
+    [section-id="{{ sectionId }}"] .why-hex--pos-3 { top: 4px;   left: 110px; }
+    [section-id="{{ sectionId }}"] .why-hex--pos-4 { top: 113px; left: 48px;  }
+    [section-id="{{ sectionId }}"] .why-hex--pos-5 { top: 111px; left: 177px; }
+
+    /* 2-column flex grid for points. `width: 48%` + `gap: 10px`
+       gives a balanced layout without sub-pixel rounding issues. */
+    [section-id="{{ sectionId }}"] .why-points {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding-inline: 10px;
+      gap: 15px 10px;
+    }
+    [section-id="{{ sectionId }}"] .why-point {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 48%;
+      margin-block-end: 10px;
+    }
+    [section-id="{{ sectionId }}"] .why-point__icon-wrap {
+      width: 60px;
+      height: 60px;
+      margin-block-end: 10px;
+    }
+    [section-id="{{ sectionId }}"] .why-point__text {
+      font-size: 16px;
+      line-height: 1.5;
+      /* Tokenized — was hardcoded `#4A4A4A` carried from the
+         original. Color-mixed against foreground so the text
+         adapts to the theme palette (and matches the desktop
+         variant which already uses var(--foreground)). */
+      color: color-mix(in srgb, var(--foreground) 80%, transparent);
+      width: 100%;
+    }
+  }
+
+  /* ── Desktop layout (≥992px) ── */
+  @media (min-width: 992px) {
+    [section-id="{{ sectionId }}"] .why-content {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* Points: vertical list, 45% width capped at 500px. Each row
+       is icon-beside-text. Logical `padding-inline-start` on the
+       gap means the icon-text spacing flips correctly in RTL. */
+    [section-id="{{ sectionId }}"] .why-points-col {
+      flex: 0 0 45%;
+      max-width: 500px;
+    }
+    [section-id="{{ sectionId }}"] .why-point {
+      display: flex;
+      align-items: flex-start;
+      margin-block-end: 20px;
+      gap: 15px;
+      width: 100%;
+    }
+    [section-id="{{ sectionId }}"] .why-point__icon-wrap {
+      width: 50px;
+      height: 50px;
+    }
+    [section-id="{{ sectionId }}"] .why-point__text {
+      font-size: 16px;
+      line-height: 1.6;
+      padding-block-start: 3px;
+      /* `text-align: start` follows page direction — right-aligned
+         in RTL, left-aligned in LTR. Original used `text-align:
+         right` because the section forced `direction: rtl`; with
+         logical alignment we get correct behavior in both. */
+      text-align: start;
+    }
+
+    /* Gallery: 45% width, `margin-inline-end` so the gap between
+       points and gallery flips correctly in RTL. */
+    [section-id="{{ sectionId }}"] .why-gallery-col {
+      flex: 0 0 45%;
+      max-width: 500px;
+      display: flex;
+      justify-content: center;
+      margin-inline-end: 20px;
+    }
+    [section-id="{{ sectionId }}"] .why-hex-grid {
+      position: relative;
+      width: 500px;
+      height: 480px;
+      /* `margin-block-start: 100px` compensates for `top: -100px`
+         on `.why-hex--pos-1` so the first hex doesn't visually
+         stick out the top of the section (and get clipped by
+         `overflow: hidden` above). If the desktop hex offsets
+         change, this number needs to be updated in lockstep. */
+      margin-block-start: 100px;
+    }
+    [section-id="{{ sectionId }}"] .why-hex { width: 222px; }
+    /* Desktop honeycomb — wider stagger than mobile. Two rows of
+       2, with the center row of 1 between them. */
+    [section-id="{{ sectionId }}"] .why-hex--pos-1 { top: -100px; left: 41px;  }
+    [section-id="{{ sectionId }}"] .why-hex--pos-2 { top: -96px;  left: 251px; }
+    [section-id="{{ sectionId }}"] .why-hex--pos-3 { top: 81px;   left: 144px; }
+    [section-id="{{ sectionId }}"] .why-hex--pos-4 { top: 263px;  left: 41px;  }
+    [section-id="{{ sectionId }}"] .why-hex--pos-5 { top: 260px;  left: 249px; }
+  }
+
+  /* ===========================================================
+     ELASTIC POP-IN ANIMATION — items spring into view with a
+     gentle overshoot. Animation delay is set inline per element
+     based on loop index so they cascade in. The original used
+     `animation: ... forwards` so the final state sticks; we
+     preserve that. `prefers-reduced-motion` opt-out below.
+     =========================================================== */
+  /* Animation gate — `.section-why--animate` lives on the same
+     element as `[section-id]`, so the selectors here are
+     concatenated (no space between the two). Same bug class as
+     the section-level rules above. */
+  [section-id="{{ sectionId }}"].section-why--animate .why-point,
+  [section-id="{{ sectionId }}"].section-why--animate .why-hex {
+    opacity: 0;
+    animation: why-elastic-pop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes why-elastic-pop {
+    0%   { opacity: 0; transform: scale(0.5); }
+    60%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [section-id="{{ sectionId }}"].section-why--animate .why-point,
+    [section-id="{{ sectionId }}"].section-why--animate .why-hex {
+      opacity: 1;
+      animation: none;
+      transform: none;
+    }
+  }
+
+  /* ===========================================================
+     EMPTY STATE — placeholder when neither points nor gallery
+     images have been added yet. Keeps the section visible and
+     editable in the Vitrin editor.
+     =========================================================== */
+  [section-id="{{ sectionId }}"].section-why--empty .why-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 96px;
+    padding: 16px;
+    margin-inline: 16px;
+    border: 1px dashed
+      color-mix(in srgb, var(--foreground) 25%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  [section-id="{{ sectionId }}"].section-why--empty .why-empty-hint {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-align: center;
+    line-height: 1.3;
+  }
+</style>
+{% endif %}{# /country-visibility guard #}

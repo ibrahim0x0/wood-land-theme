@@ -1,0 +1,1028 @@
+{
+  "template": "sections/hero.jinja",
+  "name": {
+    "ar": "البانر الرئيسي",
+    "en": "Hero Banner"
+  },
+  "settings": [
+    {
+      "id": "is_primary_hero",
+      "type": "checkbox",
+      "label": {
+        "ar": "البانر الرئيسي (H1)",
+        "en": "Primary hero (renders as H1)"
+      },
+      "info": {
+        "ar": "يُعرض العنوان كـ H1. استخدم فقط على أول بانر في الصفحة لأغراض السيو.",
+        "en": "Renders the heading as H1. Use ONLY on the first hero of the page for correct SEO."
+      },
+      "default": true
+    },
+    {
+      "id": "background_image",
+      "type": "image",
+      "label": {
+        "ar": "صورة الخلفية — سطح المكتب",
+        "en": "Background image — Desktop"
+      },
+      "info": {
+        "ar": "مقاس مقترح: 1920×1080. يُنصح بشدة بإضافتها حتى عند استخدام فيديو خلفية — تظهر فورًا كصورة معاينة (poster) للفيديو، وهي أساسية لسرعة التحميل (LCP).",
+        "en": "Recommended: 1920×1080. Strongly recommended even when using a background video — it paints instantly as the video's poster and is critical for load speed (LCP)."
+      }
+    },
+    {
+      "id": "background_image_mobile",
+      "type": "image",
+      "label": {
+        "ar": "صورة الخلفية — موبايل",
+        "en": "Background image — Mobile"
+      },
+      "info": {
+        "ar": "مقاس مقترح: 828×1200 (طولي).",
+        "en": "Recommended: 828×1200 (portrait)."
+      }
+    },
+    {
+      "id": "background_video",
+      "type": "video",
+      "label": {
+        "ar": "فيديو الخلفية — سطح المكتب (اختياري)",
+        "en": "Background video — Desktop (optional)"
+      },
+      "info": {
+        "ar": "MP4 فقط — الحد الأقصى 10MB. يُعرض مكتومًا بتكرار فوق الصورة.",
+        "en": "MP4 only — 10MB max. Plays muted on loop over the background image."
+      }
+    },
+    {
+      "id": "background_video_mobile",
+      "type": "video",
+      "label": {
+        "ar": "فيديو الخلفية — موبايل (اختياري)",
+        "en": "Background video — Mobile (optional)"
+      },
+      "info": {
+        "ar": "MP4 فقط — الحد الأقصى 10MB. إن تُرك فارغًا، يُستخدم فيديو سطح المكتب.",
+        "en": "MP4 only — 10MB max. If empty, the desktop video is used on mobile too."
+      }
+    },
+    {
+      "id": "video_play_on_mobile",
+      "type": "checkbox",
+      "label": {
+        "ar": "تشغيل الفيديو على الموبايل",
+        "en": "Play video on mobile"
+      },
+      "info": {
+        "ar": "بشكل افتراضي، يرى مستخدمو الموبايل الصورة فقط لتوفير البيانات.",
+        "en": "Off by default — mobile visitors see the image only, saving data."
+      },
+      "default": false
+    },
+    {
+      "id": "video_respect_motion",
+      "type": "checkbox",
+      "label": {
+        "ar": "احترام تقليل الحركة (إمكانية الوصول)",
+        "en": "Respect reduced motion (accessibility)"
+      },
+      "default": true
+    },
+    {
+      "id": "background_position",
+      "type": "select",
+      "label": {
+        "ar": "موضع الصورة",
+        "en": "Image position"
+      },
+      "options": [
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Center"
+          }
+        },
+        {
+          "value": "top",
+          "label": {
+            "ar": "أعلى",
+            "en": "Top"
+          }
+        },
+        {
+          "value": "bottom",
+          "label": {
+            "ar": "أسفل",
+            "en": "Bottom"
+          }
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "id": "overlay_color",
+      "type": "select",
+      "label": {
+        "ar": "لون الطبقة العلوية",
+        "en": "Overlay color"
+      },
+      "info": {
+        "ar": "أسود = أفضل لجعل النص الفاتح مقروءًا. تدرُّج = يتلاشى من شفاف أعلى إلى داكن أسفل. العلامة = لون الزر فوق الصورة. بدون = بدون طبقة.",
+        "en": "Dark (black) best for legibility. Gradient fades transparent top → dark bottom. Brand = primary color tint. None = no overlay."
+      },
+      "options": [
+        {
+          "value": "dark",
+          "label": {
+            "ar": "أسود",
+            "en": "Dark"
+          }
+        },
+        {
+          "value": "gradient",
+          "label": {
+            "ar": "تدرُّج من الأسفل",
+            "en": "Gradient (bottom fade)"
+          }
+        },
+        {
+          "value": "primary",
+          "label": {
+            "ar": "لون العلامة التجارية",
+            "en": "Brand"
+          }
+        },
+        {
+          "value": "none",
+          "label": {
+            "ar": "بدون",
+            "en": "None"
+          }
+        }
+      ],
+      "default": "dark"
+    },
+    {
+      "id": "overlay_opacity",
+      "type": "range",
+      "label": {
+        "ar": "شفافية الطبقة (إذا كانت ≠ بدون)",
+        "en": "Overlay opacity (when overlay ≠ none)"
+      },
+      "info": {
+        "ar": "يطبَّق فقط عند اختيار طبقة (داكنة/أساسية/تدرج). يُتجاهل عند اختيار \"بدون\".",
+        "en": "Applies only when overlay color is dark / primary / gradient. Ignored when set to \"None\"."
+      },
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 35
+    },
+    {
+      "id": "logo_image",
+      "type": "image",
+      "label": {
+        "ar": "شعار أو صورة صغيرة فوق الشارة (اختياري)",
+        "en": "Logo / small image above badge (optional)"
+      }
+    },
+    {
+      "id": "logo_size",
+      "type": "range",
+      "label": {
+        "ar": "حجم الشعار — سطح المكتب",
+        "en": "Logo size — Desktop"
+      },
+      "min": 20,
+      "max": 96,
+      "step": 2,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "id": "logo_size_mobile",
+      "type": "range",
+      "label": {
+        "ar": "حجم الشعار — موبايل",
+        "en": "Logo size — Mobile"
+      },
+      "min": 16,
+      "max": 72,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "id": "badge_text",
+      "type": "text",
+      "label": {
+        "ar": "نص الشارة (اختياري)",
+        "en": "Badge text (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "heading",
+      "type": "textarea",
+      "label": {
+        "ar": "العنوان الرئيسي (يدعم أسطر متعددة)",
+        "en": "Heading (supports multiple lines)"
+      },
+      "info": {
+        "ar": "اضغط Enter لتقسيم العنوان إلى أكثر من سطر. مثال:\nتشكيلة الخريف\nوصلت حديثًا\n\nسيظهر العنوان على سطرين.",
+        "en": "Press Enter to split the heading onto multiple lines. Example:\nAutumn Collection\nJust arrived\n\nwill render as two lines."
+      },
+      "default": ""
+    },
+    {
+      "id": "description",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (يدعم أسطر متعددة)",
+        "en": "Description (supports multiple lines)"
+      },
+      "info": {
+        "ar": "اضغط Enter لإدراج سطر جديد — كل ضغطة تبدأ سطرًا منفصلًا في الوصف المعروض.",
+        "en": "Press Enter to insert a line break — each press starts a new line in the rendered description."
+      },
+      "default": ""
+    },
+    {
+      "id": "content_alignment",
+      "type": "select",
+      "label": {
+        "ar": "محاذاة المحتوى",
+        "en": "Content alignment"
+      },
+      "options": [
+        {
+          "value": "start",
+          "label": {
+            "ar": "البداية",
+            "en": "Start"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Center"
+          }
+        },
+        {
+          "value": "end",
+          "label": {
+            "ar": "النهاية",
+            "en": "End"
+          }
+        }
+      ],
+      "default": "start"
+    },
+    {
+      "id": "content_position",
+      "type": "select",
+      "label": {
+        "ar": "الموضع العمودي للمحتوى — سطح المكتب",
+        "en": "Content vertical position — Desktop"
+      },
+      "info": {
+        "ar": "موضع النصوص والأزرار عموديًا داخل البانر: أعلى، وسط، أو أسفل.",
+        "en": "Where the text and buttons sit vertically inside the banner: top, middle, or bottom."
+      },
+      "options": [
+        {
+          "value": "top",
+          "label": {
+            "ar": "أعلى",
+            "en": "Top"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Middle"
+          }
+        },
+        {
+          "value": "bottom",
+          "label": {
+            "ar": "أسفل",
+            "en": "Bottom"
+          }
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "id": "content_position_mobile",
+      "type": "select",
+      "label": {
+        "ar": "الموضع العمودي للمحتوى — موبايل",
+        "en": "Content vertical position — Mobile"
+      },
+      "options": [
+        {
+          "value": "top",
+          "label": {
+            "ar": "أعلى",
+            "en": "Top"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Middle"
+          }
+        },
+        {
+          "value": "bottom",
+          "label": {
+            "ar": "أسفل",
+            "en": "Bottom"
+          }
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "id": "text_color",
+      "type": "select",
+      "label": {
+        "ar": "لون النص (أساسي)",
+        "en": "Text color (base)"
+      },
+      "info": {
+        "ar": "اللون الأساسي لجميع نصوص البانر. يمكن تجاوزه بألوان مخصصة أدناه.",
+        "en": "Base color for all banner text. Override per element below."
+      },
+      "options": [
+        {
+          "value": "auto",
+          "label": {
+            "ar": "تلقائي",
+            "en": "Auto"
+          }
+        },
+        {
+          "value": "light",
+          "label": {
+            "ar": "فاتح (أبيض)",
+            "en": "Light (white)"
+          }
+        },
+        {
+          "value": "dark",
+          "label": {
+            "ar": "داكن (افتراضي)",
+            "en": "Dark (foreground)"
+          }
+        }
+      ],
+      "default": "auto"
+    },
+    {
+      "id": "heading_color",
+      "type": "color",
+      "label": {
+        "ar": "لون العنوان (اختياري)",
+        "en": "Heading color (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "description_color",
+      "type": "color",
+      "label": {
+        "ar": "لون الوصف (اختياري)",
+        "en": "Description color (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "badge_color",
+      "type": "color",
+      "label": {
+        "ar": "لون الشارة (اختياري)",
+        "en": "Badge color (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "heading_size",
+      "type": "range",
+      "label": {
+        "ar": "حجم العنوان — سطح المكتب",
+        "en": "Heading size — Desktop"
+      },
+      "min": 16,
+      "max": 96,
+      "step": 2,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "id": "heading_size_mobile",
+      "type": "range",
+      "label": {
+        "ar": "حجم العنوان — موبايل",
+        "en": "Heading size — Mobile"
+      },
+      "min": 14,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "id": "description_size",
+      "type": "range",
+      "label": {
+        "ar": "حجم الوصف — سطح المكتب",
+        "en": "Description size — Desktop"
+      },
+      "min": 12,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "id": "description_size_mobile",
+      "type": "range",
+      "label": {
+        "ar": "حجم الوصف — موبايل",
+        "en": "Description size — Mobile"
+      },
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "id": "badge_size",
+      "type": "range",
+      "label": {
+        "ar": "حجم الشارة — سطح المكتب",
+        "en": "Badge size — Desktop"
+      },
+      "min": 10,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "id": "badge_size_mobile",
+      "type": "range",
+      "label": {
+        "ar": "حجم الشارة — موبايل",
+        "en": "Badge size — Mobile"
+      },
+      "min": 10,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "default": 11
+    },
+    {
+      "id": "button_text",
+      "type": "text",
+      "label": {
+        "ar": "نص الزر الرئيسي",
+        "en": "Primary button text"
+      },
+      "default": ""
+    },
+    {
+      "id": "button_shortcut",
+      "type": "select",
+      "label": {
+        "ar": "وجهة الزر الرئيسي (اختصار سريع)",
+        "en": "Primary button destination (quick shortcut)"
+      },
+      "info": {
+        "ar": "اختصار لوجهات شائعة. يتجاوز القائمة الذكية والرابط المخصص أدناه.",
+        "en": "Shortcut for common destinations. Overrides the smart picker and custom URL below."
+      },
+      "options": [
+        {
+          "value": "none",
+          "label": {
+            "ar": "— لا شيء —",
+            "en": "— None —"
+          }
+        },
+        {
+          "value": "recent",
+          "label": {
+            "ar": "الأحدث",
+            "en": "Recent products"
+          }
+        },
+        {
+          "value": "bestseller",
+          "label": {
+            "ar": "الأكثر شيوعًا",
+            "en": "Bestsellers / Most sales"
+          }
+        },
+        {
+          "value": "on_sale",
+          "label": {
+            "ar": "العروض",
+            "en": "On sale"
+          }
+        },
+        {
+          "value": "all",
+          "label": {
+            "ar": "كل المنتجات",
+            "en": "All products"
+          }
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "id": "button_products",
+      "type": "products",
+      "label": {
+        "ar": "أو قائمة ذكية (منتجات/فئة)",
+        "en": "Or smart picker (products / category)"
+      }
+    },
+    {
+      "id": "button_url",
+      "type": "url",
+      "label": {
+        "ar": "أو رابط مخصص",
+        "en": "Or custom URL"
+      },
+      "default": ""
+    },
+    {
+      "id": "button_variant",
+      "type": "select",
+      "label": {
+        "ar": "نمط الزر الرئيسي",
+        "en": "Primary button style"
+      },
+      "options": [
+        {
+          "value": "filled",
+          "label": {
+            "ar": "مملوء",
+            "en": "Filled"
+          }
+        },
+        {
+          "value": "outlined",
+          "label": {
+            "ar": "مُؤطَّر",
+            "en": "Outlined"
+          }
+        },
+        {
+          "value": "ghost",
+          "label": {
+            "ar": "شفاف",
+            "en": "Ghost"
+          }
+        }
+      ],
+      "default": "filled"
+    },
+    {
+      "id": "button_size",
+      "type": "select",
+      "label": {
+        "ar": "حجم الأزرار — سطح المكتب",
+        "en": "Button size — Desktop"
+      },
+      "info": {
+        "ar": "يُطبَّق على الزر الرئيسي والثانوي معًا.",
+        "en": "Applies to both primary and secondary buttons."
+      },
+      "options": [
+        {
+          "value": "sm",
+          "label": {
+            "ar": "صغير",
+            "en": "Small"
+          }
+        },
+        {
+          "value": "md",
+          "label": {
+            "ar": "متوسط",
+            "en": "Medium"
+          }
+        },
+        {
+          "value": "lg",
+          "label": {
+            "ar": "كبير",
+            "en": "Large"
+          }
+        }
+      ],
+      "default": "lg"
+    },
+    {
+      "id": "button_size_mobile",
+      "type": "select",
+      "label": {
+        "ar": "حجم الأزرار — موبايل",
+        "en": "Button size — Mobile"
+      },
+      "options": [
+        {
+          "value": "sm",
+          "label": {
+            "ar": "صغير",
+            "en": "Small"
+          }
+        },
+        {
+          "value": "md",
+          "label": {
+            "ar": "متوسط",
+            "en": "Medium"
+          }
+        },
+        {
+          "value": "lg",
+          "label": {
+            "ar": "كبير",
+            "en": "Large"
+          }
+        }
+      ],
+      "default": "sm"
+    },
+    {
+      "id": "secondary_button_text",
+      "type": "text",
+      "label": {
+        "ar": "نص الزر الثانوي (اختياري)",
+        "en": "Secondary button text (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "secondary_button_shortcut",
+      "type": "select",
+      "label": {
+        "ar": "وجهة الزر الثانوي (اختصار سريع)",
+        "en": "Secondary button destination (quick shortcut)"
+      },
+      "info": {
+        "ar": "أسرع طريقة للربط بصفحة منتجات. عند اختياره يتم تجاوز \"القائمة الذكية\" و\"الرابط المخصص\" أدناه.",
+        "en": "Fastest way to link to a products page. When set, overrides the smart picker and custom URL fields below."
+      },
+      "options": [
+        {
+          "value": "none",
+          "label": {
+            "ar": "— لا شيء —",
+            "en": "— None —"
+          }
+        },
+        {
+          "value": "recent",
+          "label": {
+            "ar": "الأحدث",
+            "en": "Recent products"
+          }
+        },
+        {
+          "value": "bestseller",
+          "label": {
+            "ar": "الأكثر شيوعًا",
+            "en": "Bestsellers / Most sales"
+          }
+        },
+        {
+          "value": "on_sale",
+          "label": {
+            "ar": "العروض",
+            "en": "On sale"
+          }
+        },
+        {
+          "value": "all",
+          "label": {
+            "ar": "كل المنتجات",
+            "en": "All products"
+          }
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "id": "secondary_button_products",
+      "type": "products",
+      "label": {
+        "ar": "أو قائمة ذكية (منتجات/فئة)",
+        "en": "Or smart picker (products / category)"
+      }
+    },
+    {
+      "id": "secondary_button_url",
+      "type": "url",
+      "label": {
+        "ar": "أو رابط مخصص",
+        "en": "Or custom URL"
+      },
+      "default": ""
+    },
+    {
+      "id": "banner_link_shortcut",
+      "type": "select",
+      "label": {
+        "ar": "وجهة البانر (اختصار سريع)",
+        "en": "Banner destination (quick shortcut)"
+      },
+      "info": {
+        "ar": "يجعل البانر بأكمله قابلًا للنقر. عند اختيار اختصار هنا يتم تجاوز \"القائمة الذكية\" و\"الرابط المخصص\" أدناه.",
+        "en": "Makes the entire banner clickable. When a shortcut is selected here, it overrides the smart picker and custom URL fields below."
+      },
+      "options": [
+        {
+          "value": "none",
+          "label": {
+            "ar": "— لا شيء —",
+            "en": "— None —"
+          }
+        },
+        {
+          "value": "recent",
+          "label": {
+            "ar": "الأحدث",
+            "en": "Recent products"
+          }
+        },
+        {
+          "value": "bestseller",
+          "label": {
+            "ar": "الأكثر شيوعًا",
+            "en": "Bestsellers / Most sales"
+          }
+        },
+        {
+          "value": "on_sale",
+          "label": {
+            "ar": "العروض",
+            "en": "On sale"
+          }
+        },
+        {
+          "value": "all",
+          "label": {
+            "ar": "كل المنتجات",
+            "en": "All products"
+          }
+        },
+        {
+          "value": "home",
+          "label": {
+            "ar": "الصفحة الرئيسية",
+            "en": "Homepage"
+          }
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "id": "banner_link_products",
+      "type": "products",
+      "label": {
+        "ar": "أو قائمة ذكية (منتجات/فئة)",
+        "en": "Or smart picker (products / category)"
+      }
+    },
+    {
+      "id": "banner_link_url",
+      "type": "url",
+      "label": {
+        "ar": "أو رابط مخصص",
+        "en": "Or custom URL"
+      },
+      "default": ""
+    },
+    {
+      "id": "dynamic_height",
+      "type": "checkbox",
+      "label": {
+        "ar": "ارتفاع ديناميكي (يتبع نسبة الصورة)",
+        "en": "Dynamic height (follows image aspect)"
+      },
+      "info": {
+        "ar": "ON: البانر يتبع نسبة الصورة كاملة دون قص. OFF: ارتفاع ثابت بالأبعاد أدناه.",
+        "en": "ON: follows image's natural aspect. OFF: fixed height from min-height below."
+      },
+      "default": true
+    },
+    {
+      "id": "min_height_mobile",
+      "type": "range",
+      "label": {
+        "ar": "الحد الأدنى للارتفاع — موبايل",
+        "en": "Minimum height — Mobile"
+      },
+      "info": {
+        "ar": "في الوضع التلقائي (الصورة تحدد الارتفاع): هذا حد أدنى — البانر يتبع الصورة لكن لا ينقص عن القيمة. 0 = بدون حد. في الوضع الثابت (بدون صورة، أو فيديو فقط): هذه هي الارتفاع الفعلي. 0 = الافتراضي 520 بكسل.",
+        "en": "In dynamic mode (image drives height): this is a floor — banner follows the image but never shrinks below this value. 0 = no floor. In fixed mode (no image, or video-only): this is the ACTUAL height. 0 = falls back to 520 px default."
+      },
+      "min": 0,
+      "max": 900,
+      "step": 25,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "min_height_desktop",
+      "type": "range",
+      "label": {
+        "ar": "الحد الأدنى للارتفاع — سطح المكتب",
+        "en": "Minimum height — Desktop"
+      },
+      "info": {
+        "ar": "في الوضع التلقائي: حد أدنى. في الوضع الثابت: الارتفاع الفعلي (0 = الافتراضي 700 بكسل).",
+        "en": "In dynamic mode: a floor. In fixed mode: the actual height (0 = falls back to 700 px default)."
+      },
+      "min": 0,
+      "max": 900,
+      "step": 25,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "banner_width",
+      "type": "select",
+      "label": {
+        "ar": "عرض البانر",
+        "en": "Banner width"
+      },
+      "options": [
+        {
+          "value": "full",
+          "label": {
+            "ar": "كامل العرض",
+            "en": "Full width"
+          }
+        },
+        {
+          "value": "contained",
+          "label": {
+            "ar": "محدود",
+            "en": "Contained"
+          }
+        }
+      ],
+      "default": "full"
+    },
+    {
+      "id": "border_radius",
+      "type": "range",
+      "label": {
+        "ar": "تقوّس الزوايا — سطح المكتب",
+        "en": "Corner radius — Desktop"
+      },
+      "info": {
+        "ar": "يعمل فقط مع \"محدود\".",
+        "en": "Only with Contained width."
+      },
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "visible_if": { "banner_width": "contained" }
+    },
+    {
+      "id": "border_radius_mobile",
+      "type": "range",
+      "label": {
+        "ar": "تقوّس الزوايا — موبايل",
+        "en": "Corner radius — Mobile"
+      },
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "visible_if": { "banner_width": "contained" }
+    },
+    {
+      "id": "section_margin",
+      "type": "range",
+      "label": {
+        "ar": "الهوامش — سطح المكتب",
+        "en": "Margin around banner — Desktop"
+      },
+      "info": {
+        "ar": "يعمل فقط مع \"محدود\".",
+        "en": "Only with Contained width."
+      },
+      "min": 0,
+      "max": 64,
+      "step": 4,
+      "unit": "px",
+      "default": 0,
+      "visible_if": { "banner_width": "contained" }
+    },
+    {
+      "id": "section_margin_mobile",
+      "type": "range",
+      "label": {
+        "ar": "الهوامش — موبايل",
+        "en": "Margin around banner — Mobile"
+      },
+      "min": 0,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "default": 0,
+      "visible_if": { "banner_width": "contained" }
+    },
+    {
+      "id": "top_space",
+      "type": "range",
+      "label": {
+        "ar": "مسافة علوية فوق البانر — سطح المكتب",
+        "en": "Space above banner — Desktop"
+      },
+      "info": {
+        "ar": "مسافة بيضاء (بالبكسل) تُضاف أعلى البانر — مفيدة لفصل البانر عن الهيدر أو القسم السابق.",
+        "en": "White space (in px) added above the banner — useful to separate it from the header or the section above."
+      },
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "top_space_mobile",
+      "type": "range",
+      "label": {
+        "ar": "مسافة علوية فوق البانر — موبايل",
+        "en": "Space above banner — Mobile"
+      },
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

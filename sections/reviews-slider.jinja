@@ -1,0 +1,756 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{% from 'components/_macros.jinja' import resolve_link %}
+{# ───────────────────────────────────────────────────────────────────
+   Customer Reviews Gallery — horizontal carousel of review screenshots
+   with click-to-zoom lightbox and an optional CTA button below.
+
+   Originally a hand-rolled JS-injected section that pulled in Swiper.js
+   + a custom lightbox from a CDN at runtime. Converted to use the
+   theme's existing infrastructure:
+     • Embla Carousel (already wired via main.js + carousel.js) instead
+       of Swiper. Same `data-carousel*` attribute API as Marquee /
+       Logo Strip / Testimonials / Partners.
+     • PhotoSwipe (already a dependency, loaded the same way as the
+       product gallery) instead of the custom lightbox.
+     • Shared section-heading partial for the title (respects the
+       global Section Headings settings).
+     • `resolve_link` macro for the CTA — same 3-tier picker pattern
+       as the hero banner (shortcut → smart picker → custom URL).
+
+   No external CDN loads, no Swiper.js bundle, no hand-rolled lightbox
+   markup. Everything reuses what the theme already ships.
+
+   `images` (not `items`) — `settings.items` collides with Jinja's
+   built-in `dict.items()` method on empty lists.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set images   = settings.images %}
+{% set count    = images | length if images else 0 %}
+{% set is_rtl   = session.locale.language.direction == 'rtl' %}
+
+{% set autoplay        = settings.autoplay | default(false) %}
+{% set autoplay_delay  = settings.autoplay_delay if settings.autoplay_delay is not none else 4000 %}
+{% set show_pagination = settings.show_pagination | default(true) %}
+{% set enable_lightbox = settings.enable_lightbox | default(true) %}
+{% set slide_radius    = settings.slide_radius if settings.slide_radius is not none else 12 %}
+
+{# Slide aspect ratio — maps the schema's underscore-separated
+   tokens (Vitrin select values can't contain forward slashes
+   reliably) to the actual CSS `aspect-ratio` syntax. Default is
+   `auto` — each image takes its natural aspect, no cropping. The
+   merchant can opt into a uniform aspect for visual consistency
+   when their screenshots are all the same shape. `slide_fit`
+   defaults to `contain` so even when a fixed ratio IS chosen,
+   mismatched images don't get destructively cropped — they
+   letterbox with whitespace instead. #}
+{% set _aspect_raw = settings.slide_aspect | default('auto', true) %}
+{% set _aspect_map = {
+  'auto':  'auto',
+  '9_16':  '9 / 16',
+  '3_4':   '3 / 4',
+  '4_5':   '4 / 5',
+  '1_1':   '1 / 1',
+  '16_9':  '16 / 9'
+} %}
+{% set slide_aspect_css = _aspect_map[_aspect_raw] | default('auto') %}
+{% set slide_fit        = settings.slide_fit | default('contain', true) %}
+
+{% set cta_text         = (settings.cta_text | trim) if settings.cta_text else '' %}
+{% set cta_show_shine   = settings.cta_show_shine   | default(true) %}
+{% set cta_target_blank = settings.cta_target_blank | default(false) %}
+{% set cta_href         = resolve_link(
+                            settings.cta_shortcut,
+                            settings.cta_products,
+                            settings.cta_url
+                          ) | trim %}
+
+{% set bg         = settings.background    | default('warm', true) %}
+{% set padding_y  = settings.padding_y     if settings.padding_y is not none else 50 %}
+{% set margin_y   = settings.margin_y      if settings.margin_y  is not none else 0 %}
+{% set border_top = settings.border_top    | default(false) %}
+{% set border_bot = settings.border_bottom | default(false) %}
+{% set is_lazy    = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-reviews-slider{% if count == 0 %} section-reviews-slider--empty{% endif %} px-4 md:px-16"
+  data-bg="{{ bg }}"
+  data-border-top="{{ 'true' if border_top else 'false' }}"
+  data-border-bottom="{{ 'true' if border_bot else 'false' }}"
+  style="
+    --reviews-padding-y: {{ padding_y }}px;
+    --reviews-margin-y: {{ margin_y }}px;
+    --reviews-slide-radius: {{ slide_radius }}px;
+    --reviews-slide-aspect: {{ slide_aspect_css }};
+    --reviews-slide-fit: {{ slide_fit }};
+  "
+>
+  <div class="theme-container">
+    {% if (settings.title and settings.title | trim) or settings.subtitle or settings.eyebrow %}
+      {# Heading via the shared partial — eyebrow / subtitle colors
+         inherit from the theme-wide Section Headings settings, just
+         like every other section. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      {% with
+        eyebrow=settings.eyebrow,
+        title=settings.title,
+        subtitle=settings.subtitle,
+        heading_style=_hs,
+        heading_alignment=heading_alignment_default,
+        heading_icon=heading_icon_default
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    {% endif %}
+
+    {% if count == 0 %}
+      {# Empty-state placeholder — same pattern as marquee /
+         testimonials. Visible target for the Vitrin editor. #}
+      <div class="reviews-empty-state">
+        <span class="reviews-empty-hint">
+          {{ 'أضف لقطات من تعليقات العملاء من إعدادات القسم' if is_rtl else 'Add customer review screenshots from the section settings' }}
+        </span>
+      </div>
+    {% else %}
+      {# ── Embla carousel — same wiring as Marquee / Logo Strip /
+         Testimonials. `main.js` reads the data-carousel* attrs and
+         spawns an Embla instance via `createCarousel()`. The
+         `data-reviews-gallery` attribute scopes the PhotoSwipe init
+         (script at the bottom) to this section's slides only. #}
+      <div
+        class="reviews-slider embla"
+        data-carousel
+        data-carousel-loop="true"
+        data-carousel-align="center"
+        data-carousel-dragfree="true"
+        {% if autoplay %}data-carousel-autoplay="{{ autoplay_delay }}"{% endif %}
+        data-reviews-gallery
+        role="region"
+        aria-label="{{ 'معرض آراء العملاء' if is_rtl else 'Customer reviews gallery' }}"
+      >
+        <div class="embla__viewport" data-carousel-viewport>
+          <div class="embla__container">
+            {% for item in images %}
+              {% if item.image %}
+                {% set _alt = (item.alt | trim) if item.alt else '' %}
+                {# PhotoSwipe needs each slide to be an `<a>` linking
+                   to the full image, with `data-pswp-width` and
+                   `data-pswp-height` for its zoom math. We DON'T
+                   hardcode them here — the script at the bottom
+                   reads each thumbnail's natural aspect ratio at
+                   load time and writes the correct dimensions back
+                   onto the <a>. Hardcoded defaults caused a "zoom
+                   in on open" bug when the actual screenshot's
+                   aspect didn't match the declared 1080×2340. #}
+                <a
+                  class="embla__slide reviews-slide"
+                  href="{{ image_url(item.image, w=1600, q=95, f='auto') }}"
+                  data-lightbox-index="{{ loop.index0 }}"
+                  aria-label="{{ _alt if _alt else (('عرض صورة تقييم ' ~ loop.index) if is_rtl else ('View review image ' ~ loop.index)) }}"
+                  {% if not enable_lightbox %}aria-disabled="true"{% endif %}
+                >
+                  {# `__card` wrapper holds the visual chrome (white
+                     background + shadow + rounded corners). The `<a>`
+                     is the flex item with padding-inline-start for
+                     the inter-slide gap; putting the chrome here
+                     instead would extend the white plate into the
+                     gap. The card fills its slide's height (`100%`),
+                     so when slides stretch to the tallest sibling
+                     (via `align-items: stretch`), shorter images
+                     get whitespace BELOW the photo within the card —
+                     an invisible padding that gives the row a
+                     uniform polaroid-like appearance. #}
+                  <div class="reviews-slide__card">
+                    <img
+                      src="{{ image_url(item.image, w=600, q=85, f='auto') }}"
+                      alt="{{ _alt }}"
+                      class="reviews-slide__img"
+                      {% if is_lazy %}loading="lazy"{% endif %}
+                      decoding="async"
+                    />
+                  </div>
+                </a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if show_pagination %}
+          {# Embla doesn't auto-render dots — `setupDots()` in
+             carousel.js handles this when a `[data-carousel-dots]`
+             container exists. We wrap dots in a centered row below
+             the strip. #}
+          <div class="reviews-pagination" data-carousel-dots role="tablist" aria-label="{{ 'نقاط التنقل' if is_rtl else 'Slide navigation' }}"></div>
+        {% endif %}
+      </div>
+
+      {% if cta_text and cta_href %}
+        {# CTA button — three-tier link picker via `resolve_link`,
+           same pattern the hero banner uses. The `--shine` modifier
+           drives the optional gradient sweep animation. The leading
+           SVG (shield with check) is the original section's
+           "trust" icon; we keep it because it pairs well with a
+           reviews context. #}
+        <div class="reviews-cta-row">
+          <a
+            class="reviews-cta-btn{% if cta_show_shine %} reviews-cta-btn--shine{% endif %}"
+            href="{{ cta_href }}"
+            {% if cta_target_blank %}target="_blank" rel="noopener"{% endif %}
+          >
+            <svg
+              class="reviews-cta-btn__icon"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+            </svg>
+            <span>{{ cta_text }}</span>
+          </a>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+{% if count > 0 and enable_lightbox %}
+  {# ── PhotoSwipe lightbox init ──
+     Scoped to `[data-reviews-gallery]` for THIS section so multiple
+     reviews-slider instances on a page don't collide. Loaded via
+     dynamic ES module import on first interaction so the ~30KB
+     PhotoSwipe bundle isn't blocking initial render — it streams
+     in only when the user actually clicks a screenshot.
+
+     The PhotoSwipe URLs match the version pinned in `lightbox.js`
+     for the product gallery, so the browser cache deduplicates the
+     module fetch across both sections. #}
+  <script type="module">
+    {
+      const gallery = document.querySelector('[section-id="{{ sectionId }}"] [data-reviews-gallery]');
+      if (gallery) {
+        let pswpLightbox = null;
+
+        // ── Compute PhotoSwipe dimensions from the thumbnail's
+        // natural aspect ratio.
+        // ----------------------------------------------------
+        // We don't know each merchant-uploaded image's full size
+        // ahead of time, but the thumbnail (already served by
+        // image_url(w=600)) has the same aspect ratio as the
+        // full-resolution version. We project that aspect onto
+        // a 1600px wide envelope (matching the image_url(w=1600)
+        // we use for the lightbox source) and write the result
+        // onto the <a>. PhotoSwipe then renders the image at its
+        // true aspect ratio — no stretch, no awkward zoom-in.
+        //
+        // If the thumbnail isn't loaded yet, we stamp default
+        // dimensions matching the most common case (portrait
+        // phone screenshot) and update once it loads. PhotoSwipe
+        // reads the data-* attrs on `loadAndOpen`, so as long as
+        // the values are set by click time we're good.
+        const stampDimensions = (link) => {
+          const img = link.querySelector("img");
+          if (!img) return;
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          if (w > 0 && h > 0) {
+            // Scale aspect ratio onto a 1600px-wide canvas,
+            // matching our lightbox source-image fetch width.
+            const targetW = 1600;
+            const targetH = Math.round(targetW * (h / w));
+            link.dataset.pswpWidth = targetW;
+            link.dataset.pswpHeight = targetH;
+          } else if (!link.dataset.pswpWidth) {
+            // Thumbnail still loading — set portrait-screenshot
+            // defaults so PhotoSwipe has SOMETHING to work with
+            // if the user clicks faster than the network. Will
+            // be overwritten by the load handler below.
+            link.dataset.pswpWidth = 1080;
+            link.dataset.pswpHeight = 2340;
+          }
+        };
+
+        // Stamp now (for already-loaded thumbnails) + on each
+        // future load event (for lazy-loaded ones).
+        gallery.querySelectorAll("a.reviews-slide").forEach((link) => {
+          const img = link.querySelector("img");
+          if (!img) return;
+          if (img.complete) {
+            stampDimensions(link);
+          } else {
+            img.addEventListener("load", () => stampDimensions(link), { once: true });
+            // Also stamp the defaults immediately so an early
+            // click doesn't blow up.
+            stampDimensions(link);
+          }
+        });
+
+        const ensureLightbox = async () => {
+          if (pswpLightbox) return pswpLightbox;
+          const { default: PhotoSwipeLightbox } = await import(
+            "https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js"
+          );
+          pswpLightbox = new PhotoSwipeLightbox({
+            // Bind to this section's gallery element + its <a> children.
+            gallery: gallery,
+            children: "a.reviews-slide",
+            pswpModule: () => import(
+              "https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js"
+            ),
+            bgOpacity: 1,
+            // `fade` instead of the default `zoom` open animation —
+            // no zoom-from-thumbnail effect, just a clean fade-in.
+            showHideAnimationType: "fade",
+            // `initialZoomLevel: 'fit'` is the default but explicit
+            // here for clarity: image opens fitted to viewport, not
+            // zoomed in. `secondaryZoomLevel: 'fill'` is what the
+            // optional zoom button toggles to. Click-on-image just
+            // closes the lightbox rather than zooming in (the icon
+            // button is the explicit zoom control if needed).
+            initialZoomLevel: "fit",
+            secondaryZoomLevel: "fill",
+            imageClickAction: "close",
+            tapAction: "close",
+            zoom: true,
+            close: true,
+            counter: true,
+            arrowPrev: true,
+            arrowNext: true,
+            paddingFn: () => ({ top: 60, bottom: 100, left: 16, right: 16 }),
+            arrowPrevSVG:
+              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            arrowNextSVG:
+              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            closeSVG:
+              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+          });
+          pswpLightbox.init();
+          return pswpLightbox;
+        };
+
+        // Intercept the click — re-stamp dimensions (in case the
+        // thumbnail finished loading after init), load PhotoSwipe
+        // lazily, then open at the clicked index. Subsequent clicks
+        // reuse the already-initialized instance.
+        gallery.addEventListener("click", async (e) => {
+          const link = e.target.closest("a.reviews-slide");
+          if (!link) return;
+          if (link.getAttribute("aria-disabled") === "true") return;
+
+          // Respect modifier-key clicks (ctrl/cmd-click → new tab,
+          // shift-click → new window). We early-return BEFORE the
+          // preventDefault below so the browser handles the click
+          // natively via the <a href>. Middle-click fires `auxclick`,
+          // which we don't intercept — already supported.
+          if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+
+          stampDimensions(link); // refresh in case thumb just finished loading
+
+          // If PhotoSwipe is already loaded, let its native handler
+          // take over (faster path — no `await` round-trip).
+          if (pswpLightbox) return;
+
+          e.preventDefault();
+          const idx = parseInt(link.dataset.lightboxIndex || "0", 10);
+
+          // Try to load + open the lightbox. If the dynamic import
+          // fails (CDN down, region-blocked, offline), navigate to
+          // the link's href as a graceful fallback — the merchant's
+          // image still opens, just in the same tab without the
+          // gallery UI. Better than a click that silently does
+          // nothing.
+          try {
+            await ensureLightbox();
+            pswpLightbox.loadAndOpen(idx);
+          } catch (err) {
+            console.warn(
+              "[reviews-slider] PhotoSwipe failed to load; falling back to direct image link.",
+              err
+            );
+            window.location.href = link.href;
+          }
+        });
+      }
+    }
+  </script>
+{% endif %}
+
+<style>
+  /* ===========================================================
+     SECTION CONTAINER
+     ----------------------------------------------------------
+     Same selector convention as marquee / logo-strip:
+     `[section-id]` is unique per instance so we use it directly
+     for section-level rules — no descendant combinator (which
+     would be a bug since both would target the same element).
+     =========================================================== */
+  [section-id="{{ sectionId }}"] {
+    padding-block: var(--reviews-padding-y, 50px);
+    margin-block: var(--reviews-margin-y, 0);
+    overflow: hidden;
+  }
+
+  [section-id="{{ sectionId }}"][data-bg="background"]  { background: var(--background); }
+  [section-id="{{ sectionId }}"][data-bg="secondary"]   { background: var(--secondary); }
+  [section-id="{{ sectionId }}"][data-bg="warm"]        { background: #FFFDF8; }
+  [section-id="{{ sectionId }}"][data-bg="transparent"] { background: transparent; }
+
+  /* Borders attached to .theme-container so they hug the contained
+     1440px width instead of bleeding to viewport edges. Same
+     containered-border pattern as marquee + logo-strip. */
+  [section-id="{{ sectionId }}"][data-border-top="true"] > .theme-container {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-start: var(--reviews-padding-y, 50px);
+  }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] > .theme-container {
+    border-block-end: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-end: var(--reviews-padding-y, 50px);
+  }
+  [section-id="{{ sectionId }}"][data-border-top="true"]    { padding-block-start: 0; }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] { padding-block-end: 0; }
+
+  /* Heading spacing — partial owns its own typography. */
+  [section-id="{{ sectionId }}"] .theme-container > :first-child {
+    margin-block-end: 30px;
+  }
+
+  /* ===========================================================
+     EMBLA WIRING — same standard pattern as marquee / logo-strip.
+     The container is a flex row Embla translates via JS; slides
+     are content-sized.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .embla__viewport {
+    /* `overflow: hidden` keeps adjacent slides from peeking into
+       the section's side padding. The slight clip on horizontal
+       drop-shadow extents at the leading/trailing edges is the
+       trade-off — minor and only visible on the slides closest to
+       viewport edges. Worth it for a clean carousel boundary. */
+    overflow: hidden;
+  }
+  [section-id="{{ sectionId }}"] .embla__container {
+    display: flex;
+    /* `stretch` matches the original Woodland Swiper behavior (also
+       Swiper's default). Every slide stretches to the tallest
+       sibling's height — for same-aspect images this means uniform
+       heights with zero whitespace, EXACTLY what the original
+       carousel produced. For mixed-aspect images, shorter ones get
+       whitespace below the photo within their card; since the card
+       background is white that whitespace is invisible.
+       Previously this was `flex-start` which gave each slide its
+       natural height — but tiny subpixel differences from Vitrin's
+       image re-encoding made even uniform-source images render at
+       slightly different heights, breaking the clean row look. */
+    align-items: stretch;
+    margin-inline-start: -15px;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  /* ===========================================================
+     SLIDE — review screenshot card.
+     - 85% width on mobile (`centeredSlides` Embla effect via
+       `data-carousel-align="center"`)
+     - 30% width on desktop (3 visible at once)
+     - White card with soft shadow, rounded corners
+     - Hover lift to communicate clickability when lightbox enabled
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .reviews-slide {
+    flex: 0 0 85%;
+    min-width: 0;
+    padding-inline-start: 15px;
+    display: block;
+    cursor: pointer;
+    /* Reset link defaults — slide is a real <a> for PhotoSwipe but
+       we want it to LOOK like a card, not a link. */
+    text-decoration: none;
+    color: inherit;
+  }
+  @media (min-width: 768px) {
+    [section-id="{{ sectionId }}"] .reviews-slide {
+      flex: 0 0 32%;
+      padding-inline-start: 30px;
+    }
+    [section-id="{{ sectionId }}"] .embla__container {
+      margin-inline-start: -30px;
+    }
+  }
+
+  /* ── Card wrapper ──
+     Holds the visual chrome (white plate, shadow, rounded corners)
+     and stretches to match the slide's height. With Embla's
+     `align-items: stretch` on the container, every slide is the
+     same height as the tallest sibling — and the card fills it
+     via `height: 100%`. The image inside takes its natural aspect,
+     so shorter screenshots leave white space below; the white
+     card background fills that space invisibly, producing a clean
+     uniform-height row regardless of input variation. */
+  [section-id="{{ sectionId }}"] .reviews-slide__card {
+    display: block;
+    height: 100%;
+    background: #fff;
+    border-radius: var(--reviews-slide-radius, 12px);
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 6px 16px -8px rgba(0, 0, 0, 0.10);
+    transition:
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 240ms ease;
+    /* `will-change: transform` pre-promotes the card to its own
+       compositor layer. Without it, some browsers (notably Safari
+       and older Chromium) render the rounded corners briefly
+       jagged/squared during the hover translateY animation —
+       overflow:hidden + border-radius + transform is a known
+       triple where the clip mask gets recomputed mid-animation
+       and lags the transform by a frame. The hint stabilizes the
+       clip on its own layer so corners stay smooth throughout. */
+    will-change: transform;
+  }
+  [section-id="{{ sectionId }}"] .reviews-slide:hover .reviews-slide__card {
+    transform: translateY(-2px);
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.06),
+      0 14px 28px -10px rgba(0, 0, 0, 0.14);
+  }
+  /* Disabled lightbox — flatten and remove pointer affordance. */
+  [section-id="{{ sectionId }}"] .reviews-slide[aria-disabled="true"] {
+    cursor: default;
+  }
+  [section-id="{{ sectionId }}"] .reviews-slide[aria-disabled="true"]:hover .reviews-slide__card {
+    transform: none;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 6px 16px -8px rgba(0, 0, 0, 0.10);
+  }
+
+  /* ── Image inside the card ──
+     The image is now plain — no background, no shadow, no radius
+     (those moved to the card wrapper above). It just renders at
+     its natural aspect within the card, with the card's white
+     background filling any remaining space when the image is
+     shorter than the stretched card.
+
+     The optional `aspect-ratio` and `object-fit` settings still
+     work: when the merchant picks a fixed ratio, the image is
+     forced to that ratio inside the card. With `contain` fit, the
+     card might still show whitespace around a letterboxed image —
+     stacked behaviors compound for a clean appearance regardless
+     of merchant choice. */
+  [section-id="{{ sectionId }}"] .reviews-slide__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--reviews-slide-aspect, auto);
+    object-fit: var(--reviews-slide-fit, contain);
+    /* Match the card's radius on the image itself. The card's
+       `overflow: hidden` already clips at its rounded corners,
+       but during the hover transform some browsers briefly render
+       the clip with a one-frame lag — making the image's
+       hard-edged rectangular bounds peek past the rounded
+       corners momentarily. Giving the image its own matching
+       radius means even that one-frame lag still shows rounded
+       corners. `inherit` picks up the card's value automatically. */
+    border-radius: inherit;
+    pointer-events: none; /* let the parent <a> handle clicks cleanly */
+  }
+
+  /* ===========================================================
+     PAGINATION — dots row beneath the carousel. carousel.js
+     `setupDots()` populates `[data-carousel-dots]` with one
+     <button> per slide; we restyle them to a clean centered row.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .reviews-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-block-start: 28px;
+  }
+  [section-id="{{ sectionId }}"] .reviews-pagination button {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--foreground) 18%, transparent);
+    cursor: pointer;
+    transition:
+      width 250ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 200ms ease;
+  }
+  [section-id="{{ sectionId }}"] .reviews-pagination button[data-active="true"] {
+    width: 24px;
+    background: var(--accent, var(--primary));
+  }
+
+  /* ===========================================================
+     CTA BUTTON — gradient pill with optional shine sweep.
+     Three-tier link picker resolves the href via `resolve_link`
+     (same as hero banner CTAs). The shine animation is opt-in
+     via `cta_show_shine` and disabled under prefers-reduced-motion.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .reviews-cta-row {
+    display: flex;
+    justify-content: center;
+    margin-block-start: 28px;
+    padding-inline: 16px;
+  }
+  [section-id="{{ sectionId }}"] .reviews-cta-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 56px;
+    /* Solid primary background — matches the theme's primary button
+       (`.btn-filled` in components.css uses `bg-primary`). The
+       merchant configures this once at the theme level (Layout
+       Settings → Colors → Primary) and every primary CTA across
+       the site stays in sync, including this one. The shine sweep
+       below provides the visual interest that the previous gradient
+       offered, without coupling the CTA's color to `--accent`. */
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    font-weight: 700;
+    font-size: 18px;
+    text-decoration: none;
+    border-radius: var(--button-radius, 8px);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--primary) 30%, transparent);
+    transition:
+      background-color 200ms ease,
+      transform 200ms ease,
+      box-shadow 200ms ease;
+    /* `overflow: hidden` clips the shine pseudo to the rounded
+       button shape (so the streak doesn't slide off the corners).
+       `isolation: isolate` is what makes the shine layering work:
+       it creates a new stacking context on the button, so the
+       `z-index: -1` on the shine pseudo (below) places it BETWEEN
+       the button's background and its text/icon — visible on the
+       surface but never washing out the label. Without isolation,
+       `z-index: -1` would push the pseudo behind the page background
+       entirely (invisible). */
+    overflow: hidden;
+    isolation: isolate;
+  }
+  [section-id="{{ sectionId }}"] .reviews-cta-btn:hover {
+    /* Match `.btn-filled:hover` from the theme's button system —
+       0.9 opacity on the primary fill (close to 90% via overlay).
+       Combined with the lift, it reads as a tactile press cue. */
+    background: color-mix(in srgb, var(--primary) 92%, transparent);
+    transform: scale(1.04);
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+  [section-id="{{ sectionId }}"] .reviews-cta-btn:active {
+    transform: scale(0.98);
+  }
+  [section-id="{{ sectionId }}"] .reviews-cta-btn__icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Shine sweep — translucent diagonal gradient slides across the
+     button every 3 seconds. `skewX(-25deg)` gives the streak the
+     classic "polished metal" angle. */
+  [section-id="{{ sectionId }}"] .reviews-cta-btn--shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline-start: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    animation: reviews-shine 3s infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+  @keyframes reviews-shine {
+    0%   { inset-inline-start: -100%; }
+    20%  { inset-inline-start: 200%; }
+    100% { inset-inline-start: 200%; }
+  }
+
+  /* Mobile: compact-button treatment.
+     - Width auto (not the previous 90%-of-viewport block button) so
+       it sizes to content. The previous wide-mobile pattern made the
+       CTA dominate the screen below the carousel; on small screens
+       a content-sized button reads as a polished accent rather than
+       a banner.
+     - Font, padding, gap, and icon all scaled down proportionally
+       so the button looks balanced rather than just shrunk text in
+       a too-large frame. */
+  @media (max-width: 768px) {
+    [section-id="{{ sectionId }}"] .reviews-cta-btn {
+      width: auto;
+      max-width: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 22px;
+      gap: 8px;
+    }
+    [section-id="{{ sectionId }}"] .reviews-cta-btn__icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [section-id="{{ sectionId }}"] .reviews-cta-btn--shine::after {
+      animation: none;
+    }
+    [section-id="{{ sectionId }}"] .reviews-slide__img,
+    [section-id="{{ sectionId }}"] .reviews-cta-btn {
+      transition: none;
+    }
+    [section-id="{{ sectionId }}"] .reviews-slide:hover .reviews-slide__img,
+    [section-id="{{ sectionId }}"] .reviews-cta-btn:hover {
+      transform: none;
+    }
+  }
+
+  /* ===========================================================
+     EMPTY STATE — placeholder for the editor when no images yet.
+     =========================================================== */
+  [section-id="{{ sectionId }}"].section-reviews-slider--empty .reviews-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 96px;
+    padding: 16px;
+    margin-inline: 16px;
+    border: 1px dashed color-mix(in srgb, var(--foreground) 25%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  [section-id="{{ sectionId }}"].section-reviews-slider--empty .reviews-empty-hint {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-align: center;
+    line-height: 1.3;
+  }
+</style>
+{% endif %}{# /country-visibility guard #}

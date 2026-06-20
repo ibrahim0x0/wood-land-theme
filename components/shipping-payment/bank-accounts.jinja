@@ -1,0 +1,128 @@
+{% if banks %}
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+    {% for bank in banks %}
+      <div class="border-border-light flex flex-col gap-3 rounded border px-4 py-3">
+        <div class="border-border-light flex items-center gap-3 border-b pb-3">
+          {% if bank.bank.logo %}
+            <div
+              class="border-border-light flex size-[42px] shrink-0 items-center justify-center overflow-hidden rounded border"
+            >
+              <img
+                src="{{ image_url(bank.bank.logo, w=84, q=85, f='auto') }}"
+                alt="{{ bank.bank.name }}"
+                class="size-full object-contain"
+                loading="lazy"
+              />
+            </div>
+          {% else %}
+            <div class="border-border-light flex size-[42px] shrink-0 items-center justify-center rounded border">
+              <svg
+                class="text-muted size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+              </svg>
+            </div>
+          {% endif %}
+          <span class="text-foreground text-xs uppercase tracking-wide flex-1">{{ bank.bank.name }}</span>
+        </div>
+        <div class="flex flex-col gap-2">
+          {% if bank.beneficiary_name %}
+            <div class="flex items-start gap-4">
+              <span class="text-muted text-sm w-[78px] shrink-0">{{ _("Name") }}</span>
+              <span class="text-foreground text-sm flex-1 text-end">{{ bank.beneficiary_name }}</span>
+            </div>
+          {% endif %}
+          <div class="flex flex-col gap-1">
+            {% if bank.account_number %}
+              <div class="flex items-center gap-4">
+                <span class="text-muted text-sm w-[78px] shrink-0">{{ _("Account No.") }}</span>
+                <div class="flex flex-1 items-center justify-end gap-0.5">
+                  <span
+                    class="text-foreground text-sm"
+                    dir="ltr"
+                    >{{ bank.account_number }}</span
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-icon btn-icon-md bg-white/10 backdrop-blur-sm"
+                    data-copy-btn
+                    data-copy-value="{{ bank.account_number }}"
+                    aria-label="{{ _('Copy') }}"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="13"
+                        height="13"
+                        rx="2"
+                      />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            {% endif %}
+            {% if bank.iban %}
+              <div class="flex items-center gap-4">
+                <span class="text-muted text-sm w-[78px] shrink-0">{{ _("IBAN") }}</span>
+                <div class="flex flex-1 items-center justify-end gap-0.5">
+                  <span
+                    class="text-foreground text-sm"
+                    dir="ltr"
+                    >{{ bank.iban }}</span
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-icon btn-icon-md bg-white/10 backdrop-blur-sm"
+                    data-copy-btn
+                    data-copy-value="{{ bank.iban }}"
+                    aria-label="{{ _('Copy') }}"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="13"
+                        height="13"
+                        rx="2"
+                      />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="py-8 text-center">
+    <svg
+      class="text-muted mx-auto mb-4 size-12 md:size-16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+    </svg>
+    <p class="text-muted text-sm md:text-sm">{{ _("No bank accounts available") }}</p>
+  </div>
+{% endif %}

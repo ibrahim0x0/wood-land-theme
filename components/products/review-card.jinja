@@ -1,0 +1,120 @@
+{#
+  Review Card Component
+
+  Props:
+  - review: Review object with:
+    - customer.name: string
+    - created_at: date string
+    - rating: number (1-5)
+    - comment: string
+    - images: array of image objects with .path (optional)
+    - reply: store reply object (optional)
+      - reply.text: string
+      - reply.images: array
+      - reply.created_at: date string
+  - store: Store object (for reply avatar)
+#}
+
+<div class="flex w-full flex-col gap-1">
+  {# Header: Name + Rating + Date #}
+  <div class="flex flex-col gap-1">
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-foreground text-sm font-semibold">{{ review.customer.name or _("Anonymous") }}</p>
+      <span
+        class="text-muted text-sm shrink-0 whitespace-nowrap"
+        data-time-ago-date="{{ review.created_at }}"
+      >
+        {{ review.created_at }}
+      </span>
+    </div>
+
+    {# Star Rating #}
+    <div class="flex gap-0.5 overflow-clip">
+      {% set rating = review.rating %}
+      {% include 'components/rating-stars.jinja' %}
+    </div>
+  </div>
+
+  {# Review Comment #}
+  {% if review.comment %}
+    <p class="text-foreground text-sm">{{ review.comment|safe }}</p>
+  {% endif %}
+
+  {# Review Images #}
+  {% if review.images and review.images|length > 0 %}
+    <div
+      class="flex flex-wrap gap-2"
+      data-review-images
+    >
+      {% for image in review.images %}
+        <div
+          class="size-20 cursor-pointer overflow-hidden rounded"
+          data-image-index="{{ loop.index0 }}"
+        >
+          <img
+            src="{{ image_url(image.path or image.small or image.url or image, w=160, q=85, f='auto') }}"
+            alt="{{ _('Review image') }}"
+            class="size-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# Store Reply #}
+  {% if review.reply %}
+    <div class="border-foreground ms-6 mt-3 flex flex-col gap-3 border-s-2 ps-4">
+      {# Reply Header #}
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-center gap-3">
+          {% if store.logo %}
+            <img
+              src="{{ image_url(store.logo, w=160, q=90, f='auto') }}"
+              alt="{{ store.name }}"
+              width="80"
+              height="32"
+              class="h-8 w-auto shrink-0 object-contain"
+            />
+          {% endif %}
+          <p class="text-foreground text-sm font-semibold">{{ store.name }}</p>
+        </div>
+        {% if review.reply.created_at %}
+          <span
+            class="text-muted text-sm shrink-0 whitespace-nowrap"
+            data-time-ago-date="{{ review.reply.created_at }}"
+          >
+            {{ review.reply.created_at }}
+          </span>
+        {% endif %}
+      </div>
+
+      {# Reply Text #}
+      {% if review.reply.text %}
+        <p class="text-foreground text-sm">{{ review.reply.text|safe }}</p>
+      {% endif %}
+
+      {# Reply Images #}
+      {% if review.reply.images and review.reply.images|length > 0 %}
+        <div
+          class="flex flex-wrap gap-2"
+          data-reply-images
+        >
+          {% for image in review.reply.images %}
+            <div
+              class="size-20 cursor-pointer overflow-hidden rounded"
+              data-image-index="{{ loop.index0 }}"
+            >
+              <img
+                src="{{ image_url(image.path or image.small or image.url or image, w=160, q=85, f='auto') }}"
+                alt="{{ _('Reply image') }}"
+                class="size-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

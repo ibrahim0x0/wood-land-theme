@@ -1,0 +1,36 @@
+{% if payment_methods %}
+  <div>
+    <div class="flex flex-wrap items-start gap-4">
+      {% for method in payment_methods %}
+        {% if method.icons %}
+          {% for icon in method.icons %}
+            <div class="border-border-light flex items-center rounded border px-4 py-3">
+              <img
+                src="{{ image_url(icon, w=96, q=85, f='auto') }}"
+                alt="{{ method.name if method.name else _('Payment method') }}"
+                class="h-6 w-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% if store.settings.payment_description %}
+      <p class="text-muted text-sm mt-4">{{ store.settings.payment_description }}</p>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="py-8 text-center">
+    <svg
+      class="text-muted mx-auto mb-4 size-12 md:size-16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z" />
+    </svg>
+    <p class="text-muted text-sm md:text-sm">{{ _("No payment methods available") }}</p>
+  </div>
+{% endif %}

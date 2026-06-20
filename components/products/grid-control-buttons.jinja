@@ -1,0 +1,153 @@
+{# Grid control icons #}
+{% set icon_one_col %}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <path
+      d="M12 19V12V5M12 19V5V19Z"
+      fill="currentColor"
+    ></path>
+    <path
+      d="M12 19V5V12V19Z"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></path>
+  </svg>
+{% endset %}
+
+
+{% set icon_two_col %}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <path
+      d="M14.5 19V12V5M9.5 19V5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+  </svg>
+{% endset %}
+
+
+{% set icon_four_col %}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <path
+      d="M9.5 19V5M4.5 19V5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+    <path
+      d="M19.5 19V5M14.5 19V5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+  </svg>
+{% endset %}
+
+
+{% set icon_list %}
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M19 14.5H5H19ZM19 19.5H5H19Z"
+      fill="currentColor"
+    ></path>
+    <path
+      d="M19 14.5H5M19 19.5H5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+    <path
+      d="M19 4.5L5 4.5M19 9.5H5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+  </svg>
+{% endset %}
+
+{# Mobile view - single column only #}
+<div
+  class="btn-group btn-group-separated md:!hidden"
+  role="radiogroup"
+  aria-label="{{ _('Select grid layout') }}"
+>
+  <label class="btn-group-item btn-group-item-icon">
+    <input
+      type="radio"
+      name="grid_view_mobile"
+      value="one"
+      class="sr-only"
+      data-grid-btn="one"
+      aria-label="{{ _('1-column grid') }}"
+    />
+    {{ icon_one_col }}
+  </label>
+  <label class="btn-group-item btn-group-item-icon">
+    <input
+      type="radio"
+      name="grid_view_mobile"
+      value="list"
+      class="sr-only"
+      data-grid-btn="list"
+      aria-label="{{ _('List view') }}"
+    />
+    {{ icon_list }}
+  </label>
+</div>
+
+{# Desktop view - four columns and list #}
+<div
+  class="btn-group btn-group-separated !hidden md:!flex"
+  role="radiogroup"
+  aria-label="{{ _('Select grid layout') }}"
+>
+  <label class="btn-group-item btn-group-item-icon">
+    <input
+      type="radio"
+      name="grid_view_desktop"
+      value="four"
+      class="sr-only"
+      data-grid-btn="four"
+      aria-label="{{ _('4-column grid') }}"
+      checked
+    />
+    {{ icon_four_col }}
+  </label>
+  <label class="btn-group-item btn-group-item-icon">
+    <input
+      type="radio"
+      name="grid_view_desktop"
+      value="list"
+      class="sr-only"
+      data-grid-btn="list"
+      aria-label="{{ _('List view') }}"
+    />
+    {{ icon_list }}
+  </label>
+</div>

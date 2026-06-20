@@ -1,0 +1,50 @@
+{#
+  Category Hero Component
+
+  Displays a hero banner with background image, title, and optional description.
+  Used on both categories listing page and single category pages.
+
+  Variables:
+  - title: string (required) - Hero title
+  - description: string (optional) - Hero description
+  - image: string (optional) - Background image URL
+#}
+<section
+  class="{{ 'min-h-[300px] md:min-h-[400px] md:py-16' if image else 'md:py-8' }} relative flex items-center overflow-hidden px-4 py-6 md:px-16"
+>
+  {% if image %}
+    <div class="absolute inset-0 -z-10">
+      {# This hero image is the LCP element on category pages — load it eagerly
+         with high priority (no `loading="lazy"`) and hand the browser a
+         responsive srcset so mobile doesn't pull the full 1920px file. The
+         box is already reserved by the section's min-height, so eager-loading
+         introduces no layout shift. #}
+      <img
+        src="{{ image_url(image, w=1280, q=85, f='auto') }}"
+        srcset="
+          {{ image_url(image, w=768,  q=85, f='auto') }}  768w,
+          {{ image_url(image, w=1280, q=85, f='auto') }} 1280w,
+          {{ image_url(image, w=1920, q=85, f='auto') }} 1920w
+        "
+        sizes="100vw"
+        alt="{{ title }}"
+        class="size-full object-cover"
+        fetchpriority="high"
+        decoding="async"
+      />
+      <div class="absolute inset-0 bg-white/20"></div>
+    </div>
+  {% else %}
+    <div class="bg-secondary absolute inset-0 -z-10"></div>
+  {% endif %}
+  <div class="theme-container">
+    <div class="flex max-w-[768px] flex-col gap-4">
+      {% if title %}
+        <h1 class="text-foreground text-lg md:text-2xl font-semibold tracking-tight">{{ title }}</h1>
+      {% endif %}
+      {% if description %}
+        <p class="text-foreground text-sm md:text-base">{{ description }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>

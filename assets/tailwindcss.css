@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import "photoswipe/dist/photoswipe.css";
+@import "nouislider/dist/nouislider.css";
+@import "./css/components.css";
+@import "./css/product-options.css";
+@import "./css/price-slider.css";
+@import "./css/custom-fields.css";
+@import "./css/product-filters.css";
+@import "./css/lightbox.css";
+@import "./css/cart-drawer.css";
+@import "./css/region-dialog.css";
+@import "./css/header.css";
+@import "./css/search-dialog.css";
+@import "./css/product-card.css";
+@import "./css/quick-view.css";
+@import "./css/hero.css";
+@import "./css/highlights.css";
+@import "./css/scrollbar.css";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  /* ========== CORE COLORS (set by layout.jinja from merchant settings) ========== */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ========== FIXED SYSTEM COLORS ========== */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  /* ========== UTILITY COLORS ========== */
+  --color-border-light: var(--border-light);
+
+  /* ========== FONT ========== */
+  --font-sans: var(--font-family);
+
+  /* ========== RADIUS ========== */
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 2);
+  --radius-xl: calc(var(--radius) * 3);
+}
+
+
+:root {
+  /* ========== LAYOUT ========== */
+  --header-h: 107px;
+
+  /* ========== DERIVED TOKENS (fixed) ========== */
+  --muted-foreground: #858484;
+  --border-light: #f2f2f2;
+
+  /* ========== FIXED SYSTEM COLORS ========== */
+  --destructive: #c22b51;
+  --destructive-foreground: #ffffff;
+  --success: #649560;
+  --success-foreground: #ffffff;
+  --warning: #ffb400;
+  --warning-foreground: #0b0a09;
+
+  /* ========== TYPOGRAPHY ========== */
+  --font-body1--size: 16px;
+  --font-body1--line-height: 1.5;
+  --font-body1--weight: 400;
+
+  --font-subtitle2--size: 14px;
+  --font-subtitle2--line-height: 1.5;
+  --font-subtitle2--weight: 600;
+
+  --font-body2--size: 14px;
+  --font-body2--line-height: 1.5;
+  --font-body2--weight: 400;
+
+  --font-caption--size: 12px;
+  --font-caption--line-height: 1.5;
+  --font-caption--weight: 400;
+
+  --font-tagline--size: 16px;
+  --font-tagline--line-height: normal;
+  --font-tagline--weight: 400;
+}
+
+/* ========================================
+   PROSE TYPOGRAPHY THEME (Static Pages)
+   Custom theme matching Figma design tokens
+   ======================================== */
+
+@utility prose-theme {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--foreground);
+  --tw-prose-links: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--foreground);
+  --tw-prose-bullets: var(--foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--foreground);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-kbd-shadows: 0 0 0;
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--secondary);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  /* Invert (dark mode) */
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-lead: var(--foreground);
+  --tw-prose-invert-links: var(--foreground);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-counters: var(--foreground);
+  --tw-prose-invert-bullets: var(--foreground);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-quotes: var(--foreground);
+  --tw-prose-invert-quote-borders: var(--foreground);
+  --tw-prose-invert-captions: var(--muted-foreground);
+  --tw-prose-invert-kbd: var(--foreground);
+  --tw-prose-invert-kbd-shadows: 0 0 0;
+  --tw-prose-invert-code: var(--foreground);
+  --tw-prose-invert-pre-code: var(--foreground);
+  --tw-prose-invert-pre-bg: var(--secondary);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.theme-container {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.announcement-marquee {
+  display: flex;
+  width: 100%;
+}
+
+.announcement-marquee__content {
+  display: flex;
+  align-items: center;
+  animation: marquee-scroll var(--marquee-speed, 30s) linear infinite;
+}
+
+[dir="rtl"] .announcement-marquee__content {
+  animation-name: marquee-scroll-rtl;
+}
+
+.announcement-marquee:hover .announcement-marquee__content {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-scroll-rtl {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+/* ========================================
+   VITRIN INCLUDES - Typography Overrides
+   Override hardcoded styles from platform templates
+   ======================================== */
+
+/* Loyalty Points Widget (vitrin:products/loyalty_points_widget.jinja) */
+.loyalty-points-products-section {
+  font-size: 0.875rem !important; /* 14px - matches text-sm */
+  font-family: inherit !important;
+  border-color: var(--border) !important;
+  border-radius: var(--radius) !important;
+}
+
+.loyalty-points-products-section p {
+  font-size: inherit !important;
+}
+
+.loyalty-points-products-section .loyalty-points-rewards {
+  font-size: inherit !important;
+  color: var(--foreground) !important;
+}

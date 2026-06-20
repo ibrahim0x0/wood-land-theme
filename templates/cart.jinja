@@ -1,0 +1,143 @@
+{% extends "layout.jinja" %}
+
+{% block title %}{{ store.name }} – {{ _('Cart') }}{% endblock %}
+
+{% block content %}
+  <section class="px-4 py-6 md:px-16">
+    <div class="theme-container">
+      {%
+        with
+        items=[
+          {'href': url_for('home'), 'label': _("Home")},
+          {'label': _("Cart")}
+        ]
+      %}
+        {% include 'components/ui/breadcrumb.jinja' %}
+      {% endwith %}
+    </div>
+  </section>
+
+  <section class="px-4 pb-6 md:px-16 md:pb-16">
+    <div class="theme-container">
+      {% if cart.products_count > 0 %}
+        <div class="cart-with-products">
+          <div class="grid grid-cols-1 md:gap-8 lg:grid-cols-12 lg:gap-12">
+            <div class="lg:col-span-8">
+              <h1 class="text-foreground text-xl md:text-2xl font-semibold tracking-tight">{{ _("Cart") }}</h1>
+
+              {% include 'components/cart/shipping-progress.jinja' %}
+
+              <div class="border-border-light text-foreground text-xs uppercase tracking-wide mt-6 hidden border-b pb-4 lg:flex">
+                <div class="flex-1">{{ _("Product") }}</div>
+                <div class="w-48">{{ _("Amount") }}</div>
+                <div class="w-48 text-end">{{ _("Total") }}</div>
+              </div>
+
+              <div
+                class="mt-4 space-y-4"
+                data-cart-products-list
+              >
+                {% include 'vitrin:v2/cart/products_list.jinja' %}
+
+                {% if store.settings.checkout.gift_order_settings.is_gift_order_enabled == '1' %}
+                  <div class="mt-4">{% include 'components/cart/gift-card-display.jinja' %}</div>
+                {% endif %}
+              </div>
+
+              <a
+                href="{{ url_for('home') }}"
+                class="text-foreground text-sm mt-6 inline-flex items-center gap-2 rounded py-2.5 transition-opacity hover:opacity-70"
+              >
+                <svg
+                  class="size-4 rtl:rotate-180"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 12L6 8L10 4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+                {{ _("Continue shopping") }}
+              </a>
+
+              {% include 'components/cart/recommended-strip.jinja' %}
+            </div>
+            <div class="lg:col-span-4">
+              <div class="divide-border-light sticky top-4 flex flex-col divide-y">
+                {% include 'components/cart/loyalty-program.jinja' %}
+                {% include 'components/cart/coupon-code.jinja' %}
+                {% include 'components/cart/gift-order.jinja' %}
+                <div class="flex flex-col gap-4 pt-4">
+                  {% include 'components/cart/order-summary.jinja' %}
+                  {% include 'components/cart/checkout-buttons.jinja' %}
+                  <div data-payment-widgets>{% include 'vitrin:cart/payment_widgets.jinja' %}</div>
+
+                  {# Apple Pay Quick Checkout — Cart placement: pays for
+                     the entire current cart. This block is already
+                     inside the `cart.products_count > 0` branch above,
+                     satisfying the docs' "cart must have items"
+                     requirement. Renders only when enabled in Layout
+                     Settings → Cart Page. Single instance per page —
+                     do not duplicate elsewhere. #}
+                  {% if cart_show_apple_pay %}
+                    {% include 'vitrin:checkout/apple-pay-quick-checkout.jinja' %}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        {% include 'components/cart/empty-state.jinja' %}
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
+
+{% block footer_scripts %}
+  {# Cart Controller - Modular cart page functionality #}
+  <script
+    src="{{ 'dist/cart-controller.js' | asset_url }}"
+    defer
+  ></script>
+  <!-- prettier-ignore-start -->
+  <script>
+    // Initialize CartPage module after DOM is ready
+    document.addEventListener("DOMContentLoaded", function () {
+    // This must happen BEFORE any cart operations to prevent default HTML replacement.
+    // Cap attempts so a missing ZidCart SDK doesn't spin forever.
+    (function registerHandler(attempt = 0) {
+      if (window.ZidCart && window.ZidCart.registerCustomHandler) {
+        window.ZidCart.registerCustomHandler();
+        return;
+      }
+      if (attempt >= 100) {
+        console.warn("[CartPage] ZidCart never became available; skipping custom handler.");
+        return;
+      }
+      setTimeout(() => registerHandler(attempt + 1), 50);
+    })();
+      CartPage.init({
+        cart: {{ cart | tojson }},
+        loyaltyEnabled: {{ (store.settings.checkout.is_loyalty_enabled | default(false)) | tojson }},
+        cartTotalValue: {{ cart.total_value | default(0) }},
+        storeCurrencyCode: "{{ session.currency.code }}",
+        cartCurrencyCode: "{{ cart.currency.cart_currency.code if cart.currency else session.currency.code }}",
+        translations: {
+          forPointsGetDiscount: "{{ _('For %(points)s points get %(discount)s discount') }}",
+          itemsCount: "{{ _('%(count)s items') }}",
+          freeShippingApplied: "{{ _('Free shipping applied!') }}",
+          addMoreForFreeShipping: "{{ _('Add %(total)s more to get free shipping') }}",
+          discount: "{{ _('Discount') }}",
+          loyalty: "{{ _('Loyalty') }}"
+        }
+      });
+    });
+  </script>
+  <!-- prettier-ignore-end -->
+{% endblock %}

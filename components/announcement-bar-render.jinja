@@ -1,0 +1,218 @@
+{# ───────────────────────────────────────────────────────────────────
+   Announcement-bar render partial — shared between the header instance
+   (components/header-announcement-bar.jinja) and the standalone page
+   section (sections/announcement-bar.jinja).
+
+   Expects in scope:
+     • `ab`          — dict of resolved settings (messages, colors, mode,
+                       icon_size, etc.). See either caller for the shape.
+     • `dismiss_key` — string used as a per-instance sessionStorage key
+                       so two bars on the same page don't share state.
+                       Use 'header' for the header version, sectionId
+                       for sections.
+
+   The inline <script> is idempotent — `:not([data-bar-init])` /
+   `[data-dismiss-init])` selectors skip bars that an earlier instance
+   of this partial already wired up, so multiple bars on one page (or
+   re-renders from dynamic content) don't double-bind setInterval.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set msgs = ab.messages or [] %}
+
+{% if msgs | length > 0 %}
+  {% set bg_style = 'background: linear-gradient(90deg, ' ~ ab.background_color ~ ', ' ~ ab.background_color_2 ~ ');' if ab.use_gradient and ab.background_color_2 else 'background-color: ' ~ ab.background_color ~ ';' %}
+
+  {% set vis_classes = '' %}
+  {% if not ab.show_on_mobile %}{% set vis_classes = vis_classes ~ ' hidden md:block' %}{% endif %}
+  {% if not ab.show_on_desktop %}{% set vis_classes = vis_classes ~ ' md:hidden' %}{% endif %}
+
+  {% set align_class = {'start': 'justify-start text-start', 'center': 'justify-center text-center', 'end': 'justify-end text-end'}[ab.alignment or 'center'] %}
+
+  <div
+    class="announcement-bar {{ vis_classes }} {{ 'uppercase' if ab.uppercase else '' }} w-full overflow-hidden"
+    data-announcement-bar
+    data-dismiss-key="{{ dismiss_key }}"
+    data-mode="{{ ab.mode or 'rotate' }}"
+    data-effect="{{ ab.rotate_effect or 'fade' }}"
+    data-rotate-delay="{{ ab.rotate_delay or 4000 }}"
+    data-dismissible="{{ 'true' if ab.dismissible else 'false' }}"
+    style="{{ bg_style }} color: {{ ab.text_color }}; font-size: {{ ab.font_size or 13 }}px; letter-spacing: {{ ab.letter_spacing or 0 }}px; --marquee-speed: {{ ab.marquee_speed or 30 }}s;"
+  >
+    <div
+      class="theme-container relative flex items-center gap-3 px-4"
+      style="padding-top: {{ ab.padding_y or 10 }}px; padding-bottom: {{ ab.padding_y or 10 }}px;"
+    >
+      {# ───── ROTATE MODE ───── #}
+      {% if (ab.mode or 'rotate') == 'rotate' %}
+        <div
+          class="announcement-track {{ align_class }} relative flex-1"
+          data-announcement-track
+        >
+          {% for msg in msgs %}
+            <div
+              class="announcement-slide {{ align_class }} flex items-center gap-2"
+              data-announcement-slide
+              data-index="{{ loop.index0 }}"
+            >
+              {% include 'components/header-announcement-icon.jinja' %}
+              {% if msg.link %}
+                <a
+                  href="{{ msg.link }}"
+                  class="font-medium hover:underline"
+                  >{{ msg.text }}</a
+                >
+              {% else %}
+                <span class="font-medium">{{ msg.text }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        {# ───── MARQUEE MODE ───── #}
+      {% else %}
+        <div class="announcement-marquee flex-1 overflow-hidden">
+          <div class="announcement-marquee__track">
+            {% for _ in range(2) %}
+              {% for msg in msgs %}
+                <span class="announcement-marquee__item inline-flex items-center gap-2 px-8 whitespace-nowrap">
+                  {% include 'components/header-announcement-icon.jinja' %}
+                  {% if msg.link %}
+                    <a
+                      href="{{ msg.link }}"
+                      class="font-medium hover:underline"
+                      >{{ msg.text }}</a
+                    >
+                  {% else %}
+                    <span class="font-medium">{{ msg.text }}</span>
+                  {% endif %}
+                </span>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if ab.dismissible %}
+        <button
+          type="button"
+          class="announcement-close ms-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full opacity-80 transition hover:opacity-100"
+          data-announcement-close
+          aria-label="{{ 'إغلاق' if session.lang == 'ar' else 'Dismiss' }}"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <style>
+    [data-announcement-bar] .announcement-track {
+      min-height: 1.4em;
+    }
+    [data-announcement-bar][data-mode="rotate"][data-effect="fade"] .announcement-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 600ms ease;
+      pointer-events: none;
+    }
+    [data-announcement-bar][data-mode="rotate"][data-effect="fade"] .announcement-slide.is-active {
+      opacity: 1;
+      position: relative;
+      pointer-events: auto;
+    }
+    [data-announcement-bar][data-mode="rotate"][data-effect="slide"] .announcement-track {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+    [data-announcement-bar][data-mode="rotate"][data-effect="slide"] .announcement-slide {
+      flex: 0 0 100%;
+      transition: transform 600ms ease;
+    }
+
+    [data-announcement-bar][data-mode="marquee"] .announcement-marquee__track {
+      display: inline-flex;
+      white-space: nowrap;
+      animation: announcement-marquee var(--marquee-speed, 30s) linear infinite;
+      will-change: transform;
+    }
+    @keyframes announcement-marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    [dir="rtl"] [data-announcement-bar][data-mode="marquee"] .announcement-marquee__track {
+      animation-name: announcement-marquee-rtl;
+    }
+    @keyframes announcement-marquee-rtl {
+      from { transform: translateX(0); }
+      to   { transform: translateX(50%); }
+    }
+    [data-announcement-bar][data-mode="marquee"]:hover .announcement-marquee__track {
+      animation-play-state: paused;
+    }
+
+    [data-announcement-bar].is-dismissed {
+      display: none !important;
+    }
+  </style>
+
+  <script type="module">
+    {
+      const safeStorage = {
+        get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+        set: (k, v) => { try { sessionStorage.setItem(k, v); } catch {} },
+      };
+
+      for (const el of document.querySelectorAll('[data-announcement-bar][data-mode="rotate"]:not([data-bar-init])')) {
+        el.dataset.barInit = '1';
+        const slides = [...el.querySelectorAll('[data-announcement-slide]')];
+        if (slides.length === 0) continue;
+
+        const effect = el.dataset.effect ?? 'fade';
+        const delay = Number.parseInt(el.dataset.rotateDelay, 10) || 4000;
+        const isRtl = document.documentElement.dir === 'rtl';
+        let index = 0;
+
+        const show = (i) => {
+          if (effect === 'fade') {
+            slides.forEach((s, idx) => s.classList.toggle('is-active', idx === i));
+            return;
+          }
+          const dir = isRtl ? 1 : -1;
+          for (const s of slides) s.style.transform = `translateX(${dir * i * 100}%)`;
+        };
+
+        show(0);
+        if (slides.length > 1) {
+          setInterval(() => show(index = (index + 1) % slides.length), delay);
+        }
+      }
+
+      for (const el of document.querySelectorAll('[data-announcement-bar][data-dismissible="true"]:not([data-dismiss-init])')) {
+        el.dataset.dismissInit = '1';
+        const key = `announcement-bar:dismissed:${el.dataset.dismissKey || 'default'}`;
+        if (safeStorage.get(key) === '1') {
+          el.classList.add('is-dismissed');
+          continue;
+        }
+        el.querySelector('[data-announcement-close]')?.addEventListener('click', () => {
+          el.classList.add('is-dismissed');
+          safeStorage.set(key, '1');
+        });
+      }
+    }
+  </script>
+{% endif %}

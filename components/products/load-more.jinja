@@ -1,0 +1,37 @@
+{# ── Load More ──
+   Filled primary button that fetches the NEXT page and appends its product
+   cards to the grid (assets/js/features/product-filter.js → loadMore), instead
+   of numbered pagination. Lives inside #products-content, so it is replaced
+   with a fresh (page-reset) button whenever filters re-render the listing.
+
+   Expects `totalPages` and `currentPage` to be set by the caller (same as the
+   pagination component). #}
+{% set _lm_total   = totalPages | default(1) | int %}
+{% set _lm_current = currentPage | default(1) | int %}
+{% set _lm_count   = products.count | default(0) | int %}
+{% set _lm_shown   = products.results | length %}
+{% set _lm_is_rtl  = session.locale.language.direction == 'rtl' %}
+
+<div
+  class="load-more"
+  data-load-more-root
+  data-load-more-total-count="{{ _lm_count }}"
+>
+  <p class="load-more__count">
+    {{ 'عرض' if _lm_is_rtl else 'Showing' }}
+    <span data-load-more-count>{{ _lm_shown }} / {{ _lm_count }}</span>
+  </p>
+
+  {% if _lm_current < _lm_total %}
+    <button
+      type="button"
+      class="load-more-btn"
+      data-load-more-next="{{ _lm_current + 1 }}"
+      data-load-more-total="{{ _lm_total }}"
+      onclick="window.productFilter.loadMore(this)"
+    >
+      <span class="load-more-btn__label">{{ 'تحميل المزيد' if _lm_is_rtl else 'Load more' }}</span>
+      <span class="load-more-btn__spinner" aria-hidden="true"></span>
+    </button>
+  {% endif %}
+</div>

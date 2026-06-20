@@ -1,0 +1,106 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{% from 'components/_macros.jinja' import resolve_link %}
+{% set is_lazy = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-gallery bg-background px-4 py-6 md:p-16"
+>
+  <div class="theme-container">
+    {% if settings.title or settings.subtitle or settings.eyebrow %}
+      {# Shared heading partial — style + alignment + icon inherit from
+         Layout Settings → Section Headings unless this section overrides. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      <div class="mb-6">
+        {% with
+          eyebrow=settings.eyebrow,
+          title=settings.title,
+          subtitle=settings.subtitle,
+          heading_style=_hs,
+          heading_alignment=heading_alignment_default,
+          heading_icon=heading_icon_default
+        %}
+          {% include 'components/products/section-heading.jinja' %}
+        {% endwith %}
+      </div>
+    {% endif %}
+    {% if settings.gallery %}
+      {% set item_count = settings.gallery | length %}
+      <div
+        class="grid grid-cols-2 gap-4 md:grid-cols-4 [&_.media-wrap]:aspect-[4/3] [&[data-items-count='1']]:grid-cols-1 [&[data-items-count='1']]:md:grid-cols-2 [&[data-items-count='2']]:grid-cols-1 [&[data-items-count='2']]:md:grid-cols-2 [&[data-items-count='3']]:auto-rows-[153px] [&[data-items-count='3']]:grid-cols-2 [&[data-items-count='3']]:md:auto-rows-[314px] [&[data-items-count='3']_.media-wrap]:aspect-auto [&[data-items-count='3']_.media-wrap]:h-full [&[data-items-count='3']_.media-wrap]:w-full [&[data-items-count='3']>*:first-child]:col-span-2 [&[data-items-count='3']>*:first-child]:row-span-2 [&[data-items-count='4']]:grid-cols-1 [&[data-items-count='4']]:md:grid-cols-2 [&[data-items-count='5']]:auto-rows-[153px] [&[data-items-count='5']]:grid-cols-2 [&[data-items-count='5']]:md:auto-rows-[314px] [&[data-items-count='5']]:md:grid-cols-4 [&[data-items-count='5']_.media-wrap]:aspect-auto [&[data-items-count='5']_.media-wrap]:h-full [&[data-items-count='5']_.media-wrap]:w-full [&[data-items-count='5']>*:first-child]:col-span-2 [&[data-items-count='5']>*:first-child]:row-span-2"
+        data-items-count="{{ item_count }}"
+      >
+        {% for item in settings.gallery %}
+          <div class="group relative overflow-hidden rounded">
+            <div class="media-wrap">
+              <picture>
+                {% if item.src_mobile %}
+                  <source
+                    media="(max-width: 767px)"
+                    srcset="{{ image_url(item.src_mobile, w=400, q=80, f='auto') }}"
+                  />
+                {% endif %}
+                <img
+                  src="{{ image_url(item.src, w=800, q=85, f='auto') }}"
+                  alt="{{ item.alt }}"
+                  class="h-full w-full object-cover"
+                  {% if is_lazy or not loop.first %}loading="lazy"{% endif %}
+                />
+              </picture>
+            </div>
+
+            {% if item.image_title or item.primary_button_text or item.secondary_button_text %}
+              <div class="absolute inset-0 flex flex-col items-center justify-center space-y-6">
+                {% if item.image_title %}
+                  <h3 class="text-foreground text-lg md:text-xl font-semibold text-center">{{ item.image_title }}</h3>
+                {% endif %}
+
+                {% if item.primary_button_text or item.secondary_button_text %}
+                  {% set _primary_href = resolve_link(item.primary_button_shortcut, item.primary_button_products, item.primary_button_url) | trim %}
+                  {% set _secondary_href = resolve_link(item.secondary_button_shortcut, item.secondary_button_products, item.secondary_button_url) | trim %}
+                  <div class="flex flex-wrap items-center justify-center gap-4">
+                    {% if item.primary_button_text and _primary_href %}
+                      <a
+                        href="{{ _primary_href }}"
+                        class="btn btn-filled btn-lg"
+                      >
+                        {{ item.primary_button_text }}
+                      </a>
+                    {% endif %}
+                    {% if item.secondary_button_text and _secondary_href %}
+                      <a
+                        href="{{ _secondary_href }}"
+                        class="btn btn-outlined btn-lg"
+                      >
+                        {{ item.secondary_button_text }}
+                      </a>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}{# /country-visibility guard #}

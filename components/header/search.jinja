@@ -1,0 +1,166 @@
+{# Trigger (icon button in the header) #}
+<button
+  type="button"
+  command="show-modal"
+  commandfor="search-dialog"
+  class="flex size-10 items-center justify-center"
+  aria-label="{{ _('Search') }}"
+  data-search-trigger
+>
+  {% set icon_size = settings.logo_icons_size or 22 %}
+  {% if settings.logo_icons_search %}
+    {% set icon_url = settings.logo_icons_search %}
+    {% include 'components/header/_icon-img.jinja' %}
+  {% else %}
+    {# Lucide: search #}
+    <svg xmlns="http://www.w3.org/2000/svg" width="{{ icon_size }}" height="{{ icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-foreground">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3"/>
+    </svg>
+  {% endif %}
+</button>
+
+{# Collect up to 6 top-level menu categories to show as quick chips in the
+   empty state. Links are whitelisted via the shared safe_url/menu_href helper. #}
+{% from 'components/_macros.jinja' import menu_href %}
+{% set _quick_chips = [] %}
+{% for m in store.settings.menus.main_menu.items %}
+  {% if _quick_chips | length < 6 %}
+    {% set _ = _quick_chips.append(m) %}
+  {% endif %}
+{% endfor %}
+
+{# Search dialog — centered glass modal #}
+<el-dialog id="search-dialog-wrapper">
+  <dialog
+    id="search-dialog"
+    class="search-dialog fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent"
+    aria-labelledby="search-dialog-title"
+  >
+    <el-dialog-backdrop
+      class="search-dialog__backdrop fixed inset-0 transition-opacity data-closed:opacity-0 data-enter:duration-250 data-enter:ease-out data-leave:duration-180 data-leave:ease-in"
+    ></el-dialog-backdrop>
+
+    <div tabindex="0" class="search-dialog__positioner focus:outline-none">
+      <el-dialog-panel
+        class="search-dialog__panel transform transition-all data-closed:translate-y-3 data-closed:scale-95 data-closed:opacity-0 data-enter:duration-220 data-enter:ease-out data-leave:duration-160 data-leave:ease-in"
+      >
+        <h2 id="search-dialog-title" class="sr-only">{{ _('Search') }}</h2>
+
+        {# ─── Input bar ─── #}
+        <form class="search-dialog__input-row" onsubmit="return false" role="search">
+          <span class="search-dialog__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+          </span>
+          <input
+            type="search"
+            id="search-input"
+            name="q"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="{{ _('Search products, categories…') }}"
+            class="search-dialog__input"
+            data-search-input
+          />
+          <button
+            type="button"
+            class="search-dialog__clear hidden"
+            data-search-clear
+            aria-label="{{ _('Clear search') }}"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <kbd class="search-dialog__kbd" data-search-kbd aria-hidden="true">Esc</kbd>
+          <button
+            type="button"
+            command="close"
+            commandfor="search-dialog"
+            class="search-dialog__close"
+            aria-label="{{ _('Close search') }}"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </form>
+
+        {# ─── Body (results / loading / empty / idle) ─── #}
+        <div class="search-dialog__body">
+
+          {# Idle state — shown before any query. Has recent searches (JS) +
+             quick category chips from the main menu. #}
+          <div class="search-dialog__idle" data-search-idle>
+            <div class="search-dialog__section hidden" data-search-recent-section>
+              <div class="search-dialog__section-head">
+                <span>{{ _('Recent searches') }}</span>
+                <button type="button" class="search-dialog__clear-recent" data-search-clear-recent>
+                  {{ _('Clear') }}
+                </button>
+              </div>
+              <div class="search-dialog__chips" data-search-recent></div>
+            </div>
+
+            {% if _quick_chips | length > 0 %}
+              <div class="search-dialog__section">
+                <div class="search-dialog__section-head">
+                  <span>{{ _('Browse categories') }}</span>
+                </div>
+                <div class="search-dialog__chips">
+                  {% for chip in _quick_chips %}
+                    <a class="search-dialog__chip" href="{{ menu_href(chip.url, chip.resource_type) }}">
+                      {{ chip.label }}
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          {# Loading state — vertical list skeletons matching the result rows. #}
+          <div class="search-dialog__loading hidden" data-search-loading>
+            {% for i in range(4) %}
+              <div class="search-dialog__row search-dialog__row--skeleton">
+                <div class="search-dialog__thumb bg-secondary animate-pulse"></div>
+                <div class="search-dialog__row-body">
+                  <div class="bg-secondary h-4 w-3/5 animate-pulse rounded"></div>
+                  <div class="bg-secondary h-3 w-2/5 animate-pulse rounded mt-2"></div>
+                </div>
+                <div class="bg-secondary h-4 w-12 animate-pulse rounded"></div>
+              </div>
+            {% endfor %}
+          </div>
+
+          {# Results state — vertical list. Rendered by search.js. #}
+          <div class="search-dialog__results hidden" data-search-results>
+            <ul class="search-dialog__list" data-search-products role="listbox"></ul>
+          </div>
+
+          {# No results state. #}
+          <div class="search-dialog__empty hidden" data-search-empty>
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <p>{{ _('No products found') }}</p>
+            <span class="search-dialog__empty-hint" data-search-empty-query></span>
+          </div>
+        </div>
+
+        {# ─── Sticky footer: "Search for '…'" link (only while typing) ─── #}
+        <a
+          href="#"
+          class="search-dialog__all hidden"
+          data-search-all-link
+        >
+          <span data-search-all-text>{{ _('Search for') }} ''</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" class="rtl:rotate-180" aria-hidden="true">
+            <path d="M3 8H13M9 4L13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>

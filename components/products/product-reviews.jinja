@@ -1,0 +1,149 @@
+{#
+  Product Reviews Component
+
+  Props:
+  - product: Product object with:
+    - rating.average: number
+    - rating.total_count: number
+    - rating.ratings_5.count, ratings_4.count, etc.
+    - reviews.results: array of review objects
+    - reviews.pages_count: number
+  - store: Store object
+  - session: Session object (for guest check)
+#}
+{% if product %}
+  {# Time Ago Labels for JS #}
+  <script
+    type="application/json"
+    data-time-ago-labels
+  >
+    {
+      "year": "{{ _('year') }}",
+      "years": "{{ _('years') }}",
+      "month": "{{ _('month') }}",
+      "months": "{{ _('months') }}",
+      "week": "{{ _('week') }}",
+      "weeks": "{{ _('weeks') }}",
+      "day": "{{ _('day') }}",
+      "days": "{{ _('days') }}",
+      "hour": "{{ _('hour') }}",
+      "hours": "{{ _('hours') }}",
+      "minute": "{{ _('minute') }}",
+      "minutes": "{{ _('minutes') }}",
+      "ago": "{{ _('%s ago') }}",
+      "justNow": "{{ _('Just now') }}"
+    }
+  </script>
+
+  <div class="mt-6 flex flex-col gap-4">
+    {# Title #}
+    <h2 class="text-foreground text-xl font-semibold tracking-tight md:text-2xl">{{ _("Customer reviews") }}</h2>
+
+    {# Rating Summary Section #}
+    <div class="flex flex-col gap-6 md:flex-row">
+      {# Left: Overall Rating + Write Review Button #}
+      <div class="flex shrink-0 flex-col gap-4">
+        {% if product.rating %}
+          <div class="flex flex-col gap-1">
+            <p class="text-foreground text-xs tracking-wide uppercase">{{ _("Overall rating") }}</p>
+            <div class="flex h-8 items-center gap-1.5">
+              <p class="text-foreground text-lg font-semibold">{{ product.rating.average|round(1) }}</p>
+              <div class="flex gap-0.5 overflow-clip">
+                {% set rating = product.rating.average %}
+                {% include 'components/rating-stars.jinja' %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        {# Write Review Button - Guest version (shown via JS) #}
+        <button
+          type="button"
+          class="btn btn-outlined btn-lg"
+          data-login-redirect="{{ url_for('add_product_review', slug=product.id) }}"
+          data-auth-guest
+        >
+          {{ _("Write a review") }}
+        </button>
+        {# Write Review Button - Authenticated version (shown via JS) #}
+        <a
+          href="{{ url_for('add_product_review', slug=product.slug) }}"
+          class="btn btn-outlined btn-lg hidden"
+          data-auth-user
+        >
+          {{ _("Write a review") }}
+        </a>
+      </div>
+
+      {# Right: Rating Snapshot #}
+      {% if product.rating %}
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <p class="text-foreground text-xs tracking-wide uppercase">{{ _("Rating snapshot") }}</p>
+
+          {% set total_reviews = product.rating.total_count or 1 %}
+
+          {% for i in range(5, 0, -1) %}
+            {% set rating_key = 'ratings_' ~ i %}
+            {% set rating_data = product.rating[rating_key] %}
+            {% set count = rating_data.count if rating_data else 0 %}
+            {% set percentage = (count / total_reviews * 100) if total_reviews > 0 else 0 %}
+            <div class="flex w-full items-center gap-2">
+              <span class="text-foreground w-[42px] shrink-0 text-sm">
+                {{ i }} {{ _("star") if i == 1 else _("stars") }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="bg-secondary h-1 w-full rounded">
+                  <div
+                    class="bg-accent h-1 rounded-sm"
+                    style="width: {{ percentage|round(1) }}%"
+                  ></div>
+                </div>
+              </div>
+              <span class="text-muted w-10 shrink-0 text-right text-sm">{{ count }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    {# Divider #}
+    <div class="border-border border-y py-4">
+      {# Review Count #}
+      {% if product.reviews and product.reviews.results %}
+        <p class="text-foreground text-xs tracking-wide uppercase">
+          {{ product.reviews.results|length }} {{ _("out of") }}
+          {{ product.reviews.count or product.reviews.results|length }}
+          {{ _("reviews") }}
+        </p>
+      {% endif %}
+    </div>
+
+    {# Reviews List #}
+    {% if product.reviews and product.reviews.results %}
+      <div class="flex flex-col gap-2">
+        {% for review in product.reviews.results %}
+          {% with review=review, store=store %}
+            {% include 'components/products/review-card.jinja' %}
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+      {# All Reviews Link #}
+      {% if product.reviews.pages_count > 1 %}
+        <div class="flex justify-end">
+          <a
+            href="{{ url_for('product_reviews', slug=product.id) }}"
+            class="btn btn-outlined btn-sm"
+          >
+            {{ _("All reviews") }}
+          </a>
+        </div>
+      {% endif %}
+    {% else %}
+      {# No Reviews Message #}
+      <p class="text-muted text-sm">{{ _("There are no reviews yet. Be the first one to review this product") }}</p>
+    {% endif %}
+  </div>
+
+  <script src="{{ 'js/time-ago.js' | asset_url }}"></script>
+{% endif %}

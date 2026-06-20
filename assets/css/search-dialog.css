@@ -1,0 +1,366 @@
+/* ============================================================================
+   Search dialog — center-screen glass modal with vertical list results.
+   ----------------------------------------------------------------------------
+   Replaces the old full-width slide-down. Lives on top of the existing
+   <el-dialog> so Escape and backdrop-click still work out of the box.
+   ============================================================================ */
+
+.search-dialog__backdrop {
+  /* Light dim + modest blur so the page fades back but doesn't feel heavy.
+     Previous value (foreground 55%) was too aggressive for a dropdown-level
+     search surface. */
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  backdrop-filter: blur(4px) saturate(120%);
+  -webkit-backdrop-filter: blur(4px) saturate(120%);
+  z-index: 0;
+}
+
+/* Center the panel in the viewport. Small top padding so on tall screens the
+   dialog sits a bit above center (matches Spotlight/Linear/Raycast pattern).
+   `position: relative` + z-index: 1 keeps the panel above the fixed backdrop
+   (fixed elements otherwise paint on top of normal-flow siblings). */
+.search-dialog__positioner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: clamp(4rem, 14vh, 9rem);
+  padding-inline: 1rem;
+  padding-bottom: 2rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.search-dialog__panel {
+  width: 100%;
+  max-width: 640px;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 30px 70px -20px rgba(0, 0, 0, 0.30),
+    0 10px 30px -10px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+/* ─── Input row ─── */
+.search-dialog__input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+.search-dialog__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+.search-dialog__input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.25rem 0;
+}
+.search-dialog__input::placeholder {
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+}
+/* Hide the browser's native search-clear button — we supply our own. */
+.search-dialog__input::-webkit-search-cancel-button { display: none; }
+
+.search-dialog__clear,
+.search-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.search-dialog__clear:hover,
+.search-dialog__close:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--foreground);
+}
+.search-dialog__close {
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.search-dialog__kbd {
+  flex-shrink: 0;
+  padding: 0.125rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 5px;
+  user-select: none;
+}
+
+/* ─── Body ─── */
+.search-dialog__body {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding: 0.5rem;
+  /* Scrollbar inherits the global primary-tinted style from scrollbar.css.
+     Only override the WebKit width here (narrower than the global 8px so
+     it fits better inside the compact dialog body). */
+}
+.search-dialog__body::-webkit-scrollbar { width: 6px; }
+
+/* ─── Idle state (recent + quick chips) ─── */
+/* `:not(.hidden)` lets Tailwind's `.hidden` (display:none) win when applied
+   by search.js — otherwise my `display: flex` here has equal specificity
+   but loads later and would clobber `.hidden`. Same trick on the other
+   state containers below. */
+.search-dialog__idle:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem;
+}
+.search-dialog__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+.search-dialog__clear-recent {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  transition: color 150ms ease;
+}
+.search-dialog__clear-recent:hover { color: var(--primary); }
+
+.search-dialog__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.search-dialog__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.search-dialog__chip:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  color: var(--primary);
+}
+.search-dialog__chip:active { transform: scale(0.97); }
+
+/* ─── Loading skeletons (reuse row layout) ─── */
+.search-dialog__loading:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ─── Results list ─── */
+.search-dialog__results { padding: 0; }
+.search-dialog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-dialog__row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 10px;
+  color: var(--foreground);
+  text-decoration: none;
+  transition: background-color 150ms ease, padding-inline-start 150ms ease;
+}
+.search-dialog__row:hover,
+[data-search-row].is-active .search-dialog__row {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  padding-inline-start: 1rem;
+}
+[data-search-row].is-active .search-dialog__row {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.search-dialog__row--skeleton { padding: 0.625rem 0.75rem; }
+
+.search-dialog__thumb {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.search-dialog__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.search-dialog__row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.search-dialog__row-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.search-dialog__price {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+.search-dialog__price-sale {
+  color: var(--destructive);
+  font-weight: 600;
+}
+.search-dialog__price-orig {
+  text-decoration: line-through;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+}
+
+.search-dialog__badge {
+  flex-shrink: 0;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+.search-dialog__badge--sale {
+  background: var(--destructive);
+  color: var(--destructive-foreground, #fff);
+}
+.search-dialog__badge--out {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+.search-dialog__badge--custom {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.search-dialog__row-chev {
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  transition: color 150ms ease, transform 150ms ease;
+}
+.search-dialog__row:hover .search-dialog__row-chev,
+[data-search-row].is-active .search-dialog__row-chev {
+  color: var(--primary);
+  transform: translateX(2px);
+}
+[dir="rtl"] .search-dialog__row:hover .search-dialog__row-chev,
+[dir="rtl"] [data-search-row].is-active .search-dialog__row-chev {
+  transform: translateX(-2px);
+}
+
+/* ─── Empty state ─── */
+.search-dialog__empty:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  gap: 0.5rem;
+  text-align: center;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+.search-dialog__empty p {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin: 0;
+}
+.search-dialog__empty-hint {
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+}
+
+/* ─── Footer "search all" link ─── */
+.search-dialog__all:not(.hidden) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.search-dialog__all:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-dialog__panel,
+  .search-dialog__row,
+  .search-dialog__chip { transition: none !important; }
+}

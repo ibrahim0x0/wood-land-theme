@@ -1,0 +1,162 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# Optimize countdown images for better LCP #}
+{% from 'components/_macros.jinja' import resolve_link %}
+{# When the merchant uploads ONLY a mobile image (no desktop), use the
+   mobile image as the desktop fallback too — avoids rendering a broken
+   <picture> with a desktop <source> pointing at an empty URL. Same in
+   reverse for desktop-only. #}
+{% set mobile_image = image_url(settings.background_image_mobile or settings.background_image, w=768, q=80, f='auto') if (settings.background_image_mobile or settings.background_image) else '' %}
+{% set desktop_image = image_url(settings.background_image or settings.background_image_mobile, w=1920, q=85, f='auto') if (settings.background_image or settings.background_image_mobile) else '' %}
+{% set is_lazy = settings.order > 2 %}
+{% set button_url_resolved = resolve_link(
+     settings.button_shortcut,
+     settings.button_products,
+     settings.button_url
+   ) | trim %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-countdown relative flex min-h-[700px] items-center justify-center overflow-hidden px-4 py-6 md:min-h-[480px] md:px-16 md:py-32"
+>
+  {% if settings.background_image or settings.background_image_mobile %}
+    <div class="absolute inset-0 -z-10">
+      <picture>
+        <source media="(min-width: 768px)" srcset="{{ desktop_image }}" />
+        <img
+          src="{{ mobile_image }}"
+          alt="{{ settings.title | default('') }}"
+          class="h-full w-full object-cover md:object-bottom"
+          {% if is_lazy %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+        />
+      </picture>
+      <div
+        class="bg-primary absolute inset-0"
+        style="opacity: {{ settings.overlay_opacity | default(5) / 100 }}"
+      ></div>
+    </div>
+  {% endif %}
+  <div class="theme-container">
+    <div class="countdown-content grid gap-x-20 gap-y-8 lg:grid-cols-12 lg:items-center">
+      <div class="space-y-6 lg:col-span-6">
+        <div>
+          {% if settings.badge_text %}
+            <span class="text-foreground text-xs uppercase tracking-wide">{{ settings.badge_text }}</span>
+          {% endif %}
+          {% if settings.title %}
+            <h2 class="text-foreground text-2xl md:text-3xl font-semibold tracking-tight uppercase">{{ settings.title }}</h2>
+          {% endif %}
+          {% if settings.description %}
+            <p class="text-foreground text-base">{{ settings.description }}</p>
+          {% endif %}
+        </div>
+        {% if settings.button_text %}
+          <a
+            href="{{ button_url_resolved if button_url_resolved else '#' }}"
+            class="btn btn-filled btn-lg"
+          >
+            {{ settings.button_text }}
+          </a>
+        {% endif %}
+      </div>
+      <div class="lg:col-span-6">
+        <div class="countdown-timer flex items-stretch gap-4 lg:justify-end">
+          <div
+            class="flex min-w-16 flex-col items-center justify-center rounded bg-white/30 p-2 text-center backdrop-blur-sm md:min-w-[98px]"
+          >
+            <span class="days-value text-foreground text-xl md:text-2xl font-semibold"> 00 </span>
+            <span class="text-foreground text-xs uppercase tracking-wide uppercase"> {{ _('Day') }} </span>
+          </div>
+          <span
+            aria-hidden="true"
+            class="bg-border-disabled my-2 w-px"
+          ></span>
+          <div
+            class="flex min-w-16 flex-col items-center justify-center rounded bg-white/30 p-2 text-center backdrop-blur-sm md:min-w-[98px]"
+          >
+            <span class="hours-value text-foreground text-xl md:text-2xl font-semibold"> 00 </span>
+            <span class="text-foreground text-xs uppercase tracking-wide uppercase"> {{ _('Hour') }} </span>
+          </div>
+          <span
+            aria-hidden="true"
+            class="bg-border-disabled my-2 w-px"
+          ></span>
+          <div
+            class="flex min-w-16 flex-col items-center justify-center rounded bg-white/30 p-2 text-center backdrop-blur-sm md:min-w-[98px]"
+          >
+            <span class="minutes-value text-foreground text-xl md:text-2xl font-semibold"> 00 </span>
+            <span class="text-foreground text-xs uppercase tracking-wide uppercase"> {{ _('Min') }} </span>
+          </div>
+          <span
+            aria-hidden="true"
+            class="bg-border-disabled my-2 w-px"
+          ></span>
+          <div
+            class="flex min-w-16 flex-col items-center justify-center rounded bg-white/30 p-2 text-center backdrop-blur-sm md:min-w-[98px]"
+          >
+            <span class="seconds-value text-foreground text-xl md:text-2xl font-semibold"> 00 </span>
+            <span class="text-foreground text-xs uppercase tracking-wide uppercase"> {{ _('Sec') }} </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const section = document.querySelector('[section-id="{{ sectionId }}"]');
+      const endDate = new Date("{{ settings.end_date }}").getTime();
+      const daysEl = section.querySelector(".days-value");
+      const hoursEl = section.querySelector(".hours-value");
+      const minutesEl = section.querySelector(".minutes-value");
+      const secondsEl = section.querySelector(".seconds-value");
+      const contentEl = section.querySelector(".countdown-content");
+
+      if (!endDate || isNaN(endDate) || endDate <= new Date().getTime()) {
+        contentEl.style.display = "none";
+        return;
+      }
+
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = endDate - now;
+
+        if (distance < 0) {
+          if (interval) clearInterval(interval);
+          section.style.display = "none";
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        daysEl.textContent = String(days).padStart(2, "0");
+        hoursEl.textContent = String(hours).padStart(2, "0");
+        minutesEl.textContent = String(minutes).padStart(2, "0");
+        secondsEl.textContent = String(seconds).padStart(2, "0");
+      }
+
+      let interval;
+      updateCountdown();
+      interval = setInterval(updateCountdown, 1000);
+    })();
+  </script>
+</section>
+{% endif %}{# /country-visibility guard #}

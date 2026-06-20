@@ -1,0 +1,473 @@
+{# Global card + listing-page defaults exposed as template-level vars so
+   partials can read them without going through `settings.*` (which is
+   scoped to the section inside a section include).
+
+   Grouping:
+   - `card_*`       : theme-wide card defaults (style, density, visibility,
+                      badge). Apply to every product card across the site.
+   - `listing_*`    : category / all-products / search page grids.
+                      Independent from carousel aspect.
+
+   All use single-arg `| default(x)` so only *undefined* falls back;
+   explicit `false` from a checkbox stays false. #}
+{% set card_free_shipping_badge   = settings.product_card_free_shipping_badge   | default(true) %}
+{% set card_name_badge            = settings.product_card_name_badge            | default(false) %}
+{# Free-shipping threshold for the product-card badge. The badge only shows on a
+   product whose own price meets this value (a single product card can't read
+   Zid's cart-level free-shipping rule). Set it in Layout → Product card →
+   "Free-shipping badge — minimum order amount"; 0 = no badge. #}
+{% set card_free_shipping_threshold = settings.product_card_free_shipping_badge_min | float(0) %}
+{% set card_density_default       = settings.product_card_density               | default('large') %}
+{% set card_show_wishlist         = settings.product_card_show_wishlist         | default(true) %}
+{% set card_show_quick_view       = settings.product_card_show_quick_view       | default(true) %}
+{% set card_enable_image_swap     = settings.product_card_enable_image_swap     | default(true) %}
+{# Product page (PDP) toggles — `product_page_*` keys. Exposed to the
+   templates as `pdp_*` template-level vars so individual product/cart
+   templates can read them without re-resolving from `settings`.
+
+   Buy Now resolution:
+     Per Zid docs (https://docs.zid.dev/themes-developer-guide/features
+     /checkout-as-a-popup), the checkout popup becomes available SOLELY
+     by including `vitrin:checkout/checkout_dialog.jinja` — there's no
+     dashboard flag we need to gate on. So this is a simple two-state
+     toggle: render the button or don't.
+
+     "auto" and "always" both resolve to true (kept "auto" as a value
+     for backwards-compat with stores that saved that earlier setting).
+     "off" → don't render. #}
+{% set _pdp_buy_now_mode      = settings.product_page_show_buy_now | default('auto', true) %}
+{% set pdp_show_buy_now       = _pdp_buy_now_mode != 'off' %}
+{% set pdp_buy_now_label      = (settings.product_page_buy_now_label | trim) if settings.product_page_buy_now_label else '' %}
+{# Old-price ("was") label shown before the struck price. Editable from the
+   dashboard (Product Page → old-price label); defaults to "قبل". #}
+{% set pdp_was_label          = (settings.product_page_old_price_label | trim) if settings.product_page_old_price_label else 'قبل' %}
+{# When on, images embedded in the product description are moved to the top
+   of the description block (see assets/js/features/desc-image-first.js). #}
+{% set pdp_desc_image_first    = settings.product_page_desc_image_first | default(true) %}
+{# Apple Pay Quick Checkout — per Zid docs (docs.zid.dev/themes-developer-
+   guide/features/apple-pay-quick-checkout), including
+   `vitrin:checkout/apple-pay-quick-checkout.jinja` enables the button.
+   Behavior is page-dependent: on PDP it buys a single product; on cart
+   page it pays for the entire cart. The template must appear at most
+   once per page. Same auto/always/off pattern as Buy Now. #}
+{% set _pdp_apple_pay_mode    = settings.product_page_show_apple_pay | default('auto', true) %}
+{% set pdp_show_apple_pay     = _pdp_apple_pay_mode != 'off' %}
+{% set _cart_apple_pay_mode   = settings.cart_page_show_apple_pay    | default('auto', true) %}
+{% set cart_show_apple_pay    = _cart_apple_pay_mode != 'off' %}
+{# Product video testimonials (Layout Settings → Product Videos). The list
+   maps products → videos; the PDP partial filters it to the current product. #}
+{% set product_videos_enabled  = settings.product_videos_enabled | default(true) %}
+{% set product_videos_list     = settings.product_videos_list %}
+{% set product_videos_eyebrow  = settings.product_videos_eyebrow %}
+{% set product_videos_title    = settings.product_videos_title %}
+{% set product_videos_subtitle = settings.product_videos_subtitle %}
+{% set product_floating_enabled = settings.product_videos_floating_enabled | default(false) %}
+{% set product_floating_list    = settings.product_videos_floating_list %}
+{# Section-heading globals — the default style, alignment, and optional
+   decorative icon for every section's title. Individual sections can
+   override via 'inherit' resolution. Icon is a merchant-uploaded image
+   (SVG/PNG) that renders below the title when provided. #}
+{% set heading_style_default      = settings.section_headings_style             | default('souq') %}
+{% set heading_alignment_default  = settings.section_headings_alignment         | default('start') %}
+{% set heading_icon_default       = settings.section_headings_icon_image %}
+{# Optional theme-wide eyebrow/subtitle color overrides for section
+   headings. Applied via the `--section-heading-eyebrow-color` and
+   `--section-heading-subtitle-color` CSS variables emitted on :root
+   below; the section-heading partial CSS in product-card.css consumes
+   these with the existing colors as fallbacks. Empty string means
+   "no override" — the partial keeps its default color. #}
+{% set heading_eyebrow_color      = settings.section_headings_eyebrow_color %}
+{% set heading_subtitle_color     = settings.section_headings_subtitle_color %}
+{% set listing_columns_desktop    = settings.listing_columns_desktop            | default('4') %}
+{% set listing_columns_mobile     = settings.listing_columns_mobile             | default('2') %}
+{% set listing_image_aspect_ratio = settings.listing_image_aspect_ratio         | default('square') %}
+
+<!DOCTYPE html>
+<html
+  class="no-js"
+  lang="{{ session.lang }}"
+  dir="{{ session.locale.language.direction }}"
+>
+  <script>
+    /* Flip `no-js` → `js` synchronously so any progressive-
+       enhancement CSS that gates behavior on `.js` (or `:not(.no-js)`)
+       takes effect before first paint, eliminating the flash of
+       unstyled content. Inline + synchronous on purpose: a deferred
+       loader would let no-js styles paint first. */
+    document.documentElement.classList.replace("no-js", "js");
+
+    /* Defensive stubs for Vitrin tracking functions ──
+       Merchant-installed Zid Apps inject custom scripts into
+       `store.settings.app_scripts_bundle.scripts.*` that call these
+       four functions DIRECTLY (without a `typeof === 'function'`
+       guard). When the function isn't defined yet (e.g., Google
+       Analytics app removed but script reference stale, or tracking.js
+       hasn't finished loading by the time the merchant's snippet
+       fires) the call throws and breaks the checkout flow.
+       We pre-stub each function as a logging no-op. Once Vitrin's
+       real tracking.js loads and defines the actual functions, they
+       OVERWRITE our stubs naturally (later assignment wins). This
+       keeps stale/broken merchant tracking snippets from crashing
+       the storefront. */
+    (function () {
+      var fns = [
+        "zidInitiateCheckoutEventTracking",
+        "zidPurchaseEventTracking",
+        "zidAddCartEventTracking",
+        "zidViewContentEventTracking"
+      ];
+      for (var i = 0; i < fns.length; i++) {
+        var name = fns[i];
+        if (typeof window[name] !== "function") {
+          // IIFE to capture `name` in closure for the warning log.
+          window[name] = (function (n) {
+            return function () {
+              if (window.__themeDebug) {
+                console.warn("[zid-tracking-stub] " + n + " called but real implementation not loaded — merchant tracking may be misconfigured");
+              }
+            };
+          })(name);
+        }
+      }
+    })();
+  </script>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="x-ua-compatible"
+      content="ie=edge"
+    />
+    {# `viewport-fit=cover` lets pages extend into the iOS notch/home-indicator
+       safe areas — required for `env(safe-area-inset-*)` to resolve to actual
+       pixel values instead of 0. Components like the WhatsApp FAB and bottom
+       sticky CTA use those env() values to clear the gesture bar.
+       Note: `maximum-scale` and `user-scalable` are deliberately NOT set —
+       blocking pinch-zoom violates WCAG 1.4.4 (Resize Text) and creates
+       accessibility issues for users with low vision. #}
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    {# Page title — each template provides a `{% block title %}`. The default
+       falls back to the store name. If `{% vitrin_head %}` (below) injects
+       its own <title>, browsers honour the LAST title tag, so this stays
+       a safe default without conflicting. #}
+    <title>{% block title %}{{ store.name }}{% endblock %}</title>
+
+    {# Meta description — same pattern: each template can override via
+       `{% block meta_description %}`. Falls back to the store name + a
+       generic descriptor when not set. #}
+    <meta name="description" content="{% block meta_description %}{{ store.name }}{% endblock %}" />
+
+    {# Open Graph + Twitter card — minimal defaults so social shares
+       render with a title + image instead of empty cards. Templates
+       can override via `{% block og_image %}`. The store logo is the
+       sensible default fallback. #}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}" />
+    {% if store.logo %}
+      <meta property="og:image" content="{% block og_image %}{{ store.logo }}{% endblock %}" />
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {# Favicon — Zid's `{% vitrin_head %}` typically injects this; the
+       fallback below covers the case where it doesn't, using the store
+       logo as a generic icon. Browsers ignore the second declaration
+       when vitrin_head provides one. #}
+    {% if store.logo %}
+      <link rel="icon" type="image/png" href="{{ store.logo }}" />
+    {% endif %}
+
+    {% vitrin_head %}
+    {# Preconnect for the @tailwindplus/elements CDN below — saves a
+       full TLS handshake round-trip on the script load.
+       Note: preconnects to `raqeeb.zid.sa` and `sdk-cdn.mazeedplus.com`
+       were trialled but Lighthouse flagged them as "Unused preconnect"
+       — those origins are loaded conditionally by Vitrin platform tags
+       and aren't always requested, so over-preconnecting wastes
+       handshake budget. Removed. #}
+    <link
+      rel="preconnect"
+      href="https://cdn.jsdelivr.net"
+      crossorigin
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    {# flagcdn.com serves the country-flag PNGs used by the phone-input and the
+       mobile region drawer. Those are interaction-gated (the field/drawer must
+       open first), so a full `preconnect` would waste a handshake on most page
+       loads — `dns-prefetch` just warms the DNS lookup cheaply. #}
+    <link
+      rel="dns-prefetch"
+      href="https://flagcdn.com"
+    />
+
+    {# Resolve the merchant's font choice. Picking "— Custom —" in the
+       font select lets them type any Google Font name (e.g. "Work Sans")
+       into the `family_custom` text field; otherwise we use the select
+       value directly. `_url` uses `+` (Google Fonts URL syntax), `_css`
+       uses spaces (CSS font-family syntax) — both transforms are safe on
+       either form because the select values use `+` and the custom
+       field uses spaces. #}
+    {% set _font_pick = (settings.font_family_custom or 'Baloo+Bhaijaan+2') if settings.font_family == 'custom' else (settings.font_family | default('Baloo+Bhaijaan+2')) %}
+    {# Strip URL-meta characters from the merchant-supplied font name
+       before injecting it into the Google Fonts URL. Without this,
+       a font name containing `&`, `?`, `#`, `=`, or quotes would
+       break the URL or, worse, allow query-string injection. We
+       allow letters, digits, spaces (→ `+`) and hyphens — Google
+       Fonts names only ever contain those characters. #}
+    {% set _font_safe = _font_pick | reject('in', ['&', '?', '#', '=', '"', "'", '\\', '<', '>']) | join('') %}
+    {% set _font_url  = (_font_pick | replace(' ', '+') | replace('&', '') | replace('?', '') | replace('#', '') | replace('=', '') | replace('"', '') | replace("'", '') | replace('<', '') | replace('>', '')) %}
+    {% set _font_css  = _font_pick | replace('+', ' ') | replace('"', '') | replace("'", '') %}
+
+    {# Google Fonts — non-blocking load.
+       - `media="print"` + `onload` flip trick makes the browser defer
+         applying the stylesheet until it's downloaded, so it doesn't
+         block initial render.
+       - `display=swap` shows the fallback stack immediately and swaps in
+         the web font when ready — no FOIT (flash of invisible text).
+       - `subset=latin,arabic` narrows the `unicode-range` declarations
+         Google returns to the two scripts most Zid stores use. For
+         Latin-only families this is just `latin`; for Arabic-only it's
+         just `arabic` — either way, other scripts (Cyrillic, Greek,
+         Vietnamese, etc.) are excluded from the CSS response. #}
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family={{ _font_url }}:wght@400;500;600;700&display=swap&subset=latin,arabic"
+    />
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.onload=null;this.media='all'"
+      href="https://fonts.googleapis.com/css2?family={{ _font_url }}:wght@400;500;600;700&display=swap&subset=latin,arabic"
+    />
+    {#
+      Prettier ignore is needed here because the CSS contains Jinja template variables
+      which cause Prettier's PostCSS parser to fail with "Cannot read properties of undefined (reading 'raw')"
+    #}
+    <!-- prettier-ignore-start -->
+    <style>
+      :root {
+        /* Font — merchant pick first; then a system-font stack so text
+           still renders in a native UI face (Arabic or Latin) while
+           Google Fonts is arriving. Order covers: macOS/iOS native,
+           Chrome-on-macOS, Windows (Segoe UI renders Arabic well),
+           Windows Arabic fallback (Tahoma), broad Latin (Arial),
+           generic sans-serif last. */
+        --font-family: "{{ _font_css }}",
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+
+        /* ========== LIGHT MODE COLORS (Default) ========== */
+        --background: {{ settings.theme_background | default('#FFFFFF') }};
+        --foreground: {{ settings.theme_foreground | default('#0B0A09') }};
+        {# Brand primary from Zid's "Store identity" page (store.settings.
+           branding.colors.primary), e.g. #efa41c. Falls back to the theme
+           default if the store hasn't set a brand colour. #}
+        --primary: {{ settings.theme_primary or store.settings.branding.colors.primary or '#FFBD4E' }};
+        --primary-foreground: {{ settings.theme_primary_foreground | default('#0B0A09') }};
+        --secondary: {{ settings.theme_secondary | default('#FFFFFF') }};
+        --muted: {{ settings.theme_muted | default('#545352') }};
+        --accent: {{ settings.theme_accent | default('#A89C90') }};
+        --border: {{ settings.theme_border | default('#B5B5B5') }};
+        --input: {{ settings.theme_input | default('#545352') }};
+        --ring: {{ settings.theme_ring | default('#0B0A09') }};
+
+        /* ========== RADIUS ========== */
+        --radius: {{ settings.theme_radius | default(0) }}px;
+        --button-radius: {{ settings.theme_button_radius | default(0) }}px;
+
+        /* ========== SECTION HEADING COLOR OVERRIDES ==========
+           Theme-wide overrides for the eyebrow / subtitle colors
+           used by `components/products/section-heading.jinja`.
+           Only emitted when the merchant has set a non-empty value;
+           when absent, the partial's CSS rules fall back to their
+           defaults (--primary for souq eyebrow, color-mix muted
+           for subtitle). Applies across every section that uses the
+           shared heading partial — products, testimonials, partners,
+           why-us, etc. */
+        {% if heading_eyebrow_color %}--section-heading-eyebrow-color: {{ heading_eyebrow_color }};{% endif %}
+        {% if heading_subtitle_color %}--section-heading-subtitle-color: {{ heading_subtitle_color }};{% endif %}
+      }
+    </style>
+    <!-- prettier-ignore-end -->
+
+    <link rel="preload" href="{{ 'styles.css' | asset_url }}" as="style" />
+    <link rel="stylesheet" type="text/css" href="{{ 'styles.css' | asset_url }}" />
+
+    {# TailwindPlus Elements — pinned version for better caching.
+       `type=module` means it's deferred-by-default — runs after the
+       main HTML parse, doesn't block FCP. Kept in <head> (vs body)
+       because empirically the head position gives the request earlier
+       network priority; moving to body doubled its load time
+       (531ms → 1,075ms) due to bandwidth contention with images. #}
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1.0.22"
+      type="module"
+    ></script>
+
+    {% if user_custom_css %}
+      <link
+        rel="stylesheet"
+        href="{{ user_custom_css }}"
+      />
+    {% endif %}
+
+    {# ── Merchant-supplied custom CSS ──
+       Injected AFTER styles.css and the linked user_custom_css so a
+       merchant rule can override anything from the theme. The `| safe`
+       keeps `<`, `>`, etc. intact (Jinja's autoescape would otherwise
+       turn `>` into `&gt;` inside CSS selectors and break them).
+       Defensively neutralize `</style>` if the merchant accidentally
+       pastes a stylesheet wrapped in tags — without this escape,
+       `</style>` would terminate our wrapper early and the rest of
+       the snippet would render as raw HTML on the page. #}
+    {% if settings.custom_code_custom_css %}
+      <style data-custom-css>
+        {{ settings.custom_code_custom_css | replace('</style>', '<\\/style>') | replace('</STYLE>', '<\\/STYLE>') | safe }}
+      </style>
+    {% endif %}
+
+    {# ── Merchant-supplied custom JS for <head> ──
+       Best for analytics / pixel tracking snippets that need to load
+       early. The script is inline (no defer/async) so it executes
+       in document order, matching how Google Analytics / Meta Pixel
+       expect to be loaded.
+       Defensively neutralize `</script>` — common third-party widgets
+       wrap their snippets in <script> tags, and pasted content with
+       `</script>` would close our wrapper early and inject HTML. #}
+    {% if settings.custom_code_custom_js_head %}
+      <script data-custom-js-head>
+        {{ settings.custom_code_custom_js_head | replace('</script>', '<\\/script>') | replace('</SCRIPT>', '<\\/SCRIPT>') | safe }}
+      </script>
+    {% endif %}
+  </head>
+  <body
+    data-template="{{ session.template }}"
+    class="min-h-dvh font-sans antialiased"
+  >
+    {% include 'header.jinja' %}
+    <main id="main">{% block content %}{% endblock %}</main>
+
+    {% include 'footer.jinja' %}
+    {% include 'components/bottom-nav.jinja' %}
+    {% include 'components/whatsapp-fab.jinja' %}
+    {% include "vitrin:shared/region_settings_dialog.jinja" %}
+    {# Global Notify Me Dialog - for product cards on any page #}
+    {% include 'components/products/notify-me-dialog.jinja' %}
+    {# Global Quick View Modal - for product cards on any page #}
+    {% include 'components/products/quick-view-modal.jinja' %}
+    <script>
+      window.zidOpenRegionSettingDialog = () => {
+        region_settings_dialog?.open();
+      };
+    </script>
+    {# Global config scripts (must run before theme bundle) #}
+    <!-- prettier-ignore-start -->
+    <script>
+      // Layout config for header functionality
+      window.layoutConfig = {
+        profileUrl: "{{ url_for('profile') }}"
+      };
+
+      // Product translations (used by variants.js for variant changes).
+      // `discount` reads the "Save" msgid so the chip stays consistent
+      // with the server-rendered label after a variant change.
+      window.productTranslations = {
+        discount: "{{ _('Save') }}",
+        remaining: "{{ _('Remaining %s only') }}",
+        sold: "{{ _('Sold more than %s times') }}"
+      };
+      window.storeLowStockEnabled = {{ 'true' if store.settings.products.low_stock_enabled else 'false' }};
+      window.storeLowStockThreshold = {{ store.settings.products.low_stock_threshold | default(5) }};
+
+      // Notify Me translations (used by notify-me.js for stock alerts)
+      window.notifyMeTranslations = {
+        success: "{{ _('You will be notified when this product is back in stock!') }}",
+        error: "{{ _('Failed to submit. Please try again.') }}",
+        required: "{{ _('Please fill in all required fields') }}",
+        phoneRequired: "{{ _('Phone number is required') }}",
+        phoneTooShort: "{{ _('Phone number is too short') }}",
+        phoneTooLong: "{{ _('Phone number is too long') }}",
+        phoneInvalid: "{{ _('Invalid phone number') }}"
+      };
+
+      // Custom styles for Vitrin Kit Components (bundle, gift, region dialogs)
+      // These override the default styles in platform widgets
+      window.zidCustomStyles = {
+        bundle_selection: {
+          fontFamily: "var(--font-family)",
+          fontSize: "14px"
+        },
+        gift_dialog: {
+          fontFamily: "var(--font-family)",
+          fontSize: "14px",
+          primaryColor: "var(--primary)",
+          primaryForeground: "var(--primary-foreground)",
+          backgroundColor: "var(--background)",
+          borderRadius: "var(--radius)"
+        },
+        region_settings_dialog: {
+          fontFamily: "var(--font-family)",
+          fontSize: "14px",
+          primaryColor: "var(--primary)",
+          primaryForeground: "var(--primary-foreground)",
+          backgroundColor: "var(--background)",
+          borderRadius: "var(--radius)"
+        }
+      };
+    </script>
+    <!-- prettier-ignore-end -->
+
+    {# Bundled theme JS (Vite output) - includes all feature modules #}
+    <script
+      defer
+      src="{{ 'dist/theme.js' | asset_url }}"
+    ></script>
+
+    {# Include the Vitrin checkout_dialog template globally if Buy Now is enabled,
+       so Quick View from any page can trigger the popup checkout. #}
+    {% if pdp_show_buy_now %}
+      {% include 'components/products/checkout-dialog-init.jinja' %}
+    {% endif %}
+
+    {% vitrin_body %}
+
+    {# Loyalty Rewards - loaded AFTER vitrin_body so popup is in DOM #}
+    {% if session.template not in ['product_details', 'cart_page', 'page_details'] and store.settings.checkout.is_loyalty_enabled %}
+      <script>
+        var loyalty_button_direction = "{{ session.locale.language.direction }}";
+        var text_loyalty_rewards = '{{ _("Rewards") }}';
+        var text_loyalty_options = '{{ _("For {points} get a discount {percentage}") }}';
+        var store_currency_code = "{{ session.currency }}";
+      </script>
+      <script defer src="{{ 'js/layout-loyalty.js' | asset_url }}"></script>
+    {% endif %}
+    {% block footer_scripts %}
+    {% endblock %}
+
+    {# ── Merchant-supplied custom JS for end of <body> ──
+       Loaded AFTER the theme bundle (dist/theme.js) and after
+       vitrin_body, so all DOM elements + theme JS APIs are
+       available. Best for cart hooks, third-party chat widgets,
+       abandoned-cart triggers, etc. — anything that reads or
+       mutates the rendered page.
+       Same `</script>` neutralization as the head variant above —
+       pasted snippets often contain `</script>` which would
+       terminate our wrapper early. #}
+    {% if settings.custom_code_custom_js_body %}
+      <script data-custom-js-body>
+        {{ settings.custom_code_custom_js_body | replace('</script>', '<\\/script>') | replace('</SCRIPT>', '<\\/SCRIPT>') | safe }}
+      </script>
+    {% endif %}
+  </body>
+</html>
+

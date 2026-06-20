@@ -1,0 +1,429 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Hero Banner — two height modes (dynamic default / fixed) with image
+   and/or video background, badge, multi-line heading, description,
+   two CTAs, whole-banner link, overlay variants, per-breakpoint px
+   typography, custom colors, and layout knobs.
+
+   Visual state flows out through data-* attributes + inline CSS custom
+   properties on <section>, consumed by hero.css.
+
+   Security notes:
+     - Heading/description textareas are escaped via `| e` before the
+       `\n → <br>` conversion so merchant-supplied HTML can't leak.
+     - URL fields pass through `safe_url` inside `resolve_link` (in
+       components/_macros.jinja) so `javascript:` and `data:` schemes
+       collapse to '#'.
+     - aria-label / alt attributes are escaped + newlines collapsed so
+       a heading containing `"` or `\n` cannot escape the attribute.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% from 'components/_macros.jinja' import resolve_link %}
+
+{# ── Presence flags ────────────────────────────────────────────── #}
+{% set has_image   = settings.background_image or settings.background_image_mobile %}
+{% set is_lazy     = settings.order > 2 %}
+
+{# Image URLs — only resolve when an image is actually uploaded, so the
+   <picture> doesn't emit `src=""` when only a video is configured. #}
+{% set mobile_image  = image_url(settings.background_image_mobile or settings.background_image, w=828,  q=80, f='auto') if has_image else '' %}
+{% set desktop_image = image_url(settings.background_image or settings.background_image_mobile,  w=1920, q=80, f='auto') if has_image else '' %}
+
+{# ── Height mode ─────────────────────────────────────────────────
+   Dynamic-height needs an IMAGE specifically — `.hero-bg-img` gets
+   `height: auto` in dynamic mode and dictates the section height
+   from its natural aspect ratio. Video alone CANNOT drive dynamic
+   height because the `<video>` element is `position: absolute` (so
+   it would contribute zero intrinsic height to the section).
+
+   Fallback rule: dynamic mode requires has_image. Without an image
+   (video-only or no media), we fall back to fixed mode so the
+   merchant's min_height_* settings (or the 520/700 defaults) apply
+   and the banner has actual height. This prevents the empty-section
+   collapse bug when a merchant sets a video bg without an image. #}
+{% set _dynamic_pref = settings.dynamic_height if settings.dynamic_height is not none else true %}
+{% set dynamic_h     = _dynamic_pref and has_image %}
+
+{# ── Link resolution (all three URLs use the same 3-tier picker) ── #}
+{# Whole-banner link — keeps the "Homepage" shortcut option. #}
+{% set banner_url = resolve_link(
+     settings.banner_link_shortcut,
+     settings.banner_link_products,
+     settings.banner_link_url
+   ) | trim %}
+{# '#' from safe_url means the URL was rejected as unsafe — treat as no
+   link so we don't get a clickable banner that goes nowhere. #}
+{% set has_link = banner_url | length > 0 and banner_url != '#' %}
+
+{% set button_url_resolved = resolve_link(
+     settings.button_shortcut,
+     settings.button_products,
+     settings.button_url
+   ) | trim %}
+{% set secondary_button_url_resolved = resolve_link(
+     settings.secondary_button_shortcut,
+     settings.secondary_button_products,
+     settings.secondary_button_url
+   ) | trim %}
+
+{# ── Overlay + text color ──────────────────────────────────────── #}
+{% set overlay       = settings.overlay_color | default('dark', true) %}
+{% set _tc_setting   = settings.text_color    | default('auto', true) %}
+{% set text_color    = _tc_setting if _tc_setting != 'auto' else ('dark' if overlay == 'none' else 'light') %}
+{% set text_class    = 'text-white' if text_color == 'light' else 'text-foreground' %}
+
+{# overlay_opacity — `is not none` (not `| default`) so a merchant
+   explicitly choosing 0 renders as 0, not the 35 fallback. #}
+{% set overlay_opacity = settings.overlay_opacity if settings.overlay_opacity is not none else 35 %}
+
+{% set btn_variant   = settings.button_variant | default('filled', true) %}
+{# Defensive lookup — defaulting on the dict access (instead of relying on
+   `| default('start', true)` above) means legacy stored values like 'left'
+   or 'right' (from a previous schema version) don't raise KeyError and
+   crash the section. Falls back to start-aligned. #}
+{% set _align_in     = settings.content_alignment | default('start', true) %}
+{% set _align_map    = { 'start': 'items-start text-start', 'center': 'items-center text-center', 'end': 'items-end text-end' } %}
+{% set align         = _align_in if _align_in in _align_map else 'start' %}
+{% set align_class   = _align_map[align] %}
+
+{# Vertical position (per breakpoint) — same defensive normalization as
+   alignment so an unknown stored value can never emit a broken data
+   attribute. Mobile applies below 768px, desktop at 768px and up. #}
+{% set _vpos_in      = settings.content_position        | default('center', true) %}
+{% set _vpos_mob_in  = settings.content_position_mobile | default('center', true) %}
+{% set vpos          = _vpos_in     if _vpos_in     in ['top', 'center', 'bottom'] else 'center' %}
+{% set vpos_mobile   = _vpos_mob_in if _vpos_mob_in in ['top', 'center', 'bottom'] else 'center' %}
+
+{# Button size still uses a select (sm/md/lg) — normalize mobile in case
+   a legacy value like 'lg' was saved before the schema had it. #}
+{% set button_size        = settings.button_size        | default('lg', true) %}
+{% set _btn_mob_raw       = settings.button_size_mobile | default('sm', true) %}
+{% set button_size_mobile = _btn_mob_raw if _btn_mob_raw in ['sm', 'md', 'lg'] else 'sm' %}
+
+{# Layout — dynamic gets min-height as a floor; fixed gets it as actual
+   height. For fixed mode with no merchant-set min-height, fall back to
+   sensible defaults so the banner isn't collapsed. #}
+{% set banner_width    = settings.banner_width   | default('full', true) %}
+{% set radius_px       = settings.border_radius         | int(0) %}
+{% set radius_px_mob   = settings.border_radius_mobile  | int(0) %}
+{% set margin_px       = settings.section_margin        | int(0) %}
+{% set margin_px_mob   = settings.section_margin_mobile | int(0) %}
+{% set _min_h_mobile   = settings.min_height_mobile  | int(0) %}
+{% set _min_h_desktop  = settings.min_height_desktop | int(0) %}
+{# Fixed-mode default floor when merchant hasn't picked one. #}
+{% set min_h_mobile  = _min_h_mobile  if (_min_h_mobile  > 0 or dynamic_h) else 520 %}
+{% set min_h_desktop = _min_h_desktop if (_min_h_desktop > 0 or dynamic_h) else 700 %}
+
+{# ── Size resolution (px ranges) — defensive against legacy strings.
+   `_size_or(v, fallback)` returns fallback when v is undefined, 0, or a
+   non-numeric legacy value like 'sm'. #}
+{% macro _size_or(value, fallback) -%}
+  {%- set n = value | int(0) -%}
+  {{- n if n > 0 else fallback -}}
+{%- endmacro %}
+{% set heading_size_px        = _size_or(settings.heading_size,             48) %}
+{% set heading_size_mobile_px = _size_or(settings.heading_size_mobile,      30) %}
+{% set desc_size_px           = _size_or(settings.description_size,         17) %}
+{% set desc_size_mobile_px    = _size_or(settings.description_size_mobile,  15) %}
+{% set badge_size_px          = _size_or(settings.badge_size,               13) %}
+{% set badge_size_mobile_px   = _size_or(settings.badge_size_mobile,        11) %}
+{% set logo_size_px           = _size_or(settings.logo_size,                40) %}
+{% set logo_size_mobile_px    = _size_or(settings.logo_size_mobile,         32) %}
+{% set top_space_px           = settings.top_space         | int(0) %}
+{% set top_space_mobile_px    = settings.top_space_mobile  | int(0) %}
+
+{# Consolidated inline style for the <section> element. #}
+{% set section_style %}
+  --min-h-mobile: {{ min_h_mobile }}px;
+  --min-h-desktop: {{ min_h_desktop }}px;
+  --banner-radius-mobile: {{ radius_px_mob }}px;
+  --banner-radius: {{ radius_px }}px;
+  --section-margin-mobile: {{ margin_px_mob }}px;
+  --section-margin: {{ margin_px }}px;
+  --hero-heading-size-mobile: {{ heading_size_mobile_px }}px;
+  --hero-heading-size:        {{ heading_size_px }}px;
+  --hero-description-size-mobile: {{ desc_size_mobile_px }}px;
+  --hero-description-size:        {{ desc_size_px }}px;
+  --hero-badge-size-mobile: {{ badge_size_mobile_px }}px;
+  --hero-badge-size:        {{ badge_size_px }}px;
+  --hero-logo-size-mobile: {{ logo_size_mobile_px }}px;
+  --hero-logo-size:        {{ logo_size_px }}px;
+  --hero-top-space-mobile: {{ top_space_mobile_px }}px;
+  --hero-top-space:        {{ top_space_px }}px;
+{% endset %}
+
+{# ── Attribute-safe alt/aria text ──────────────────────────────────
+   Escapes any quotes/brackets the merchant typed, then collapses line
+   breaks to spaces (attributes can't span lines). CRLF handled. #}
+{% set heading_alt_text %}{{ settings.heading | default('') | e | replace('\r\n', ' ') | replace('\n', ' ') | replace('\r', ' ') }}{% endset %}
+
+{# ── Reusable content markup ────────────────────────────────────── #}
+{% macro hero_content() %}
+  <div class="theme-container relative z-10 flex max-w-[960px] flex-col gap-20">
+    <div class="hero-content flex max-w-[768px] flex-col gap-6 {{ align_class }}">
+      <div class="flex flex-col gap-4">
+        {% if settings.logo_image %}
+          {# `| trim` strips any surrounding whitespace that Vitrin's
+             image_url filter occasionally pads into its output. Without
+             this the rendered `src="..."` includes leading spaces and a
+             trailing newline — most browsers tolerate it but stricter
+             URL parsers (some crawlers, native apps embedding the page)
+             may reject it. #}
+          <img
+            src="{{ image_url(settings.logo_image, h=96, q=80, f='auto') | trim }}"
+            alt=""
+            aria-hidden="true"
+            class="hero-logo"
+            loading="lazy"
+            decoding="async"
+          />
+        {% endif %}
+
+        {% if settings.badge_text and settings.badge_text | trim %}
+          <span class="hero-badge {{ text_class }}"
+            {%- if settings.badge_color %} style="color: {{ settings.badge_color }}; --badge-dot-color: {{ settings.badge_color }};"{% endif -%}
+          >{{ settings.badge_text }}</span>
+        {% endif %}
+
+        {# Heading — textarea; merchant's newlines become <br> (CRLF +
+           LF handled). `| e` escapes HTML before conversion so anything
+           they type is safe, then `| safe` marks the converted markup
+           as already-escaped.
+           Single template using a dynamic tag name — `is_primary_hero`
+           swaps <h1> (one per page, top hero) ↔ <h2> (secondary hero on
+           a page that already has an <h1> elsewhere). #}
+        {% if settings.heading and settings.heading | trim %}
+          {% set _heading_html = settings.heading | e | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', '<br>') %}
+          {% set _h_tag = 'h1' if settings.is_primary_hero else 'h2' %}
+          <{{ _h_tag }} class="hero-heading {{ text_class }}"
+            {%- if settings.heading_color %} style="color: {{ settings.heading_color }};"{% endif -%}
+          >{{ _heading_html | safe }}</{{ _h_tag }}>
+        {% endif %}
+
+        {% if settings.description and settings.description | trim %}
+          {% set _description_html = settings.description | e | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', '<br>') %}
+          <p class="hero-description {{ text_class }}"
+            {%- if settings.description_color %} style="color: {{ settings.description_color }};"{% endif -%}
+          >{{ _description_html | safe }}</p>
+        {% endif %}
+      </div>
+
+      {% if (settings.button_text and settings.button_text | trim)
+         or (settings.secondary_button_text and settings.secondary_button_text | trim) %}
+        <div class="hero-ctas flex flex-wrap gap-3"
+             data-button-size="{{ button_size }}"
+             data-button-size-mobile="{{ button_size_mobile }}">
+          {% if settings.button_text and settings.button_text | trim %}
+            <a href="{{ button_url_resolved if button_url_resolved else '#' }}"
+               class="btn hero-btn hero-btn--{{ btn_variant }}"
+               data-text-color="{{ text_color }}">{{ settings.button_text }}</a>
+          {% endif %}
+          {% if settings.secondary_button_text and settings.secondary_button_text | trim %}
+            <a href="{{ secondary_button_url_resolved if secondary_button_url_resolved else '#' }}"
+               class="btn hero-btn hero-btn--secondary"
+               data-text-color="{{ text_color }}">{{ settings.secondary_button_text }}</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{# ── Background video ──────────────────────────────────────────────
+   Emits:
+     - ONE <video> when desktop src exists AND (no mobile-specific src
+       OR mobile-play is off). Uses no breakpoint class when it plays on
+       both breakpoints, --desktop class when mobile is hidden/different.
+     - SECOND <video> only when a merchant uploaded a distinct mobile src
+       AND mobile-play is on. Avoids the Safari-double-download case
+       where both elements reference the same desktop URL.
+
+   The video is loaded LAZILY by assets/js/features/hero-video.js: it ships
+   with NO `autoplay` and an empty <source> (the URL is parked in `data-src`),
+   so nothing downloads at parse time. The JS loads + plays ONLY the
+   breakpoint-visible video once the main thread is idle (post-LCP).
+   Previously `autoplay` forced an immediate full download — silently
+   overriding `preload="none"` — which pushed hero-video LCP past 10s on
+   mobile. `preload` stays "none"; it only matters once the JS sets the src. #}
+{% macro bg_video(poster_image) %}
+  {#- Vitrin's `type: "video"` field returns a file-upload object (not
+      a plain string) — running it through `safe_url` would break because
+      `safe_url` calls `.startswith()` on its input, which fails silently
+      for objects and returns `#`. We deliberately use the raw value here
+      and let Jinja's `{{ }}` render call stringify the object to its URL.
+      XSS surface is nil since merchants can't paste raw URLs into a
+      type:video field — only platform-validated file uploads land here. -#}
+  {%- set _desktop_src = settings.background_video -%}
+  {%- set _mobile_src  = settings.background_video_mobile -%}
+  {%- set _play_mobile = settings.video_play_on_mobile -%}
+
+  {#- When mobile-specific src exists OR mobile is hidden, desktop video
+      is desktop-only. When mobile-specific is absent AND mobile plays,
+      the SAME element plays on both breakpoints (no breakpoint class). -#}
+  {%- set _desktop_class -%}
+    hero-bg-video
+    {%- if _mobile_src or not _play_mobile %} hero-bg-video--desktop{% endif -%}
+  {%- endset -%}
+
+  {% if _desktop_src %}
+    <video
+      class="{{ _desktop_class }}"
+      loop muted playsinline
+      preload="{{ 'metadata' if is_lazy else 'none' }}"
+      {% if poster_image %}poster="{{ poster_image }}"{% endif %}
+      {% if settings.video_respect_motion %}data-respect-motion="true"{% endif %}
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <source data-src="{{ _desktop_src }}" type="video/mp4">
+    </video>
+  {% endif %}
+
+  {% if _mobile_src and _play_mobile %}
+    <video
+      class="hero-bg-video hero-bg-video--mobile"
+      loop muted playsinline
+      preload="{{ 'metadata' if is_lazy else 'none' }}"
+      {% if poster_image %}poster="{{ poster_image }}"{% endif %}
+      {% if settings.video_respect_motion %}data-respect-motion="true"{% endif %}
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <source data-src="{{ _mobile_src }}" type="video/mp4">
+    </video>
+  {% endif %}
+{% endmacro %}
+
+{# Whole-banner link overlay — sits over image but under the content
+   layer (which disables pointer-events so clicks pass through; buttons
+   re-enable). aria-label escaped against quote/newline injection. #}
+{% macro banner_link(url) %}
+  {% if url %}
+    <a href="{{ url }}"
+       class="hero-link-overlay"
+       aria-label="{{ heading_alt_text or _('Banner link') }}"></a>
+  {% endif %}
+{% endmacro %}
+
+{# ── DYNAMIC HEIGHT (default): foreground <picture>, content overlaid ── #}
+{% if dynamic_h %}
+  <section
+    data-section-id="{{ sectionId }}"
+    class="section-hero section-hero--dynamic relative overflow-hidden"
+    data-overlay="{{ overlay }}"
+    data-text-color="{{ text_color }}"
+    data-content-align="{{ align }}"
+    data-content-position="{{ vpos }}"
+    data-content-position-mobile="{{ vpos_mobile }}"
+    data-banner-width="{{ banner_width }}"
+    {% if not has_image %}data-no-image="true"{% endif %}
+    {% if has_link %}data-has-link="true"{% endif %}
+    {# data-rounded gates the clip-path on rounded contained banners
+       only — pure CSS can't compare custom-property values to zero,
+       so we stamp the flag server-side when at least one breakpoint's
+       radius is non-zero. Avoids paying clip-path's repaint cost on
+       full-width or zero-radius banners (the most common case). #}
+    {% if banner_width == 'contained' and (radius_px > 0 or radius_px_mob > 0) %}data-rounded="true"{% endif %}
+    style="{{ section_style }}"
+  >
+    {% if has_image %}
+      <picture class="hero-picture block w-full">
+        <source media="(min-width: 768px)" srcset="{{ desktop_image }}" />
+        <img
+          src="{{ mobile_image }}"
+          alt="{{ heading_alt_text }}"
+          class="hero-bg-img block w-full h-auto"
+          style="object-position: {{ settings.background_position | default('center') }}"
+          {% if is_lazy %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+          decoding="async"
+        />
+      </picture>
+    {% endif %}
+
+    {{ bg_video(desktop_image) }}
+
+    {{ banner_link(banner_url) }}
+
+    <div class="hero-overlay-layer absolute inset-0 flex items-center px-4 md:px-16">
+      {% if overlay != 'none' %}
+        <div class="hero-overlay hero-overlay--{{ overlay }} absolute inset-0 pointer-events-none"
+             style="opacity: {{ overlay_opacity / 100 }}"></div>
+      {% endif %}
+      {{ hero_content() }}
+    </div>
+  </section>
+
+{# ── FIXED HEIGHT: absolute image + object-cover + min-height ───── #}
+{% else %}
+  <section
+    data-section-id="{{ sectionId }}"
+    class="section-hero relative flex items-center overflow-hidden px-4 md:px-16"
+    data-overlay="{{ overlay }}"
+    data-text-color="{{ text_color }}"
+    data-content-align="{{ align }}"
+    data-content-position="{{ vpos }}"
+    data-content-position-mobile="{{ vpos_mobile }}"
+    data-banner-width="{{ banner_width }}"
+    {% if not has_image %}data-no-image="true"{% endif %}
+    {% if has_link %}data-has-link="true"{% endif %}
+    {# data-rounded gates the clip-path on rounded contained banners
+       only — pure CSS can't compare custom-property values to zero,
+       so we stamp the flag server-side when at least one breakpoint's
+       radius is non-zero. Avoids paying clip-path's repaint cost on
+       full-width or zero-radius banners (the most common case). #}
+    {% if banner_width == 'contained' and (radius_px > 0 or radius_px_mob > 0) %}data-rounded="true"{% endif %}
+    style="{{ section_style }}"
+  >
+    {# Wrapper was previously `-z-10` (z-index: -10). On any section
+       that DIDN'T explicitly create its own stacking context, that
+       negative z-index escaped the local stack and dropped behind the
+       section's `background: var(--secondary)` (set by
+       `[data-no-image="true"]`), making the video invisible. Switched
+       to `z-0` (z-index: 0) — keeps the layer below the content
+       (which is at `z-10`) but above the section's background. The
+       `isolation: isolate` rule in hero.css adds a second line of
+       defense in case the markup ever regresses. #}
+    <div class="absolute inset-0 z-0">
+      {% if has_image %}
+        <picture>
+          <source media="(min-width: 768px)" srcset="{{ desktop_image }}" />
+          <img
+            src="{{ mobile_image }}"
+            alt="{{ heading_alt_text }}"
+            class="hero-bg-img h-full w-full object-cover"
+            style="object-position: {{ settings.background_position | default('center') }}"
+            {% if is_lazy %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+            decoding="async"
+          />
+        </picture>
+      {% endif %}
+      {{ bg_video(desktop_image) }}
+      {% if overlay != 'none' %}
+        <div class="hero-overlay hero-overlay--{{ overlay }} absolute inset-0 pointer-events-none"
+             style="opacity: {{ overlay_opacity / 100 }}"></div>
+      {% endif %}
+    </div>
+
+    {{ banner_link(banner_url) }}
+
+    {{ hero_content() }}
+  </section>
+{% endif %}
+{% endif %}{# /country-visibility guard #}

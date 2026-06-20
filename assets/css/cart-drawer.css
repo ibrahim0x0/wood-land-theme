@@ -1,0 +1,1221 @@
+/* Drawer-local design tokens. Control radii (qty, coupon input/button,
+   variant trigger, checkout, rec-card buttons) all flow through the global
+   `--button-radius` so controls sitting next to each other always match the
+   merchant's Button Roundness setting. Surfaces (popovers, cards, callouts,
+   inset boxes) use a dedicated `--drawer-radius` scale so they're coherent
+   and tunable in one place instead of a dozen scattered px values. */
+  [data-cart-drawer] {
+    /* Squared per request — every drawer surface + control that flows through
+       these tokens (cards, inset boxes, qty, coupon, checkout, etc.) becomes
+       radius 0. `--button-radius` is overridden locally so the buttons square
+       too without touching the merchant's global Button Roundness. */
+    --drawer-radius: 0px;
+    --drawer-radius-sm: 0px;
+    --button-radius: 0px;
+  }
+
+/* Per-line loading spinner overlay */
+  [data-drawer-line] {
+    transition:
+      opacity 250ms ease,
+      transform 250ms ease,
+      max-height 350ms ease;
+    max-height: 200px;
+    overflow: hidden;
+  }
+  [data-drawer-line].is-entering {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  [data-drawer-line].is-leaving {
+    opacity: 0;
+    max-height: 0;
+    padding-block: 0;
+    margin-block: 0 !important;
+  }
+  [data-drawer-line].is-busy {
+    pointer-events: none;
+  }
+  [data-drawer-line].is-busy::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(1px);
+  }
+  [data-drawer-line] {
+    position: relative;
+  }
+  .drawer-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .drawer-spinner svg {
+    width: 22px;
+    height: 22px;
+    animation: drawer-spin 700ms linear infinite;
+  }
+  @keyframes drawer-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Subtotal value flash on change */
+  [data-drawer-total].is-pulsing {
+    animation: drawer-total-pulse 380ms ease;
+  }
+  @keyframes drawer-total-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Premium variant-swap confirmation dialog */
+  .variant-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 250ms ease;
+    border: 0;
+    margin: 0;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
+  .variant-confirm-overlay:popover-open {
+    display: flex;
+  }
+  .variant-confirm {
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+  }
+  .variant-confirm__btn {
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+  }
+  .variant-confirm-overlay.is-visible { opacity: 1; }
+  .variant-confirm-overlay.is-leaving { opacity: 0; }
+
+  .variant-confirm {
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    border-radius: 20px;
+    padding: 2rem 2rem 1.75rem;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.5) inset,
+      0 30px 80px -20px rgba(0, 0, 0, 0.35),
+      0 8px 24px -8px rgba(0, 0, 0, 0.15);
+    animation: variant-confirm-in 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes variant-confirm-in {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .variant-confirm__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--primary);
+    margin: 0 auto 1rem;
+  }
+  .variant-confirm__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-bottom: 0.375rem;
+  }
+  .variant-confirm__subtitle {
+    font-size: 0.875rem;
+    color: color-mix(in srgb, var(--foreground) 65%, transparent);
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+  }
+  .variant-confirm__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  .variant-confirm__actions .variant-confirm__btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ─── Confirmation dialog style variants ─── */
+
+  /* Glass (default) — already styled above */
+
+  /* Solid — opaque background, no blur */
+  .variant-confirm-overlay--solid { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(0, 0, 0, 0.55); }
+  .variant-confirm-overlay--solid .variant-confirm {
+    background: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Minimal — light overlay, clean white panel */
+  .variant-confirm-overlay--minimal { background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .variant-confirm-overlay--minimal .variant-confirm {
+    background: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Dark — dark panel with light text */
+  .variant-confirm-overlay--dark { background: rgba(0, 0, 0, 0.60); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .variant-confirm-overlay--dark .variant-confirm {
+    background: color-mix(in srgb, #0f172a 92%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 30px 80px -20px rgba(0, 0, 0, 0.50);
+  }
+  .variant-confirm-overlay--dark .variant-confirm__title { color: #f8fafc; }
+  .variant-confirm-overlay--dark .variant-confirm__subtitle { color: #94a3b8; }
+  .variant-confirm-overlay--dark .variant-confirm__icon { background: rgba(255, 255, 255, 0.08); color: #60a5fa; }
+  .variant-confirm-overlay--dark .drawer-continue-btn { color: #cbd5e1; border-color: rgba(255, 255, 255, 0.15); }
+  .variant-confirm-overlay--dark .drawer-continue-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .variant-confirm { animation: none; }
+    .variant-confirm-overlay { transition: none; }
+  }
+
+  /* Variant "Edit" button — navigates to product page. Aligned to the
+     drawer's control family: tracks --button-radius (like the qty stepper
+     and variant trigger beside it), light primary tint, restrained hover
+     (no scale) to match the other outlined controls. */
+  .drawer-variants__edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .drawer-variants__edit-btn:hover {
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+  .drawer-variants__edit-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+  .drawer-variants .drawer-variants__values + .drawer-variants__edit-btn {
+    margin-inline-start: 0.5rem;
+  }
+
+  /* Premium variant dropdown */
+  .drawer-variants { display: block; }
+  .drawer-variants__values {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.3;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .drawer-variants__select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    /* Width comes from the display span, NOT from the longest option */
+    width: max-content;
+    /* Outlined style — transparent fill, clear border. Matches .drawer-qty
+       so the two controls read as the same visual family. */
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+    /* Tracks the global Button Roundness so it matches the qty pill it sits beside. */
+    border-radius: var(--button-radius);
+    padding: 0;
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease;
+  }
+  /* Visible label that determines the wrapper's width */
+  .drawer-variants__display {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding-block: 0.4375rem;
+    padding-inline: 0.75rem 1.875rem;
+    color: var(--foreground);
+    white-space: nowrap;
+    letter-spacing: 0.005em;
+    pointer-events: none;
+  }
+  .drawer-variants__select-wrap:hover {
+    border-color: color-mix(in srgb, var(--foreground) 45%, transparent);
+    transform: translateY(-1px);
+  }
+  .drawer-variants__select-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  /* Premium price summary */
+  [data-drawer-breakdown] {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .drawer-summary__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
+  .drawer-summary__label {
+    color: color-mix(in srgb, var(--foreground) 65%, transparent);
+    font-weight: 500;
+  }
+  /* Merged total line — carries the bottom-line emphasis (replaces the old
+     standalone total row). */
+  .drawer-summary__row--total {
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-top: 0.5rem;
+  }
+  .drawer-summary__row--total .drawer-summary__label {
+    color: var(--foreground);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .drawer-summary__row--total .drawer-summary__value {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+  /* Struck pre-coupon price shown inline before the net total. */
+  .drawer-summary__value-old {
+    margin-inline-end: 0.25rem;
+    font-size: 0.8em;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 45%, transparent);
+    text-decoration: line-through;
+    white-space: nowrap;
+  }
+  /* Savings / loyalty-points lines folded into the total row's value stack. */
+  .drawer-summary__saved {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--success) 72%, var(--foreground));
+  }
+  .drawer-summary__saved svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .drawer-summary__saved--points {
+    color: color-mix(in srgb, var(--warning) 58%, var(--foreground));
+  }
+  /* Right-side stack: the bold value sits on top with the small
+     dimmed count metadata below. Used by the subtotal row so the
+     label/value semantics stay aligned (price label → price value,
+     count is supplemental). */
+  .drawer-summary__value-stack {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    line-height: 1.2;
+    gap: 0.25rem 0.5rem;
+  }
+  .drawer-summary__count {
+    font-size: 0.7rem;
+    /* No margin when stacked under the value — the parent flex gap
+       handles spacing. The legacy inline use (still present in older
+       summary rows) gets its breathing room from this fallback. */
+    margin-inline-start: 0;
+    color: color-mix(in srgb, var(--foreground) 50%, transparent);
+    font-weight: 600;
+  }
+  .drawer-summary__value {
+    color: var(--foreground);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .drawer-summary__value--muted {
+    color: color-mix(in srgb, var(--foreground) 50%, transparent);
+    font-weight: 500;
+    font-size: 0.75rem;
+  }
+  .drawer-summary__row--discount .drawer-summary__value { color: var(--destructive); font-weight: 600; }
+  .drawer-summary__row--meta .drawer-summary__label,
+  .drawer-summary__row--meta .drawer-summary__value {
+    font-size: 0.7rem;
+    color: color-mix(in srgb, var(--foreground) 45%, transparent);
+    font-weight: 500;
+  }
+  /* Combined savings + loyalty points callout */
+  .drawer-summary__callout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0;
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+    border-radius: var(--drawer-radius-sm);
+  }
+  .drawer-summary__callout-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    /* Darkened toward foreground so the sage --success stays legible as text
+       on the soft success tint behind it. */
+    color: color-mix(in srgb, var(--success) 72%, var(--foreground));
+    line-height: 1.2;
+  }
+  .drawer-summary__callout-row strong { font-weight: 800; }
+  .drawer-summary__callout-row svg { flex-shrink: 0; opacity: 0.95; }
+  /* Points sub-row gets a slightly different tint */
+  .drawer-summary__callout-row--points {
+    color: color-mix(in srgb, var(--warning) 58%, var(--foreground));
+  }
+  .drawer-summary__callout-row--points svg { color: color-mix(in srgb, var(--warning) 70%, var(--foreground)); }
+
+  /* Custom fields display */
+  .drawer-cf {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.375rem 0.5rem;
+    margin-top: 0.125rem;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    border-radius: var(--drawer-radius-sm);
+    font-size: 0.7rem;
+  }
+  .drawer-cf__group {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    margin-bottom: 0.125rem;
+  }
+  .drawer-cf__row { display: flex; gap: 0.375rem; align-items: baseline; }
+  .drawer-cf__label { color: color-mix(in srgb, var(--foreground) 55%, transparent); font-weight: 500; }
+  .drawer-cf__value { color: var(--foreground); font-weight: 600; min-width: 0; word-break: break-word; }
+  .drawer-cf__file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .drawer-cf__file:hover { text-decoration: underline; }
+  .drawer-cf__file img { width: 14px; height: 14px; border-radius: 2px; object-fit: cover; }
+
+
+  /* Header icon-only button (clear cart trash) */
+  .drawer-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 0;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .drawer-icon-btn:hover {
+    background: color-mix(in srgb, var(--destructive) 10%, transparent);
+    color: var(--destructive);
+  }
+  .drawer-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+
+  /* Title-row "View full cart" link */
+  .drawer-view-cart-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: fit-content;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-decoration: none;
+    transition: color 150ms ease, gap 150ms ease;
+  }
+  .drawer-view-cart-link:hover {
+    color: var(--primary);
+    gap: 0.4375rem;
+  }
+  .drawer-view-cart-link svg { transition: transform 150ms ease; }
+  .drawer-view-cart-link:hover svg { transform: translateX(2px); }
+  [dir="rtl"] .drawer-view-cart-link:hover svg { transform: translateX(-2px); }
+
+  /* Coupon row */
+  .drawer-coupon-form {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .drawer-coupon-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+    border-radius: var(--button-radius);
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .drawer-coupon-input::placeholder { color: color-mix(in srgb, var(--foreground) 50%, transparent); }
+  .drawer-coupon-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  .drawer-coupon-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.125rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+  .drawer-coupon-btn:hover:not(:disabled) {
+    opacity: 0.94;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+  .drawer-coupon-btn:active:not(:disabled) { transform: translateY(0); }
+  .drawer-coupon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+  .drawer-coupon-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+  /* Footer action buttons (checkout + continue, side by side) */
+  .drawer-checkout-btn {
+    flex: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: var(--button-radius);
+    border: 1px solid var(--primary);
+    text-decoration: none;
+    transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+  .drawer-checkout-btn:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+  .drawer-checkout-btn:active { transform: translateY(0); }
+  .drawer-checkout-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+
+  .drawer-continue-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--foreground);
+    background: transparent;
+    border-radius: var(--button-radius);
+    border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+    white-space: nowrap;
+  }
+  .drawer-continue-btn:hover {
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  }
+  .drawer-continue-btn:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+
+  /* Full-width outlined "Shopping cart" link — a secondary CTA sitting under
+     the continue/checkout row. Outlined in the primary colour so it reads as
+     subordinate to the solid checkout button above. Vertical spacing comes
+     from the footer's `space-y-3`, so no margin is set here. */
+  .drawer-cart-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.8125rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--primary);
+    background: transparent;
+    border: 1px solid var(--primary);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    transition: background 180ms ease, box-shadow 180ms ease;
+  }
+  .drawer-cart-btn:hover {
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+  .drawer-cart-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+
+  /* Shorter checkout/continue buttons on mobile to save vertical space. */
+  @media (max-width: 639px) {
+    .drawer-checkout-btn,
+    .drawer-continue-btn {
+      padding-block: 0.5625rem;
+    }
+  }
+
+  /* Secure-payment trust badge (footer) */
+  .drawer-secure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0;
+    text-align: center;
+  }
+  .drawer-secure__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    letter-spacing: 0.01em;
+  }
+  .drawer-secure__img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    /* Cap so tall/large uploads don't dominate the footer. */
+    max-height: 50px;
+    width: auto;
+    opacity: 0.9;
+  }
+
+  /* Quantity stepper — shares the premium pill aesthetic of the variant trigger */
+  .drawer-qty {
+    display: inline-flex;
+    align-items: center;
+    /* Outlined style — transparent fill, clear border. Card already has a
+       white surface behind this, so the element reads as a flat outlined pill. */
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+    /* Tracks the global Button Roundness setting since this is a
+       button-cluster control. */
+    border-radius: var(--button-radius);
+    overflow: hidden;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .drawer-qty:hover {
+    border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  }
+  .drawer-qty:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  .drawer-qty__btn {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--foreground);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 140ms ease;
+  }
+  .drawer-qty__btn:hover { background: color-mix(in srgb, var(--foreground) 8%, transparent); }
+  .drawer-qty__btn:active { background: color-mix(in srgb, var(--foreground) 16%, transparent); }
+  .drawer-qty__btn:disabled { opacity: 0.4; cursor: default; background: transparent !important; }
+  .drawer-qty__btn:focus { outline: none; }
+  .drawer-qty__value {
+    min-width: 26px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--foreground);
+    user-select: none;
+  }
+
+  /* Trigger button — fully replaces the old native <select> */
+  .drawer-variants__trigger {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+    color: var(--foreground);
+    outline: none;
+    font: inherit;
+  }
+  .drawer-variants__trigger:focus { outline: none; }
+
+  /* Custom popover menu */
+  .drawer-variants__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-start: 0;
+    z-index: 9999;
+    min-width: max(100%, 160px);
+    list-style: none;
+    margin: 0;
+    padding: 0.375rem;
+    background: var(--background);
+    border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    border-radius: var(--drawer-radius);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 18px 40px -12px rgba(0, 0, 0, 0.22),
+      0 6px 16px -8px rgba(0, 0, 0, 0.10);
+    max-height: 240px;
+    overflow-y: auto;
+    animation: drawer-variant-menu 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: top center;
+  }
+  .drawer-variants__menu[hidden] { display: none; }
+  @keyframes drawer-variant-menu {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .drawer-variants__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--drawer-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--foreground);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .drawer-variants__option:hover {
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+  .drawer-variants__option.is-current {
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+    font-weight: 700;
+  }
+  .drawer-variants__option svg {
+    color: var(--foreground);
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+  .drawer-variants__option:active {
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+  .drawer-variants__caret {
+    position: absolute;
+    inset-inline-end: 0.625rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--foreground);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .drawer-variants__select-wrap:hover .drawer-variants__caret { opacity: 0.95; }
+  .drawer-variants__select-wrap:focus-within .drawer-variants__caret { opacity: 1; transform: translateY(-50%) rotate(180deg); }
+  .drawer-variants__select option {
+    background: var(--background);
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  /* Item error banner (out of stock, price changed, etc.) */
+  .drawer-item-error {
+    font-size: 0.7rem;
+    color: color-mix(in srgb, var(--destructive) 80%, var(--foreground));
+    background: color-mix(in srgb, var(--destructive) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--drawer-radius-sm);
+    line-height: 1.3;
+  }
+
+  /* Stock warning chip */
+  .drawer-stock-low {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--warning) 16%, transparent);
+    color: color-mix(in srgb, var(--warning) 58%, var(--foreground));
+  }
+
+  /* Sale price strikethrough */
+  .drawer-price-original {
+    text-decoration: line-through;
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-inline-end: 0.25rem;
+  }
+  .drawer-price-sale {
+    color: var(--destructive);
+    font-weight: 600;
+  }
+  /* Per-line savings chip — visible only on discounted lines. Reads
+     as a soft success accent so the customer sees concrete savings
+     rather than just a strikethrough. */
+  .drawer-price-savings {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.125rem;
+    padding: 0.0625rem 0.375rem;
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: color-mix(in srgb, var(--success) 72%, var(--foreground));
+    border-radius: 0; /* squared per request */
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  /* ─── Premium recommended product cards ─── */
+  [data-recommended-track] {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Top/bottom padding leaves room for the hover shadow without clipping */
+    padding: 6px 2px 12px;
+    margin: -6px -2px 0;
+    align-items: stretch;
+  }
+  /* Mirror the primary product card: borderless flat tile, square photo,
+     no hover lift — just a subtle shadow on hover and a 1.04 image zoom. */
+  .rec-card {
+    /* Smaller cross-sell cards per request — narrower card shrinks both the
+       footprint and the (1:1) product image so the strip reads as compact
+       thumbnails rather than full product photos. */
+    flex: 0 0 116px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--background);
+    border: 0;
+    border-radius: 0; /* squared per request */
+    overflow: hidden;
+    transition: transform 250ms ease;
+  }
+  .rec-card:hover {
+    box-shadow: none; /* no shadow per request */
+  }
+
+  /* Recommended strip carousel — free scroll + swipe hint + dots (matches the
+     product rows). */
+  .cart-drawer-rec-viewport { position: relative; }
+  .cart-drawer-rec-track {
+    scroll-snap-type: none; /* free momentum, no forced snap */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cart-drawer-rec-track::-webkit-scrollbar { display: none; }
+  .cart-drawer-rec-hint {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 0.25rem; /* physical right in RTL */
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    color: var(--primary);
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    transition: opacity 300ms ease;
+  }
+  .cart-drawer-rec-hint.is-hidden { opacity: 0; }
+  .cart-drawer-rec-hint svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: currentColor;
+    animation: cart-drawer-rec-swipe 1.3s ease-in-out infinite;
+  }
+  @keyframes cart-drawer-rec-swipe {
+    0%, 100% { transform: translateX(-5px); }
+    50%      { transform: translateX(5px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cart-drawer-rec-hint svg { animation: none; }
+  }
+  .cart-drawer-rec-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .rec-card__media {
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    /* White image well — matches the card body so the card reads as a single
+       flat surface. Placeholder fallback stays neutral if image fails. */
+    background: var(--background, #ffffff);
+  }
+  .rec-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .rec-card:hover .rec-card__media img {
+    transform: scale(1.04);
+  }
+  /* Quick-view eye floating over the image's top-left corner. */
+  .rec-card__qv {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.3rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease, transform 120ms ease;
+  }
+  .rec-card__qv:hover {
+    background: var(--background);
+    color: var(--primary);
+  }
+  .rec-card__qv:active {
+    transform: scale(0.94);
+  }
+  .rec-card__qv svg {
+    width: 14px;
+    height: 14px;
+  }
+  .rec-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0.5rem 0.625rem;
+    gap: 0.375rem;
+  }
+  .rec-card__title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--foreground);
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    /* Lock to exactly 2 lines so all cards are equal height */
+    min-height: calc(0.75rem * 1.25 * 2);
+  }
+  .rec-card__title:hover {
+    /* Match the primary product card's title hover (color → primary)
+       instead of an underline. */
+    color: var(--primary);
+  }
+  .rec-card__foot {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.375rem;
+  }
+  /* Action buttons group (add-to-cart bag + quick-view eye) at the foot end. */
+  .rec-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .rec-card__price {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--cart-price, var(--foreground));
+    white-space: nowrap;
+  }
+  .rec-card__prices {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+    min-width: 0;
+  }
+  .rec-card__price-original {
+    font-size: 0.625rem;
+    color: var(--cart-original-price, var(--muted));
+    text-decoration: line-through;
+    white-space: nowrap;
+  }
+  .rec-card__price--sale {
+    color: var(--cart-sale-price, #dc2626) !important;
+  }
+  /* Cart line prices follow the same custom colors */
+  [data-cart-drawer] [data-drawer-line] .text-sm.font-semibold,
+  [data-cart-drawer] [data-drawer-total] {
+    color: var(--cart-price, var(--foreground));
+  }
+  [data-cart-drawer] .drawer-price-original {
+    color: var(--cart-original-price, var(--muted)) !important;
+  }
+  [data-cart-drawer] .drawer-price-sale {
+    color: var(--cart-sale-price, #dc2626) !important;
+  }
+  /* Recommended-card action button — primary style matching checkout & coupon */
+  .rec-card__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.6875rem;
+    /* Match the primary product card's Add button (weight 600, flat at
+       rest — the shadow only appears on hover). */
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease,
+      background 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .rec-card__btn:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+  .rec-card__btn:active { transform: translateY(0); }
+  /* Icon-only Add — fixed square that inherits the base solid-primary fill
+     (and its flat-at-rest → hover-shadow behavior) so it matches the primary
+     product card's Add button. Only the footprint changes here. */
+  .rec-card__btn--icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    gap: 0;
+    border-radius: var(--button-radius);
+  }
+  .rec-card__btn--icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .rec-card__btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+  .rec-card__btn:disabled {
+    opacity: 0.85;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+  }
+  .rec-card__variant-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+  /* Recommended-card variant menu opens upward — override the default downward animation */
+  [data-rec-variant-menu] {
+    animation: rec-variant-menu-in 180ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  }
+  @keyframes rec-variant-menu-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .rec-card__variant-wrap .rec-card__btn--view {
+    gap: 0.375rem;
+  }
+
+  /* Outlined "View" variant (products with options) — mirrors the primary
+     card's outlined quick-view: neutral border at rest, turns primary on
+     hover with a faint primary wash. */
+  .rec-card__btn--view {
+    background: transparent;
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+    box-shadow: none;
+  }
+  .rec-card__btn--view:hover {
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    box-shadow: none;
+    color: var(--primary);
+  }
+  .rec-card__btn.is-busy { opacity: 0.85; box-shadow: none; }
+  .rec-card__btn.is-success {
+    background: var(--success);
+    color: var(--success-foreground);
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 25%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-drawer-line],
+    [data-drawer-total] {
+      transition: none;
+      animation: none;
+    }
+    .drawer-spinner svg {
+      animation: none;
+    }
+    .rec-card,
+    .rec-card__media img,
+    .rec-card__btn {
+      transition: none;
+    }
+  }
+
+  /* Free-shipping bar — real SVG icons (no emojis) that swap by state: a truck
+     while below the threshold, a check once unlocked. The `.is-unlocked` class
+     is toggled on the bar by drawer.js. Icons inherit --ship-text via
+     currentColor. */
+  [data-drawer-shipping] .drawer-ship-ic {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  [data-drawer-shipping] .drawer-ship-ic__done {
+    display: none;
+  }
+  [data-drawer-shipping].is-unlocked .drawer-ship-ic__truck {
+    display: none;
+  }
+  [data-drawer-shipping].is-unlocked .drawer-ship-ic__done {
+    display: inline-flex;
+  }
+
+  /* ── Message-icon animation only (the progress bar + moving dot are left as
+     they were). The truck faces left and gently drives while below the
+     threshold; the celebration icon does a little tada once unlocked.
+     Disabled under prefers-reduced-motion. */
+  [data-drawer-shipping] .drawer-ship-ic__truck {
+    transform: scaleX(-1); /* face the reading-forward (left) direction */
+    animation: drawer-ship-drive 1.5s ease-in-out infinite;
+  }
+  @keyframes drawer-ship-drive {
+    0%, 100% { transform: scaleX(-1) translateY(0); }
+    50%      { transform: scaleX(-1) translateY(-1.5px); }
+  }
+  [data-drawer-shipping] .drawer-ship-ic__done {
+    transform-origin: center;
+    animation: drawer-ship-celebrate 1.8s ease-in-out infinite;
+  }
+  @keyframes drawer-ship-celebrate {
+    0%, 60%, 100% { transform: rotate(0) scale(1); }
+    15% { transform: rotate(-10deg) scale(1.15); }
+    30% { transform: rotate(8deg) scale(1.1); }
+    45% { transform: rotate(-4deg) scale(1.05); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-drawer-shipping] .drawer-ship-ic__truck,
+    [data-drawer-shipping] .drawer-ship-ic__done {
+      animation: none;
+    }
+  }

@@ -1,0 +1,1847 @@
+{
+  "name": {
+    "ar": "إعدادات التخطيط",
+    "en": "Layout Settings"
+  },
+  "groups": [
+    {
+      "id": "product_card",
+      "icon": "fa fa-th-large",
+      "name": {
+        "ar": "بطاقة المنتج",
+        "en": "Product Card"
+      },
+      "settings": [
+        {
+          "id": "density",
+          "type": "select",
+          "label": {
+            "ar": "حجم البطاقة (افتراضي)",
+            "en": "Card density (default)"
+          },
+          "info": {
+            "ar": "الحجم الافتراضي للبطاقة في كل الموقع. يمكن لكل قسم منتجات تعيين حجم مختلف عند الحاجة.",
+            "en": "Default card size across the site. A Products section can override this per-section when needed."
+          },
+          "options": [
+            {
+              "value": "compact",
+              "label": {
+                "ar": "مضغوط",
+                "en": "Compact"
+              }
+            },
+            {
+              "value": "default",
+              "label": {
+                "ar": "افتراضي",
+                "en": "Default"
+              }
+            },
+            {
+              "value": "large",
+              "label": {
+                "ar": "كبير",
+                "en": "Large"
+              }
+            }
+          ],
+          "default": "large"
+        },
+        {
+          "id": "show_wishlist",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار زر المفضلة على البطاقة",
+            "en": "Show wishlist button on the card"
+          },
+          "info": {
+            "ar": "يطبَّق على كل بطاقات المنتجات. يمكن تجاوزه لكل قسم منتجات عند الحاجة.",
+            "en": "Applies to every product card. A Products section can override this per-section."
+          },
+          "default": true
+        },
+        {
+          "id": "show_quick_view",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار زر المعاينة السريعة على البطاقة",
+            "en": "Show quick-view button on the card"
+          },
+          "info": {
+            "ar": "يطبَّق على كل بطاقات المنتجات. يمكن تجاوزه لكل قسم منتجات عند الحاجة.",
+            "en": "Applies to every product card. A Products section can override this per-section."
+          },
+          "default": true
+        },
+        {
+          "id": "free_shipping_badge",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار شارة الشحن المجاني على البطاقة",
+            "en": "Show free-shipping badge on the card"
+          },
+          "info": {
+            "ar": "تظهر شارة \"شحن مجاني\" على المنتجات المؤهّلة (انظر الحد الأدنى أدناه).",
+            "en": "Shows a \"Free shipping\" chip on qualifying product cards (see the minimum below)."
+          },
+          "default": true
+        },
+        {
+          "id": "free_shipping_badge_min",
+          "type": "number",
+          "label": {
+            "ar": "الحد الأدنى لظهور شارة الشحن المجاني (بعملة المتجر)",
+            "en": "Free-shipping badge — minimum order amount"
+          },
+          "info": {
+            "ar": "تظهر الشارة فقط على المنتجات التي يبلغ سعرها هذا المبلغ أو أكثر. طابقه مع الحد الأدنى لخصم الشحن المجاني لديك (مثل 30). اتركه 0 لإخفاء الشارة — لا تستطيع بطاقة المنتج قراءة قاعدة الشحن من زد تلقائيًا.",
+            "en": "The badge shows only on products priced at or above this amount. Match it to your free-shipping discount's minimum (e.g. 30). Leave 0 to hide the badge — a product card can't read Zid's shipping rule automatically."
+          },
+          "default": 0
+        },
+        {
+          "id": "name_badge",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار اسم المنتج كشارة على البطاقة",
+            "en": "Show product name as a badge on the card"
+          },
+          "info": {
+            "ar": "تظهر شارة بأيقونة وسم تحمل اسم المنتج ضمن شارات البطاقة. تُختصر الأسماء الطويلة بسطر واحد.",
+            "en": "Adds a tag-icon badge with the product's name to the card's badge column. Long names are truncated to one line."
+          },
+          "default": false
+        },
+        {
+          "id": "enable_image_swap",
+          "type": "checkbox",
+          "label": {
+            "ar": "تبديل الصورة عند التمرير",
+            "en": "Hover-swap second image"
+          },
+          "info": {
+            "ar": "عند التمرير فوق البطاقة، تُستبدل الصورة الأولى بالثانية. يطبَّق على كل بطاقات المنتجات. يمكن لقسم منتجات تجاوزه عند الحاجة.",
+            "en": "On hover, the first image swaps to the second. Applies to every product card. A Products section can override this per-section."
+          },
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "product_page",
+      "icon": "fa fa-shopping-cart",
+      "name": {
+        "ar": "صفحة المنتج",
+        "en": "Product Page"
+      },
+      "settings": [
+        {
+          "id": "show_buy_now",
+          "type": "select",
+          "label": {
+            "ar": "زر \"اشتري الآن\" بجانب الإضافة للسلة",
+            "en": "\"Buy Now\" button next to Add to Cart"
+          },
+          "info": {
+            "ar": "يظهر زر \"اشتري الآن\" بجانب \"إضافة للسلة\" في صفحة المنتج. عند الضغط عليه يفتح نافذة منبثقة للدفع السريع (تستخدم window.zid.cart.buyNow من منصة زد) لتسهيل إتمام الشراء بدون مغادرة صفحة المنتج. لا يحتاج إعداد إضافي من لوحة تحكم زد — يكفي تفعيل هذا الخيار. اختر \"معطّل\" لإخفاء الزر تمامًا.",
+            "en": "Shows a \"Buy Now\" button next to \"Add to cart\" on the product page. Clicking it opens a quick-checkout popup (using Zid's window.zid.cart.buyNow API) so customers can complete checkout without leaving the product page. No Zid admin configuration required — toggling this is the only step. Pick \"Off\" to hide the button entirely."
+          },
+          "options": [
+            { "value": "auto",   "label": { "ar": "مفعّل (افتراضي)", "en": "On (default)" } },
+            { "value": "always", "label": { "ar": "مفعّل",            "en": "On" } },
+            { "value": "off",    "label": { "ar": "معطّل",            "en": "Off" } }
+          ],
+          "default": "auto"
+        },
+        {
+          "id": "buy_now_label",
+          "type": "text",
+          "label": {
+            "ar": "── نص زر \"اشتري الآن\"",
+            "en": "── Buy Now button label"
+          },
+          "info": {
+            "ar": "اتركه فارغًا لاستخدام \"اشتري الآن\" الافتراضي.",
+            "en": "Leave empty for default \"Buy Now\"."
+          },
+          "default": ""
+        },
+        {
+          "id": "old_price_label",
+          "type": "text",
+          "label": {
+            "ar": "── كلمة \"قبل\" أمام السعر القديم",
+            "en": "── \"Was\" label before the old price"
+          },
+          "info": {
+            "ar": "الكلمة التي تظهر قبل السعر القديم المشطوب عند وجود خصم (مثل \"قبل\"). اتركها فارغة لاستخدام الافتراضي.",
+            "en": "The word shown before the struck-through old price when a product is on sale (e.g. \"قبل\" / \"Was\"). Leave empty for the default."
+          },
+          "default": "قبل"
+        },
+        {
+          "id": "desc_image_first",
+          "type": "checkbox",
+          "label": {
+            "ar": "عرض صورة الوصف في الأعلى",
+            "en": "Show description image first"
+          },
+          "info": {
+            "ar": "عند تفعيله، إذا احتوى وصف المنتج على صور يتم نقلها إلى أعلى الوصف.",
+            "en": "When enabled, if the product description contains images they are moved to the top of the description block."
+          },
+          "default": true
+        },
+        {
+          "id": "show_apple_pay",
+          "type": "select",
+          "label": {
+            "ar": "زر Apple Pay للدفع السريع",
+            "en": "Apple Pay quick-checkout button"
+          },
+          "info": {
+            "ar": "يعرض زر Apple Pay على صفحة المنتج لإتمام شراء منتج واحد فقط دون التأثير على السلة الحالية. يظهر الزر فقط لزوار سفاري على macOS / iOS مع تفعيل Apple Pay في إعدادات متجر زد. اختر \"معطّل\" لإخفاء الزر تمامًا.",
+            "en": "Shows an Apple Pay button on the product page for buying a single product without modifying the regular cart. The button only renders for Safari visitors on macOS / iOS with Apple Pay enabled in Zid store settings. Pick \"Off\" to hide entirely."
+          },
+          "options": [
+            { "value": "auto",   "label": { "ar": "مفعّل (افتراضي)", "en": "On (default)" } },
+            { "value": "always", "label": { "ar": "مفعّل",            "en": "On" } },
+            { "value": "off",    "label": { "ar": "معطّل",            "en": "Off" } }
+          ],
+          "default": "auto"
+        }
+      ]
+    },
+    {
+      "id": "product_videos",
+      "icon": "fa fa-video-camera",
+      "name": {
+        "ar": "فيديوهات المنتجات",
+        "en": "Product Videos"
+      },
+      "settings": [
+        {
+          "id": "enabled",
+          "type": "checkbox",
+          "label": {
+            "ar": "تفعيل قسم فيديوهات تجارب العملاء",
+            "en": "Enable customer video section"
+          },
+          "info": {
+            "ar": "يظهر شريط فيديوهات أسفل صفحة المنتج للمنتجات التي أضفت لها فيديوهات بالأسفل.",
+            "en": "Shows a video carousel near the bottom of the product page for products that have videos added below."
+          },
+          "default": true
+        },
+        {
+          "id": "eyebrow",
+          "type": "text",
+          "label": {
+            "ar": "النص الافتتاحي",
+            "en": "Eyebrow"
+          },
+          "default": "آراء عملائنا"
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "label": {
+            "ar": "العنوان",
+            "en": "Title"
+          },
+          "default": "تجارب حقيقية من عملائنا"
+        },
+        {
+          "id": "subtitle",
+          "type": "text",
+          "label": {
+            "ar": "الوصف",
+            "en": "Subtitle"
+          },
+          "default": "شاهد آراء عملائنا الذين جربوا هذا المنتج"
+        },
+        {
+          "id": "list",
+          "type": "list",
+          "label": {
+            "ar": "الفيديوهات",
+            "en": "Videos"
+          },
+          "info": {
+            "ar": "كل صف = فيديو واحد مرتبط بمنتج (أو أكثر). أضف عدة صفوف لنفس المنتج لعرض أكثر من فيديو. الفيديو يظهر فقط في صفحات المنتجات المختارة.",
+            "en": "Each row = one video tied to a product (or several). Add multiple rows for the same product to show more than one video. A video only appears on the selected products' pages."
+          },
+          "max_items": 100,
+          "settings": [
+            {
+              "id": "all_products",
+              "type": "checkbox",
+              "label": {
+                "ar": "إظهار على كل المنتجات",
+                "en": "Show on all products"
+              },
+              "info": {
+                "ar": "عند التفعيل يظهر هذا الفيديو في صفحة كل منتج، ويتم تجاهل حقل رابط المنتج بالأسفل.",
+                "en": "When enabled, this video shows on every product page and the Product URL field below is ignored."
+              },
+              "default": false
+            },
+            {
+              "id": "product_ref",
+              "type": "text",
+              "label": {
+                "ar": "رابط المنتج (أو اسمه بالكامل)",
+                "en": "Product URL (or its exact name)"
+              },
+              "info": {
+                "ar": "حدِّد المنتج الذي يظهر فيه هذا الفيديو: افتح صفحة المنتج في متجرك وانسخ رابطها من شريط العنوان والصقه هنا. يمكنك أيضًا كتابة اسم المنتج بالكامل. مثال: https://متجرك.zid.store/products/اسم-المنتج. لإظهاره على مجموعة منتجات: الصق عدة روابط في نفس الحقل مفصولة بفاصلة أو مسافة. (لكل المنتجات استخدم الخيار بالأعلى.)",
+                "en": "Choose which product shows this video: open the product page in your store, copy its URL from the address bar, and paste it here. You can also type the product's exact name. Example: https://yourstore.zid.store/products/product-handle. To target a group of products: paste several URLs into this one field separated by a comma or space. (For all products, use the toggle above.)"
+              }
+            },
+            {
+              "id": "video",
+              "type": "video",
+              "label": {
+                "ar": "رفع الفيديو",
+                "en": "Upload video"
+              },
+              "info": {
+                "ar": "يدعم mp4, webm - الحد الأقصى 10MB. للفيديوهات الأكبر استخدم حقل الرابط بالأسفل.",
+                "en": "Supports mp4, webm - Maximum 10MB. For larger videos, use the link field below instead."
+              }
+            },
+            {
+              "id": "video_url",
+              "type": "url",
+              "label": {
+                "ar": "أو رابط فيديو (mp4)",
+                "en": "Or video link (mp4)"
+              },
+              "info": {
+                "ar": "الصق رابط فيديو mp4 مستضاف خارجيًا. إذا تم تعبئته يُستخدم بدلًا من الرفع.",
+                "en": "Paste an externally-hosted mp4 URL. If set, it's used instead of the upload."
+              }
+            },
+            {
+              "id": "quote",
+              "type": "text",
+              "label": {
+                "ar": "التعليق (اختياري)",
+                "en": "Caption (optional)"
+              }
+            }
+          ]
+        },
+        {
+          "id": "floating_enabled",
+          "type": "checkbox",
+          "label": {
+            "ar": "── تفعيل الفيديو العائم",
+            "en": "── Enable floating video"
+          },
+          "info": {
+            "ar": "فيديو صغير عائم قابل للسحب في زاوية صفحة المنتج، للمنتجات المختارة بالأسفل.",
+            "en": "A small draggable floating video pinned to the corner of the product page, for the products selected below."
+          },
+          "default": false
+        },
+        {
+          "id": "floating_list",
+          "type": "list",
+          "label": {
+            "ar": "الفيديوهات العائمة",
+            "en": "Floating videos"
+          },
+          "info": {
+            "ar": "كل صف: اختر المنتج والفيديو. يظهر فيديو عائم واحد لكل منتج (أول صف مطابق).",
+            "en": "Each row: pick the product(s) and a video. One floating video shows per product (first matching row)."
+          },
+          "max_items": 100,
+          "settings": [
+            {
+              "id": "all_products",
+              "type": "checkbox",
+              "label": {
+                "ar": "إظهار على كل المنتجات",
+                "en": "Show on all products"
+              },
+              "info": {
+                "ar": "عند التفعيل يظهر هذا الفيديو العائم في صفحة كل منتج، ويتم تجاهل حقل رابط المنتج بالأسفل.",
+                "en": "When enabled, this floating video shows on every product page and the Product URL field below is ignored."
+              },
+              "default": false
+            },
+            {
+              "id": "product_ref",
+              "type": "text",
+              "label": {
+                "ar": "رابط المنتج (أو اسمه بالكامل)",
+                "en": "Product URL (or its exact name)"
+              },
+              "info": {
+                "ar": "افتح صفحة المنتج في متجرك وانسخ رابطها من شريط العنوان والصقه هنا (أو اكتب اسم المنتج بالكامل). لمجموعة منتجات: الصق عدة روابط مفصولة بفاصلة أو مسافة. يظهر فيديو عائم واحد لكل منتج (أول صف مطابق). (لكل المنتجات استخدم الخيار بالأعلى.)",
+                "en": "Open the product page in your store, copy its URL from the address bar and paste it here (or type the product's exact name). For a group: paste several URLs separated by a comma or space. One floating video shows per product (first matching row). (For all products, use the toggle above.)"
+              }
+            },
+            {
+              "id": "video",
+              "type": "video",
+              "label": {
+                "ar": "رفع الفيديو",
+                "en": "Upload video"
+              },
+              "info": {
+                "ar": "mp4/webm - الحد الأقصى 10MB. للأكبر استخدم حقل الرابط.",
+                "en": "mp4/webm - max 10MB. For larger, use the link field."
+              }
+            },
+            {
+              "id": "video_url",
+              "type": "url",
+              "label": {
+                "ar": "أو رابط فيديو (mp4)",
+                "en": "Or video link (mp4)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cart_page",
+      "icon": "fa fa-shopping-basket",
+      "name": {
+        "ar": "صفحة السلة",
+        "en": "Cart Page"
+      },
+      "settings": [
+        {
+          "id": "show_apple_pay",
+          "type": "select",
+          "label": {
+            "ar": "زر Apple Pay على صفحة السلة",
+            "en": "Apple Pay button on the cart page"
+          },
+          "info": {
+            "ar": "يعرض زر Apple Pay أسفل ملخص الطلب في صفحة السلة، ويُتمم شراء السلة الحالية بأكملها. يظهر فقط عندما تحتوي السلة على منتجات ولزوار سفاري على macOS / iOS مع تفعيل Apple Pay في إعدادات متجر زد. اختر \"معطّل\" لإخفاء الزر تمامًا.",
+            "en": "Shows an Apple Pay button below the order summary on the cart page. Pays for the entire current cart. Only renders when the cart has items and for Safari visitors on macOS / iOS with Apple Pay enabled in Zid store settings. Pick \"Off\" to hide entirely."
+          },
+          "options": [
+            { "value": "auto",   "label": { "ar": "مفعّل (افتراضي)", "en": "On (default)" } },
+            { "value": "always", "label": { "ar": "مفعّل",            "en": "On" } },
+            { "value": "off",    "label": { "ar": "معطّل",            "en": "Off" } }
+          ],
+          "default": "auto"
+        }
+      ]
+    },
+    {
+      "id": "section_headings",
+      "icon": "fa fa-heading",
+      "name": {
+        "ar": "عناوين الأقسام",
+        "en": "Section Headings"
+      },
+      "settings": [
+        {
+          "id": "alignment",
+          "type": "select",
+          "label": {
+            "ar": "محاذاة العناوين",
+            "en": "Default alignment"
+          },
+          "info": {
+            "ar": "المحاذاة الافتراضية لجميع عناوين الأقسام. يمكن لكل قسم تجاوزها.",
+            "en": "Default alignment for every section heading. Any section can override."
+          },
+          "options": [
+            {
+              "value": "start",
+              "label": {
+                "ar": "البداية",
+                "en": "Start"
+              }
+            },
+            {
+              "value": "center",
+              "label": {
+                "ar": "وسط",
+                "en": "Center"
+              }
+            },
+            {
+              "value": "end",
+              "label": {
+                "ar": "النهاية",
+                "en": "End"
+              }
+            }
+          ],
+          "default": "start"
+        },
+        {
+          "id": "icon_image",
+          "type": "image",
+          "label": {
+            "ar": "أيقونة تحت العنوان (اختياري)",
+            "en": "Icon under title (optional)"
+          },
+          "info": {
+            "ar": "صورة تزيينية صغيرة تظهر أسفل كل عنوان قسم. يُفضَّل SVG (يكبّر بجودة تامة) أو PNG بخلفية شفافة. المقاس المقترَح: ارتفاع 28–36 بكسل (مربع ~48×48 أو أفقي ~120×40). يُرفَع بدقة 2x (مثال 96×96) لشاشات الريتينا. تتبع محاذاة العنوان. عند تركها فارغة، يظل كل نمط بديكوره الافتراضي.",
+            "en": "Small decorative image rendered below every section title. SVG is best (scales perfectly); transparent PNG works too. Recommended display size: 28–36px tall (square ~48×48 or horizontal ~120×40). Upload at 2x for retina (e.g. 96×96 minimum for PNG). Follows the heading's alignment. When empty, each style keeps its own default decoration."
+          }
+        },
+        {
+          "id": "eyebrow_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون النص الافتتاحي (اختياري)",
+            "en": "── Eyebrow color (optional)"
+          },
+          "info": {
+            "ar": "لون السطر القصير فوق العنوان (مثل \"تشكيلة جديدة\"). يطبق على كل أقسام الموقع. اتركه فارغًا لاستخدام لون النمط الافتراضي (اللون الأساسي للعلامة في نمط سوق عصري، رمادي خافت في النخبة).",
+            "en": "Color of the short kicker line above titles (e.g. \"NEW COLLECTION\"). Applies across every section site-wide. Leave empty to use the heading style's default (brand primary in Modern Souq, muted foreground in Elite Edit)."
+          },
+          "default": ""
+        },
+        {
+          "id": "subtitle_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون النص الوصفي (اختياري)",
+            "en": "── Subtitle color (optional)"
+          },
+          "info": {
+            "ar": "لون النص الوصفي تحت العنوان. يطبق على كل أقسام الموقع. اتركه فارغًا لاستخدام لون النمط الافتراضي (رمادي خافت).",
+            "en": "Color of the descriptive text under titles. Applies across every section site-wide. Leave empty to use the heading style's default (muted foreground)."
+          },
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "listing",
+      "icon": "fa fa-list",
+      "name": {
+        "ar": "صفحات قوائم المنتجات",
+        "en": "Listing pages"
+      },
+      "settings": [
+        {
+          "id": "columns_desktop",
+          "type": "select",
+          "label": {
+            "ar": "عدد الأعمدة (سطح المكتب)",
+            "en": "Columns (Desktop)"
+          },
+          "info": {
+            "ar": "يطبَّق على صفحات كل المنتجات، الفئات، ونتائج البحث. أقسام المنتجات في الصفحة الرئيسية لها إعداداتها الخاصة.",
+            "en": "Applies to All Products, Category, and Search pages. Homepage product sections have their own per-section setting."
+          },
+          "options": [
+            {
+              "value": "4",
+              "label": {
+                "ar": "٤ أعمدة",
+                "en": "4 Columns"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "ar": "٥ أعمدة",
+                "en": "5 Columns"
+              }
+            },
+            {
+              "value": "6",
+              "label": {
+                "ar": "٦ أعمدة",
+                "en": "6 Columns"
+              }
+            }
+          ],
+          "default": "4"
+        },
+        {
+          "id": "columns_mobile",
+          "type": "select",
+          "label": {
+            "ar": "عدد الأعمدة (الجوال)",
+            "en": "Columns (Mobile)"
+          },
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "ar": "١ عمود",
+                "en": "1 Column"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "ar": "٢ أعمدة",
+                "en": "2 Columns"
+              }
+            }
+          ],
+          "default": "2"
+        },
+        {
+          "id": "image_aspect_ratio",
+          "type": "select",
+          "label": {
+            "ar": "نسبة أبعاد الصورة",
+            "en": "Image aspect ratio"
+          },
+          "options": [
+            {
+              "value": "adapt",
+              "label": {
+                "ar": "تلقائي",
+                "en": "Adapt"
+              }
+            },
+            {
+              "value": "square",
+              "label": {
+                "ar": "مربع (1:1)",
+                "en": "Square (1:1)"
+              }
+            },
+            {
+              "value": "portrait",
+              "label": {
+                "ar": "طولي (3:4)",
+                "en": "Portrait (3:4)"
+              }
+            }
+          ],
+          "default": "square"
+        }
+      ]
+    },
+    {
+      "id": "dialogs",
+      "icon": "fa fa-window-restore",
+      "name": {
+        "ar": "النوافذ والحوارات",
+        "en": "Dialogs"
+      },
+      "settings": [
+        {
+          "id": "confirm_style",
+          "type": "select",
+          "label": {
+            "ar": "نمط نافذة التأكيد",
+            "en": "Confirmation dialog style"
+          },
+          "info": {
+            "ar": "النمط البصري لنوافذ التأكيد (مثل تغيير الخيارات في السلة).",
+            "en": "Visual style of confirmation dialogs (e.g. variant swap in cart)."
+          },
+          "options": [
+            {
+              "value": "glass",
+              "label": {
+                "ar": "زجاجي — خلفية ضبابية",
+                "en": "Glass — frosted blur"
+              }
+            },
+            {
+              "value": "solid",
+              "label": {
+                "ar": "صلب — خلفية معتمة",
+                "en": "Solid — opaque background"
+              }
+            },
+            {
+              "value": "minimal",
+              "label": {
+                "ar": "مينيمال — أبيض بسيط",
+                "en": "Minimal — clean white"
+              }
+            },
+            {
+              "value": "dark",
+              "label": {
+                "ar": "داكن — خلفية داكنة",
+                "en": "Dark — dark panel"
+              }
+            }
+          ],
+          "default": "glass"
+        }
+      ]
+    },
+    {
+      "id": "font",
+      "icon": "fa fa-font",
+      "name": {
+        "ar": "الخط",
+        "en": "Font"
+      },
+      "settings": [
+        {
+          "id": "family",
+          "type": "select",
+          "label": {
+            "ar": "نوع الخط",
+            "en": "Font Family"
+          },
+          "default": "Baloo+Bhaijaan+2",
+          "options": [
+            {
+              "label": {
+                "ar": "— مخصص —",
+                "en": "— Custom —"
+              },
+              "value": "custom"
+            },
+            {
+              "label": {
+                "ar": "Alexandria",
+                "en": "Alexandria"
+              },
+              "value": "Alexandria"
+            },
+            {
+              "label": {
+                "ar": "Almarai",
+                "en": "Almarai"
+              },
+              "value": "Almarai"
+            },
+            {
+              "label": {
+                "ar": "Alkalami",
+                "en": "Alkalami"
+              },
+              "value": "Alkalami"
+            },
+            {
+              "label": {
+                "ar": "Alyamama",
+                "en": "Alyamama"
+              },
+              "value": "Alyamama"
+            },
+            {
+              "label": {
+                "ar": "Amiri",
+                "en": "Amiri"
+              },
+              "value": "Amiri"
+            },
+            {
+              "label": {
+                "ar": "Aref Ruqaa Ink",
+                "en": "Aref Ruqaa Ink"
+              },
+              "value": "Aref+Ruqaa+Ink"
+            },
+            {
+              "label": {
+                "ar": "Aref Ruqaa",
+                "en": "Aref Ruqaa"
+              },
+              "value": "Aref+Ruqaa"
+            },
+            {
+              "label": {
+                "ar": "Baloo Bhaijaan 2",
+                "en": "Baloo Bhaijaan 2"
+              },
+              "value": "Baloo+Bhaijaan+2"
+            },
+            {
+              "label": {
+                "ar": "Beiruti",
+                "en": "Beiruti"
+              },
+              "value": "Beiruti"
+            },
+            {
+              "label": {
+                "ar": "Cairo",
+                "en": "Cairo"
+              },
+              "value": "Cairo"
+            },
+            {
+              "label": {
+                "ar": "Changa",
+                "en": "Changa"
+              },
+              "value": "Changa"
+            },
+            {
+              "label": {
+                "ar": "Dawat",
+                "en": "Dawat"
+              },
+              "value": "Dawat"
+            },
+            {
+              "label": {
+                "ar": "El Messiri",
+                "en": "El Messiri"
+              },
+              "value": "El+Messiri"
+            },
+            {
+              "label": {
+                "ar": "Fustat",
+                "en": "Fustat"
+              },
+              "value": "Fustat"
+            },
+            {
+              "label": {
+                "ar": "IBM Plex Sans Arabic",
+                "en": "IBM Plex Sans Arabic"
+              },
+              "value": "IBM+Plex+Sans+Arabic"
+            },
+            {
+              "label": {
+                "ar": "Inter",
+                "en": "Inter"
+              },
+              "value": "Inter"
+            },
+            {
+              "label": {
+                "ar": "Jomhuria",
+                "en": "Jomhuria"
+              },
+              "value": "Jomhuria"
+            },
+            {
+              "label": {
+                "ar": "Katibeh",
+                "en": "Katibeh"
+              },
+              "value": "Katibeh"
+            },
+            {
+              "label": {
+                "ar": "Lalezar",
+                "en": "Lalezar"
+              },
+              "value": "Lalezar"
+            },
+            {
+              "label": {
+                "ar": "Lateef",
+                "en": "Lateef"
+              },
+              "value": "Lateef"
+            },
+            {
+              "label": {
+                "ar": "Mada",
+                "en": "Mada"
+              },
+              "value": "Mada"
+            },
+            {
+              "label": {
+                "ar": "Markazi Text",
+                "en": "Markazi Text"
+              },
+              "value": "Markazi+Text"
+            },
+            {
+              "label": {
+                "ar": "Noto Kufi Arabic",
+                "en": "Noto Kufi Arabic"
+              },
+              "value": "Noto+Kufi+Arabic"
+            },
+            {
+              "label": {
+                "ar": "Noto Naskh Arabic",
+                "en": "Noto Naskh Arabic"
+              },
+              "value": "Noto+Naskh+Arabic"
+            },
+            {
+              "label": {
+                "ar": "Noto Sans Arabic",
+                "en": "Noto Sans Arabic"
+              },
+              "value": "Noto+Sans+Arabic"
+            },
+            {
+              "label": {
+                "ar": "Open Sans",
+                "en": "Open Sans"
+              },
+              "value": "Open+Sans"
+            },
+            {
+              "label": {
+                "ar": "Rakkas",
+                "en": "Rakkas"
+              },
+              "value": "Rakkas"
+            },
+            {
+              "label": {
+                "ar": "Readex Pro",
+                "en": "Readex Pro"
+              },
+              "value": "Readex+Pro"
+            },
+            {
+              "label": {
+                "ar": "Reem Kufi Fun",
+                "en": "Reem Kufi Fun"
+              },
+              "value": "Reem+Kufi+Fun"
+            },
+            {
+              "label": {
+                "ar": "Reem Kufi Ink",
+                "en": "Reem Kufi Ink"
+              },
+              "value": "Reem+Kufi+Ink"
+            },
+            {
+              "label": {
+                "ar": "Roboto",
+                "en": "Roboto"
+              },
+              "value": "Roboto"
+            },
+            {
+              "label": {
+                "ar": "Rubik",
+                "en": "Rubik"
+              },
+              "value": "Rubik"
+            },
+            {
+              "label": {
+                "ar": "Ruwudu",
+                "en": "Ruwudu"
+              },
+              "value": "Ruwudu"
+            },
+            {
+              "label": {
+                "ar": "Scheherazade New",
+                "en": "Scheherazade New"
+              },
+              "value": "Scheherazade+New"
+            },
+            {
+              "label": {
+                "ar": "Tajawal",
+                "en": "Tajawal"
+              },
+              "value": "Tajawal"
+            }
+          ]
+        },
+        {
+          "id": "family_custom",
+          "type": "text",
+          "label": {
+            "ar": "اسم خط Google المخصص",
+            "en": "Custom Google Font name"
+          },
+          "info": {
+            "ar": "اكتب اسم الخط كما يظهر تماماً على fonts.google.com، باستخدام المسافات. أمثلة: \"Cormorant Garamond\"، \"Work Sans\"، \"Crimson Text\". يعمل فقط مع خطوط Google العامة — إذا لم يوجد الاسم على Google، يظهر النص بالخط الاحتياطي.",
+            "en": "Type the font name exactly as it appears on fonts.google.com, with spaces. Examples: \"Cormorant Garamond\", \"Work Sans\", \"Crimson Text\". Works only for public Google Fonts — if the name isn't found, text renders in the fallback stack."
+          },
+          "visible_if": {
+            "family": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "id": "theme",
+      "icon": "fa fa-paint-brush",
+      "name": {
+        "ar": "ألوان الثيم",
+        "en": "Theme Colors"
+      },
+      "settings": [
+        {
+          "id": "background",
+          "type": "color",
+          "label": {
+            "ar": "خلفية الموقع العامة",
+            "en": "Website Background"
+          },
+          "info": {
+            "ar": "اللون الذي يظهر خلف كل المحتوى في جميع صفحات المتجر.",
+            "en": "The main canvas color behind all content on every page."
+          },
+          "default": "#FFFFFF"
+        },
+        {
+          "id": "foreground",
+          "type": "color",
+          "label": {
+            "ar": "لون النصوص الأساسية",
+            "en": "Main Text Color"
+          },
+          "info": {
+            "ar": "اللون الافتراضي لكل النصوص (العناوين، الفقرات، الوصف). يجب أن يوفر تبايناً واضحاً مع خلفية الموقع.",
+            "en": "Default color for all body text (headings, paragraphs, descriptions). Must contrast clearly with Website Background."
+          },
+          "default": "#0B0A09"
+        },
+        {
+          "id": "primary",
+          "type": "color",
+          "label": {
+            "ar": "لون الأزرار والروابط (العلامة التجارية)",
+            "en": "Buttons & Links Color (Brand)"
+          },
+          "info": {
+            "ar": "لون أزرار الإجراء الرئيسية (إضافة للسلة، الدفع)، الروابط النشطة، وحلقة التركيز. غالباً يكون لون علامتك التجارية.",
+            "en": "Color of primary action buttons (Add to cart, Checkout), active links, and the focus ring. Usually your brand color."
+          },
+          "default": "#FFBD4E"
+        },
+        {
+          "id": "primary_foreground",
+          "type": "color",
+          "label": {
+            "ar": "لون النص داخل الأزرار الأساسية",
+            "en": "Text Inside Primary Buttons"
+          },
+          "info": {
+            "ar": "لون النص والأيقونات داخل الأزرار المعبأة بلون العلامة التجارية. يجب أن يتباين تماماً مع اللون الأساسي (أبيض على داكن، أو أسود على فاتح).",
+            "en": "Text & icon color inside primary-filled buttons. Must contrast with the Brand Color (white on dark, black on light)."
+          },
+          "default": "#0B0A09"
+        },
+        {
+          "id": "accent",
+          "type": "color",
+          "label": {
+            "ar": "لون العروض والشارات",
+            "en": "Offers & Badges Color"
+          },
+          "info": {
+            "ar": "لون ثانوي للتأكيد اللطيف: شارات العروض، العلامات الموسمية، التنبيهات المميزة. استخدمه باعتدال.",
+            "en": "Secondary highlight color for offer ribbons, seasonal tags, and featured callouts. Use sparingly."
+          },
+          "default": "#A89C90"
+        },
+        {
+          "id": "secondary",
+          "type": "color",
+          "label": {
+            "ar": "الخلفية الثانوية (بطاقات، رأس، حاويات هادئة)",
+            "en": "Secondary Surface (cards, header, muted containers)"
+          },
+          "info": {
+            "ar": "خلفية البطاقات، الحاويات الهادئة، وأي مكوّن يختار مصدره \"الخلفية الثانوية\" (مثل رأس الصفحة عند ضبطه يدوياً). عادةً يكون مطابقاً لخلفية الموقع أو بفرق بسيط.",
+            "en": "Used by product cards, soft containers, and any component set to pull from this token (e.g. the header when configured manually). Typically matches Website Background or is slightly off."
+          },
+          "default": "#FFFFFF"
+        },
+        {
+          "id": "muted",
+          "type": "color",
+          "label": {
+            "ar": "لون النصوص المساعدة (التسميات والشروحات)",
+            "en": "Helper Text Color (Labels & Captions)"
+          },
+          "info": {
+            "ar": "لون النصوص الثانوية مثل تسميات الحقول، شروحات المنتجات، والنصوص الأقل أهمية. عادةً أفتح من لون النصوص الأساسية.",
+            "en": "Secondary text like form labels, product captions, and less-important copy. Usually lighter than Main Text Color."
+          },
+          "default": "#545352"
+        },
+        {
+          "id": "border",
+          "type": "color",
+          "label": {
+            "ar": "لون الفواصل بين الأقسام",
+            "en": "Section Dividers Color"
+          },
+          "info": {
+            "ar": "الخطوط الفاصلة بين الأقسام، الإطارات الخفيفة حول البطاقات، وحدود الجداول. اجعله خفيفاً حتى لا يلفت الانتباه.",
+            "en": "Dividers between sections, hairlines around cards, and table borders. Keep it soft so it doesn't grab attention."
+          },
+          "default": "#B5B5B5"
+        },
+        {
+          "id": "input",
+          "type": "color",
+          "label": {
+            "ar": "لون إطار حقول الإدخال",
+            "en": "Input Field Border"
+          },
+          "info": {
+            "ar": "الإطار الافتراضي حول حقول الإدخال (النص، الإيميل، الهاتف)، القوائم المنسدلة، ومربعات الرسائل. يتحول للون العلامة التجارية عند التركيز.",
+            "en": "Default outline on text inputs, email/phone fields, select dropdowns, and textareas. Switches to Brand Color when focused."
+          },
+          "default": "#545352"
+        },
+        {
+          "id": "ring",
+          "type": "color",
+          "label": {
+            "ar": "لون إطار التركيز (لوحة المفاتيح)",
+            "en": "Focus Ring Color (Keyboard Navigation)"
+          },
+          "info": {
+            "ar": "الحلقة الملونة التي تظهر حول الأزرار والحقول عند التنقل بلوحة المفاتيح. مهمة لإمكانية الوصول — لا تُخفها.",
+            "en": "Ring around buttons and inputs during keyboard navigation. Accessibility-critical — don't remove it."
+          },
+          "default": "#0B0A09"
+        },
+        {
+          "id": "radius",
+          "type": "range",
+          "label": {
+            "ar": "تقوّس زوايا البطاقات والحقول",
+            "en": "Card & Input Roundness"
+          },
+          "info": {
+            "ar": "تقوّس البطاقات وحقول الإدخال. للأزرار استخدم الإعداد المنفصل أدناه. ‎0 = حادة، ‎16 = مستديرة.",
+            "en": "Roundness for cards and form inputs. Buttons have their own setting below. 0 = sharp, 16 = very rounded."
+          },
+          "min": 0,
+          "max": 16,
+          "step": 1,
+          "unit": "px",
+          "default": 0
+        },
+        {
+          "id": "button_radius",
+          "type": "range",
+          "label": {
+            "ar": "تقوّس زوايا الأزرار",
+            "en": "Button Roundness"
+          },
+          "info": {
+            "ar": "يطبق على جميع الأزرار في المتجر. ‎0 = حادة، ‎32 = كبسولة شبه كاملة.",
+            "en": "Applies to every button across the storefront. 0 = sharp, 32 = nearly pill-shaped."
+          },
+          "min": 0,
+          "max": 32,
+          "step": 1,
+          "unit": "px",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "id": "cart",
+      "icon": "fa fa-shopping-bag",
+      "name": {
+        "ar": "إعدادات السلة",
+        "en": "Cart Settings"
+      },
+      "settings": [
+        {
+          "id": "drawer",
+          "type": "checkbox",
+          "label": {
+            "ar": "فتح السلة كقائمة جانبية",
+            "en": "Open cart in side drawer"
+          },
+          "info": {
+            "ar": "بدلاً من الانتقال لصفحة السلة، تنفتح قائمة منزلقة",
+            "en": "Opens a slide-in panel instead of navigating to the cart page"
+          },
+          "default": true
+        },
+        {
+          "id": "auto_open",
+          "type": "checkbox",
+          "label": {
+            "ar": "فتح السلة تلقائياً عند الإضافة",
+            "en": "Auto-open when item is added"
+          },
+          "default": true
+        },
+        {
+          "id": "drawer_width",
+          "type": "select",
+          "label": {
+            "ar": "عرض القائمة",
+            "en": "Drawer width"
+          },
+          "options": [
+            {
+              "value": "sm",
+              "label": {
+                "ar": "صغير",
+                "en": "Small (380px)"
+              }
+            },
+            {
+              "value": "md",
+              "label": {
+                "ar": "متوسط",
+                "en": "Medium (440px)"
+              }
+            },
+            {
+              "value": "lg",
+              "label": {
+                "ar": "كبير",
+                "en": "Large (520px)"
+              }
+            }
+          ],
+          "default": "md"
+        },
+        {
+          "id": "drawer_side",
+          "type": "select",
+          "label": {
+            "ar": "اتجاه الانزلاق",
+            "en": "Slide from"
+          },
+          "options": [
+            {
+              "value": "end",
+              "label": {
+                "ar": "النهاية",
+                "en": "End"
+              }
+            },
+            {
+              "value": "start",
+              "label": {
+                "ar": "البداية",
+                "en": "Start"
+              }
+            }
+          ],
+          "default": "end"
+        },
+        {
+          "id": "show_coupon",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار حقل كود الخصم",
+            "en": "Show coupon input"
+          },
+          "default": true
+        },
+        {
+          "id": "show_breakdown",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار تفاصيل الخصومات",
+            "en": "Show discount breakdown"
+          },
+          "default": true
+        },
+        {
+          "id": "show_continue_shopping",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار زر متابعة التسوق",
+            "en": "Show 'Continue shopping'"
+          },
+          "default": true
+        },
+        {
+          "id": "show_loyalty_points",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار النقاط المكتسبة",
+            "en": "Show loyalty points earned"
+          },
+          "info": {
+            "ar": "فعّل فقط إذا كان برنامج الولاء مفعلاً في زد",
+            "en": "Only enable if loyalty is active in Zid dashboard"
+          },
+          "default": false
+        },
+        {
+          "id": "show_secure_payments",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار شارة الدفع الآمن",
+            "en": "Show secure-payment badge"
+          },
+          "info": {
+            "ar": "تظهر أسفل أزرار الدفع داخل السلة الجانبية",
+            "en": "Shown beneath the checkout buttons in the side cart"
+          },
+          "default": true
+        },
+        {
+          "id": "secure_payments_title",
+          "type": "text",
+          "label": {
+            "ar": "── نص شارة الدفع الآمن",
+            "en": "── Secure-payment label"
+          },
+          "info": {
+            "ar": "اتركه فارغاً لاستخدام النص الافتراضي",
+            "en": "Leave empty to use the default text"
+          },
+          "default": ""
+        },
+        {
+          "id": "secure_payments_image",
+          "type": "image",
+          "label": {
+            "ar": "── صورة وسائل الدفع",
+            "en": "── Payment icons image"
+          },
+          "info": {
+            "ar": "اتركها فارغة لاستخدام أيقونات زد الافتراضية",
+            "en": "Leave empty to use Zid's default payment icons"
+          }
+        },
+        {
+          "id": "empty_image",
+          "type": "image",
+          "label": {
+            "ar": "صورة السلة الفارغة",
+            "en": "Empty cart image"
+          },
+          "info": {
+            "ar": "صورة بديلة عن الأيقونة. 200×200 بكسل",
+            "en": "Replaces the default icon. 200×200 px"
+          }
+        },
+        {
+          "id": "price_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون السعر",
+            "en": "── Price color"
+          },
+          "default": "#0B0A09"
+        },
+        {
+          "id": "sale_price_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون سعر التخفيض",
+            "en": "── Sale price color"
+          },
+          "default": "#DC2626"
+        },
+        {
+          "id": "original_price_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون السعر الأصلي",
+            "en": "── Original price color"
+          },
+          "default": "#9CA3AF"
+        },
+        {
+          "id": "show_recommended",
+          "type": "checkbox",
+          "label": {
+            "ar": "── إظهار المنتجات المقترحة",
+            "en": "── Show recommended products"
+          },
+          "default": true
+        },
+        {
+          "id": "recommended_title",
+          "type": "text",
+          "label": {
+            "ar": "── عنوان المقترحات",
+            "en": "── Recommended title"
+          },
+          "default": ""
+        },
+        {
+          "id": "recommended_strategy",
+          "type": "select",
+          "label": {
+            "ar": "── نوع المنتجات",
+            "en": "── Recommendation strategy"
+          },
+          "options": [
+            {
+              "value": "latest",
+              "label": {
+                "ar": "أحدث المنتجات",
+                "en": "Latest"
+              }
+            },
+            {
+              "value": "best_sellers",
+              "label": {
+                "ar": "الأكثر مبيعاً",
+                "en": "Best sellers"
+              }
+            },
+            {
+              "value": "featured",
+              "label": {
+                "ar": "المميزة",
+                "en": "Featured"
+              }
+            },
+            {
+              "value": "manual",
+              "label": {
+                "ar": "اختيار يدوي",
+                "en": "Hand-picked"
+              }
+            }
+          ],
+          "default": "latest"
+        },
+        {
+          "id": "recommended_manual",
+          "type": "textarea",
+          "label": {
+            "ar": "── أسماء المنتجات (اختيار يدوي)",
+            "en": "── Product names (hand-picked)"
+          },
+          "info": {
+            "ar": "يُستخدم فقط عند اختيار 'اختيار يدوي'. اكتب اسم المنتج أو رابطه — سطر لكل منتج",
+            "en": "Only for 'Hand-picked'. Type product name or URL — one per line"
+          },
+          "default": ""
+        },
+        {
+          "id": "recommended_count",
+          "type": "range",
+          "label": {
+            "ar": "── عدد المنتجات",
+            "en": "── Number of products"
+          },
+          "min": 2,
+          "max": 12,
+          "step": 1,
+          "default": 8
+        },
+        {
+          "id": "recommended_category",
+          "type": "category",
+          "label": {
+            "ar": "── تصنيف (اختياري)",
+            "en": "── Category filter (optional)"
+          },
+          "info": {
+            "ar": "اتركه فارغاً لعرض من كل المتجر",
+            "en": "Leave empty for all products"
+          }
+        },
+        {
+          "id": "shipping_bar",
+          "type": "checkbox",
+          "label": {
+            "ar": "── إظهار شريط الشحن المجاني",
+            "en": "── Show free-shipping bar"
+          },
+          "info": {
+            "ar": "يعتمد على قاعدة الشحن من لوحة تحكم زد",
+            "en": "Uses Zid dashboard shipping rule"
+          },
+          "default": true
+        },
+        {
+          "id": "shipping_use_override",
+          "type": "checkbox",
+          "label": {
+            "ar": "── تحديد قيمة الشحن يدوياً",
+            "en": "── Set shipping threshold manually"
+          },
+          "info": {
+            "ar": "فعّل فقط لتجاوز إعدادات زد",
+            "en": "Override the dashboard rule"
+          },
+          "default": false
+        },
+        {
+          "id": "shipping_threshold_override",
+          "type": "number",
+          "label": {
+            "ar": "── الحد المخصص (بعملة المتجر)",
+            "en": "── Custom threshold"
+          },
+          "default": 0
+        },
+        {
+          "id": "shipping_bar_track",
+          "type": "color",
+          "label": {
+            "ar": "── لون مسار الشحن",
+            "en": "── Shipping track color"
+          },
+          "default": "#F6F5F4"
+        },
+        {
+          "id": "shipping_bar_fill",
+          "type": "color",
+          "label": {
+            "ar": "── لون تقدم الشحن",
+            "en": "── Shipping fill color"
+          },
+          "default": "#A89C90"
+        },
+        {
+          "id": "shipping_bar_text",
+          "type": "color",
+          "label": {
+            "ar": "── لون نص الشحن",
+            "en": "── Shipping text color"
+          },
+          "default": "#0B0A09"
+        },
+        {
+          "id": "toast_position",
+          "type": "select",
+          "label": {
+            "ar": "── موضع الإشعار",
+            "en": "── Toast position"
+          },
+          "info": {
+            "ar": "أين تظهر إشعارات السلة على الشاشة",
+            "en": "Where cart notifications appear"
+          },
+          "options": [
+            {
+              "value": "top-start",
+              "label": {
+                "ar": "أعلى البداية",
+                "en": "Top start"
+              }
+            },
+            {
+              "value": "top-center",
+              "label": {
+                "ar": "أعلى الوسط",
+                "en": "Top center"
+              }
+            },
+            {
+              "value": "top-end",
+              "label": {
+                "ar": "أعلى النهاية",
+                "en": "Top end"
+              }
+            },
+            {
+              "value": "bottom-start",
+              "label": {
+                "ar": "أسفل البداية",
+                "en": "Bottom start"
+              }
+            },
+            {
+              "value": "bottom-center",
+              "label": {
+                "ar": "أسفل الوسط",
+                "en": "Bottom center"
+              }
+            },
+            {
+              "value": "bottom-end",
+              "label": {
+                "ar": "أسفل النهاية",
+                "en": "Bottom end"
+              }
+            }
+          ],
+          "default": "top-end"
+        },
+        {
+          "id": "toast_duration",
+          "type": "range",
+          "label": {
+            "ar": "── مدة عرض الإشعار",
+            "en": "── Toast display duration"
+          },
+          "min": 1500,
+          "max": 6000,
+          "step": 500,
+          "unit": "ms",
+          "default": 3000
+        },
+        {
+          "id": "toast_bg_add",
+          "type": "color",
+          "label": {
+            "ar": "── خلفية إشعار الإضافة",
+            "en": "── Add toast background"
+          },
+          "default": "#16A34A"
+        },
+        {
+          "id": "toast_bg_update",
+          "type": "color",
+          "label": {
+            "ar": "── خلفية إشعار التحديث",
+            "en": "── Update toast background"
+          },
+          "default": "#0F172A"
+        },
+        {
+          "id": "toast_bg_remove",
+          "type": "color",
+          "label": {
+            "ar": "── خلفية إشعار الحذف",
+            "en": "── Remove toast background"
+          },
+          "default": "#B45309"
+        },
+        {
+          "id": "toast_text_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون نص الإشعار",
+            "en": "── Toast text color"
+          },
+          "default": "#FFFFFF"
+        },
+        {
+          "id": "toast_show_progress",
+          "type": "checkbox",
+          "label": {
+            "ar": "── إظهار شريط تقدم الزمن",
+            "en": "── Show timeout progress bar"
+          },
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "whatsapp_fab",
+      "icon": "fa fa-whatsapp",
+      "name": {
+        "ar": "زر واتساب العائم",
+        "en": "WhatsApp Floating Button"
+      },
+      "settings": [
+        {
+          "id": "enabled",
+          "type": "checkbox",
+          "label": {
+            "ar": "تفعيل الزر",
+            "en": "Enable button"
+          },
+          "default": false
+        },
+        {
+          "id": "default_number",
+          "type": "text",
+          "label": {
+            "ar": "رقم واتساب الافتراضي — بالصيغة الدولية بدون + (مثال: 966501234567)",
+            "en": "Default WhatsApp number — international format without + (e.g. 966501234567)"
+          },
+          "info": {
+            "ar": "أمثلة الخليج: 966xxx (السعودية)، 971xxx (الإمارات)، 965xxx (الكويت)، 973xxx (البحرين)، 974xxx (قطر)، 968xxx (عُمان).",
+            "en": "Gulf prefixes: 966xxx (Saudi), 971xxx (UAE), 965xxx (Kuwait), 973xxx (Bahrain), 974xxx (Qatar), 968xxx (Oman)."
+          },
+          "default": ""
+        },
+        {
+          "id": "default_message",
+          "type": "textarea",
+          "label": {
+            "ar": "الرسالة الافتراضية",
+            "en": "Default greeting message"
+          },
+          "info": {
+            "ar": "الرسالة التي ستظهر تلقائياً للعميل عند فتح المحادثة.",
+            "en": "Message pre-filled when the customer opens the chat."
+          },
+          "default": "مرحباً، أحتاج مساعدة"
+        },
+        {
+          "id": "append_url",
+          "type": "checkbox",
+          "label": {
+            "ar": "إرفاق رابط الصفحة الحالية",
+            "en": "Append current page URL"
+          },
+          "info": {
+            "ar": "يضيف رابط الصفحة التي ضغط منها العميل لتعرف من أين يأتي.",
+            "en": "Appends the page URL the customer clicked from so you know which page they were on."
+          },
+          "default": true
+        },
+        {
+          "id": "numbers",
+          "type": "list",
+          "label": {
+            "ar": "── أرقام مخصصة لكل دولة",
+            "en": "── Per-country numbers"
+          },
+          "info": {
+            "ar": "إذا كانت دولة الزائر مطابقة، سنستخدم الرقم المخصص بدلاً من الرقم الافتراضي. مفيد لمتاجر الخليج الموزعة على عدة دول. اختياري.",
+            "en": "If the visitor's country matches, the per-country number is used instead of the default. Useful for Gulf stores serving multiple countries. Optional."
+          },
+          "max_items": 20,
+          "settings": [
+            {
+              "id": "country_code",
+              "type": "text",
+              "label": {
+                "ar": "رمز الدولة — بحرفين (SA, AE, KW, BH, QA, OM, EG)",
+                "en": "Country code — 2 letters (SA, AE, KW, BH, QA, OM, EG)"
+              },
+              "info": {
+                "ar": "ISO 3166-1 alpha-2. الخليج: SA / AE / KW / BH / QA / OM. الشرق الأوسط: EG / JO / IQ / LB.",
+                "en": "ISO 3166-1 alpha-2. Gulf: SA / AE / KW / BH / QA / OM. Middle East: EG / JO / IQ / LB."
+              }
+            },
+            {
+              "id": "number",
+              "type": "text",
+              "label": {
+                "ar": "الرقم",
+                "en": "Number"
+              }
+            },
+            {
+              "id": "message",
+              "type": "textarea",
+              "label": {
+                "ar": "رسالة مخصصة (اختياري)",
+                "en": "Custom message (optional)"
+              },
+              "info": {
+                "ar": "إن تُركت فارغة، نستخدم الرسالة الافتراضية أعلاه.",
+                "en": "If empty, the default greeting above is used."
+              }
+            }
+          ]
+        },
+        {
+          "id": "position",
+          "type": "select",
+          "label": {
+            "ar": "── موضع الزر",
+            "en": "── Position"
+          },
+          "options": [
+            { "value": "bottom-end",   "label": { "ar": "أسفل النهاية",       "en": "Bottom end (RTL: left, LTR: right)" }},
+            { "value": "bottom-start", "label": { "ar": "أسفل البداية",       "en": "Bottom start (RTL: right, LTR: left)" }},
+            { "value": "middle-end",   "label": { "ar": "وسط النهاية (جانبي)", "en": "Middle end (vertically centered on side)" }},
+            { "value": "middle-start", "label": { "ar": "وسط البداية (جانبي)", "en": "Middle start (vertically centered on side)" }},
+            { "value": "top-end",      "label": { "ar": "أعلى النهاية",       "en": "Top end" }},
+            { "value": "top-start",    "label": { "ar": "أعلى البداية",       "en": "Top start" }}
+          ],
+          "default": "middle-start"
+        },
+        {
+          "id": "offset_x",
+          "type": "range",
+          "label": {
+            "ar": "── المسافة الأفقية",
+            "en": "── Horizontal offset"
+          },
+          "min": 0,
+          "max": 80,
+          "step": 4,
+          "unit": "px",
+          "default": 16
+        },
+        {
+          "id": "offset_y",
+          "type": "range",
+          "label": {
+            "ar": "── المسافة العمودية",
+            "en": "── Vertical offset"
+          },
+          "min": 0,
+          "max": 120,
+          "step": 4,
+          "unit": "px",
+          "default": 24
+        },
+        {
+          "id": "hide_on_cart",
+          "type": "checkbox",
+          "label": {
+            "ar": "── إخفاء الزر في صفحة السلة",
+            "en": "── Hide on cart page"
+          },
+          "default": false
+        },
+        {
+          "id": "hide_on_shipping_payment",
+          "type": "checkbox",
+          "label": {
+            "ar": "── إخفاء الزر في صفحة الشحن والدفع",
+            "en": "── Hide on shipping & payment page"
+          },
+          "default": true
+        },
+        {
+          "id": "pulse",
+          "type": "checkbox",
+          "label": {
+            "ar": "── تأثير نبض الانتباه",
+            "en": "── Idle pulse animation"
+          },
+          "info": {
+            "ar": "نبضة لطيفة كل 30 ثانية لجذب الانتباه دون إزعاج.",
+            "en": "Subtle pulse every 30s to catch attention without nagging."
+          },
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "custom_code",
+      "icon": "fa fa-code",
+      "name": {
+        "ar": "كود مخصص",
+        "en": "Custom Code"
+      },
+      "settings": [
+        {
+          "id": "custom_css",
+          "type": "textarea",
+          "label": {
+            "ar": "CSS مخصص",
+            "en": "Custom CSS"
+          },
+          "info": {
+            "ar": "يُضاف داخل وسم <style> في <head> بعد ستايلات القالب — أي قاعدة هنا تتجاوز ستايل القالب. لا تضع وسوم <style> داخل المربع، اكتب القواعد فقط. مثال: .product-card { border-radius: 12px; }",
+            "en": "Injected inside a <style> tag in <head> AFTER the theme stylesheet — any rule here overrides theme styles. Do NOT include <style> tags in the field, just the CSS rules. Example: .product-card { border-radius: 12px; }"
+          },
+          "default": ""
+        },
+        {
+          "id": "custom_js_head",
+          "type": "textarea",
+          "label": {
+            "ar": "JS مخصص (في <head>)",
+            "en": "Custom JS (head)"
+          },
+          "info": {
+            "ar": "يُضاف كـ <script> داخل <head> قبل تحميل DOM. مناسب لأكواد التتبع/التحليلات (Google Analytics، Meta Pixel، TikTok Pixel، إلخ). لا تضع وسوم <script> داخل المربع. للأكواد التي تتفاعل مع DOM (مثل عرض زر) استخدم الحقل التالي «JS في نهاية body».",
+            "en": "Injected as a <script> inside <head>, before the DOM loads. Best for tracking/analytics snippets (Google Analytics, Meta Pixel, TikTok Pixel, etc.). Do NOT include <script> tags in the field. For code that interacts with DOM elements, use the «JS body» field below instead."
+          },
+          "default": ""
+        },
+        {
+          "id": "custom_js_body",
+          "type": "textarea",
+          "label": {
+            "ar": "JS مخصص (نهاية <body>)",
+            "en": "Custom JS (end of body)"
+          },
+          "info": {
+            "ar": "يُضاف كـ <script> قبل </body> بعد تحميل سكربت القالب — يمكنك الوصول لكل العناصر في الصفحة. مناسب لأكواد التفاعل مع المنتجات والسلة، تكاملات الدردشة، أكواد عربات السلة المتروكة، إلخ. لا تضع وسوم <script> داخل المربع.",
+            "en": "Injected as a <script> before </body>, after the theme bundle — DOM elements are available. Best for interactive code (cart hooks, chat widgets, abandoned-cart triggers, etc.). Do NOT include <script> tags in the field."
+          },
+          "default": ""
+        }
+      ]
+    }
+  ]
+}

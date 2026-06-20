@@ -1,0 +1,165 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-video bg-black px-4 py-8 md:px-16 md:py-12"
+>
+  <style>
+    /* Mobile keeps the tall, immersive cap; desktop is capped much shorter
+       so the clip doesn't dominate the viewport on large screens. */
+    [section-id="{{ sectionId }}"] .section-video__player { max-height: 80vh; }
+    @media (min-width: 768px) {
+      [section-id="{{ sectionId }}"] .section-video__player { max-height: 460px; }
+    }
+  </style>
+  {% if settings.video %}
+    <div class="video-wrapper theme-container relative">
+      {# The source is attached lazily by the script below (it lives in
+         `data-video-src`, not a real <source>) so the — often large — video
+         never downloads during the critical first paint. On mobile that
+         eager download is what made the page feel stuck "while it loads".
+         `preload="none"` keeps the browser from fetching anything until we
+         attach the source when the section scrolls into view. #}
+      <video
+        class="section-video__player w-full rounded-lg"
+        style="object-fit: contain"
+        loop
+        playsinline
+        webkit-playsinline
+        muted
+        preload="none"
+        data-video-src="{{ settings.video }}"
+        {% if settings.autoplay %}data-autoplay="true"{% endif %}
+        {% if settings.poster_image %}poster="{{ image_url(settings.poster_image, w=1280, q=70, f='auto') }}"{% endif %}
+      >
+        Your browser does not support the video tag.
+      </video>
+      {% if not settings.autoplay %}
+        <div
+          class="video-overlay absolute inset-0 flex flex-col items-center justify-center space-y-6 rounded-lg bg-black/30 text-center transition-opacity duration-500"
+        >
+          {% if settings.title %}
+            <h2 class="text-2xl md:text-3xl font-semibold tracking-tight text-white">{{ settings.title }}</h2>
+          {% endif %}
+          <button class="play-button bg-background text-accent rounded-full p-4 disabled:opacity-60 disabled:cursor-wait" type="button" aria-label="{{ _('Play video') }}">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 32 32"
+              fill="none"
+            >
+              <path
+                d="M28.5453 13.3708C29.1857 13.7114 29.7214 14.2197 30.0949 14.8415C30.4685 15.4632 30.6658 16.1748 30.6658 16.9001C30.6658 17.6255 30.4685 18.3371 30.0949 18.9588C29.7214 19.5806 29.1857 20.0889 28.5453 20.4295L11.4627 29.7188C8.712 31.2162 5.33333 29.2695 5.33333 26.1908V7.61082C5.33333 4.53082 8.712 2.58548 11.4627 4.08015L28.5453 13.3708Z"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if settings.video %}
+    <script>
+      (function () {
+        const section = document.querySelector('[section-id="{{ sectionId }}"]');
+        if (!section) return;
+        const video = section.querySelector("video");
+        if (!video) return;
+        const overlay = section.querySelector(".video-overlay");
+        const playButton = section.querySelector(".play-button");
+        const src = video.getAttribute("data-video-src");
+        const isAutoplay = video.getAttribute("data-autoplay") === "true";
+        let sourceAttached = false;
+
+        // Attach the real <source> + start loading. Done lazily so the video
+        // only downloads once it's actually needed (in view / on tap).
+        function ensureSource() {
+          if (sourceAttached || !src) return;
+          sourceAttached = true;
+          const s = document.createElement("source");
+          s.src = src;
+          s.type = "video/mp4";
+          video.appendChild(s);
+          video.load();
+        }
+
+        function tryPlay() {
+          video.muted = true; // muted is required for autoplay on mobile
+          const p = video.play();
+          if (p && typeof p.catch === "function") p.catch(function () {});
+        }
+
+        // Lazy-load + (for autoplay) play only while the section is on screen.
+        // Pausing off-screen frees the decoder/bandwidth, which is what keeps
+        // mobile smooth instead of locking up behind a constantly-buffering clip.
+        if ("IntersectionObserver" in window) {
+          const io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                  ensureSource();
+                  if (isAutoplay) tryPlay();
+                } else if (isAutoplay && !video.paused) {
+                  video.pause();
+                }
+              });
+            },
+            { rootMargin: "200px 0px" }
+          );
+          io.observe(video);
+        } else {
+          ensureSource();
+          if (isAutoplay) tryPlay();
+        }
+
+        // Click-to-play (non-autoplay): attach the source, show a brief
+        // loading state on the button, then play once enough has buffered.
+        if (playButton && overlay) {
+          playButton.addEventListener("click", function () {
+            ensureSource();
+            playButton.disabled = true;
+            const reveal = function () {
+              overlay.style.opacity = "0";
+              setTimeout(function () {
+                overlay.style.display = "none";
+              }, 500);
+            };
+            if (video.readyState >= 2) {
+              video.play();
+              reveal();
+            } else {
+              video.addEventListener(
+                "canplay",
+                function onCanPlay() {
+                  video.removeEventListener("canplay", onCanPlay);
+                  video.play();
+                  reveal();
+                },
+                { once: true }
+              );
+            }
+          });
+        }
+      })();
+    </script>
+  {% endif %}
+</section>
+{% endif %}{# /country-visibility guard #}

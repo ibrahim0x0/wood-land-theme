@@ -1,0 +1,281 @@
+{
+  "template": "sections/benefits.jinja",
+  "name": {
+    "ar": "خصائص المتجر",
+    "en": "Store Benefits"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان (اختياري)",
+        "en": "Title (optional)"
+      },
+      "info": {
+        "ar": "اتركه فارغًا لإخفاء عنوان القسم تمامًا.",
+        "en": "Leave empty to hide the section title entirely."
+      },
+      "default": ""
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+
+    {
+      "id": "store_features",
+      "type": "list",
+      "label": {
+        "ar": "المزايا",
+        "en": "Features"
+      },
+      "info": {
+        "ar": "حتى 4 مزايا. كل ميزة لها أيقونة وعنوان ووصف. على الجوال تظهر بعمودين، على سطح المكتب بأربعة أعمدة.",
+        "en": "Up to 4 features. Each one has an icon, title, and description. Mobile shows 2 columns, desktop shows 4."
+      },
+      "max_items": 4,
+      "settings": [
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "الأيقونة (سطح المكتب)",
+            "en": "Icon (desktop)"
+          },
+          "info": {
+            "ar": "PNG شفاف أو SVG. ارفع بدقة عالية (200×200 بكسل أو أكثر) للحصول على وضوح الريتينا.",
+            "en": "Transparent PNG or SVG. Upload at 200×200px or larger for retina sharpness."
+          }
+        },
+        {
+          "id": "image_mobile",
+          "type": "image",
+          "label": {
+            "ar": "الأيقونة (موبايل) — اختيارية",
+            "en": "Icon (mobile) — optional"
+          },
+          "info": {
+            "ar": "إن تُركت فارغة، يُستخدم رمز سطح المكتب على الجوال أيضًا.",
+            "en": "If empty, the desktop icon is used on mobile too."
+          }
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "label": {
+            "ar": "العنوان",
+            "en": "Title"
+          }
+        },
+        {
+          "id": "description",
+          "type": "text",
+          "label": {
+            "ar": "الوصف",
+            "en": "Description"
+          }
+        }
+      ]
+    },
+    {
+      "id": "image_size",
+      "type": "range",
+      "label": {
+        "ar": "── حجم الأيقونة",
+        "en": "── Icon size"
+      },
+      "info": {
+        "ar": "ارتفاع وعرض الأيقونة بالبكسل. الافتراضي 48 بكسل. الأيقونات المربعة تبقى مربعة.",
+        "en": "Width and height of the icon in pixels. Default 48px. Square icons stay square."
+      },
+      "min": 24,
+      "max": 96,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "id": "mobile_font_scale",
+      "type": "range",
+      "label": {
+        "ar": "── حجم الخط على الجوال",
+        "en": "── Mobile font scale"
+      },
+      "info": {
+        "ar": "مضاعف لحجم النص على الشاشات الصغيرة (≤ 768 بكسل). الافتراضي 0.8em (80% من حجم سطح المكتب) لإبقاء الشبكة بعمودين متناسقة. 1em = نفس حجم سطح المكتب. التغيير يطبق على العنوان والوصف معًا.",
+        "en": "Multiplier for text size on small screens (≤ 768px). Default 0.8em (80% of desktop size) so the 2-column mobile grid stays balanced. 1em = same as desktop. Applies to both title and description proportionally."
+      },
+      "min": 0.5,
+      "max": 1.5,
+      "step": 0.05,
+      "unit": "em",
+      "default": 0.8
+    },
+    {
+      "id": "title_color",
+      "type": "color",
+      "label": {
+        "ar": "── لون العنوان (اختياري)",
+        "en": "── Title color (optional)"
+      },
+      "info": {
+        "ar": "اتركه فارغًا لاستخدام لون النص الأساسي للقالب.",
+        "en": "Leave empty to use the theme's foreground color."
+      },
+      "default": ""
+    },
+    {
+      "id": "description_color",
+      "type": "color",
+      "label": {
+        "ar": "── لون الوصف (اختياري)",
+        "en": "── Description color (optional)"
+      },
+      "info": {
+        "ar": "اتركه فارغًا لاستخدام لون النص الأساسي للقالب.",
+        "en": "Leave empty to use the theme's foreground color."
+      },
+      "default": ""
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "── الخلفية",
+        "en": "── Background"
+      },
+      "options": [
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي (افتراضي)",
+            "en": "Secondary (default)"
+          }
+        },
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "warm",
+          "label": {
+            "ar": "كريمي دافئ",
+            "en": "Warm cream"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "secondary"
+    },
+    {
+      "id": "padding_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الداخلية",
+        "en": "── Vertical padding"
+      },
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "id": "margin_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الخارجية",
+        "en": "── Vertical margin"
+      },
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "border_top",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد علوي",
+        "en": "── Top border"
+      },
+      "default": false
+    },
+    {
+      "id": "border_bottom",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد سفلي",
+        "en": "── Bottom border"
+      },
+      "default": false
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

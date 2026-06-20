@@ -1,0 +1,439 @@
+{# Premium slide-in cart drawer #}
+{# All cart settings now under single group (id: cart) #}
+{% set auto_open         = settings.cart_auto_open | default(true) %}
+{% set drawer_width      = settings.cart_drawer_width or 'md' %}
+{% set drawer_side       = settings.cart_drawer_side or 'end' %}
+{% set show_coupon       = settings.cart_show_coupon | default(true) %}
+{% set show_breakdown    = settings.cart_show_breakdown | default(true) %}
+{% set show_continue     = settings.cart_show_continue_shopping | default(true) %}
+{% set show_secure       = settings.cart_show_secure_payments | default(true) %}
+{% set secure_title      = settings.cart_secure_payments_title or _('Secure payments') %}
+{% set secure_image      = settings.cart_secure_payments_image %}
+{% set empty_image       = settings.cart_empty_image %}
+{% set price_color       = settings.cart_price_color or '#0B0A09' %}
+{% set sale_price_color  = settings.cart_sale_price_color or '#DC2626' %}
+{% set original_price_color = settings.cart_original_price_color or '#9CA3AF' %}
+{% set show_recommended  = settings.cart_show_recommended | default(true) %}
+{% set recommended_count = settings.cart_recommended_count | default(8) %}
+{% set recommended_manual = settings.cart_recommended_manual or '' %}
+{% set recommended_cat   = settings.cart_recommended_category %}
+{% set recommended_strategy = settings.cart_recommended_strategy or 'latest' %}
+{% set recommended_title_setting = settings.cart_recommended_title %}
+{% set show_shipping     = settings.cart_shipping_bar | default(true) %}
+{% set ship_use_override = settings.cart_shipping_use_override | default(false) %}
+{% set ship_threshold    = (settings.cart_shipping_threshold_override | default(0)) if ship_use_override else 0 %}
+{% set ship_track_color  = settings.cart_shipping_bar_track or '#F6F5F4' %}
+{% set ship_fill_color   = settings.cart_shipping_bar_fill or 'var(--primary)' %}
+{% set ship_text_color   = settings.cart_shipping_bar_text or '#0B0A09' %}
+{# Read the variant-swap confirm-dialog style from the new Dialogs group.
+   The old `product_card_confirm_dialog_style` key (removed during the
+   Product Card group cleanup) is kept as a backward-compat fallback so
+   merchants who picked a non-default style don't lose it on upgrade. #}
+{% set confirm_style     = settings.dialogs_confirm_style or settings.product_card_confirm_dialog_style or 'glass' %}
+
+{# All user-facing strings go through gettext so translations can be managed
+   centrally instead of hard-coded per-language ternaries. #}
+{% set t_your_cart    = _('Cart') %}
+{% set t_close        = _('Close') %}
+{% set t_empty        = _('Your cart is empty') %}
+{% set t_start_shop   = _('Start shopping') %}
+{% set t_subtotal     = _('Total') %}
+{% set t_checkout     = _('Checkout') %}
+{% set t_remove       = _('Remove') %}
+{% set t_view_cart    = _('View full cart') %}
+{% set t_clear_cart   = _('Clear cart') %}
+{% set t_clear_confirm= _('Remove all items from your cart?') %}
+{% set t_points_earn  = _("You'll earn") %}
+{% set t_points_unit  = _('points') %}
+{% set t_attached_file= _('Attached file') %}
+{% set t_continue     = _('Continue shopping') %}
+{# Rendered as a raw bilingual literal (not gettext) so the exact wording
+   "سلة المشتريات" is guaranteed regardless of catalog/.mo state. #}
+{% set t_cart_full    = 'سلة المشتريات' if (session.lang or '').startswith('ar') else 'Shopping cart' %}
+{% set t_coupon_ph    = _('Enter coupon code') %}
+{% set t_apply        = _('Apply') %}
+{% set t_only_left    = _('Only {n} left!') %}
+{# Real SVG icons (not emojis) sit in the markup beside the message and swap by
+   state — see the shipping bar's `.drawer-ship-ic` below. #}
+{% set t_default_below = _('Add {amount} more for free shipping') %}
+{% set t_default_above = _("You've unlocked free shipping!") %}
+{% set t_recommended   = recommended_title_setting or _('You might also like') %}
+
+{% set width_class = {'sm': 'max-w-[380px]', 'md': 'max-w-[440px]', 'lg': 'max-w-[520px]'}[drawer_width] %}
+
+<el-dialog
+  id="cart-drawer-wrapper"
+  class="contents"
+>
+  <dialog
+    id="cart-drawer-dialog"
+    aria-labelledby="cart-drawer-title"
+    class="fixed inset-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent not-open:hidden backdrop:bg-transparent"
+  >
+    <el-dialog-backdrop
+      class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 data-closed:opacity-0"
+    ></el-dialog-backdrop>
+
+    <div
+      tabindex="0"
+      class="absolute inset-0 focus:outline-none"
+    >
+      <el-dialog-panel
+        class="bg-background {{ 'end-0' if drawer_side == 'end' else 'start-0' }} {{ width_class }} max-md:max-w-[calc(100vw-3rem)] {% if drawer_side == 'end' %}data-closed:translate-x-full
+        rtl:data-closed:-translate-x-full{% else %}data-closed:-translate-x-full rtl:data-closed:translate-x-full{% endif %} absolute top-0 bottom-0 flex w-full transform flex-col shadow-2xl transition duration-300 ease-out"
+        style="--cart-price: {{ price_color }}; --cart-sale-price: {{ sale_price_color }}; --cart-original-price: {{ original_price_color }};"
+        data-cart-drawer
+        data-shipping-enabled="{{ 'true' if show_shipping else 'false' }}"
+        data-shipping-threshold="{{ ship_threshold }}"
+        data-shipping-msg-below="{{ t_default_below }}"
+        data-shipping-msg-above="{{ t_default_above }}"
+        data-auto-open="{{ 'true' if auto_open else 'false' }}"
+        data-only-left="{{ t_only_left }}"
+        data-clear-cart-label="{{ t_clear_cart }}"
+        data-clear-cart-confirm="{{ t_clear_confirm }}"
+        data-recommended-strategy="{{ recommended_strategy }}"
+        data-variant-method="{{ variant_method }}"
+        data-confirm-style="{{ confirm_style }}"
+        data-store-currency="{{ session.currency.code if session.currency and session.currency.code else 'USD' }}"
+        data-loyalty-preview="{{ 'true' if (settings.cart_show_loyalty_points | default(false)) else 'false' }}"
+      >
+        <header class="border-border-light flex items-center justify-between border-b px-5 py-4">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <h2 id="cart-drawer-title" class="text-lg font-semibold">
+              {{ t_your_cart }}
+              <span class="text-muted text-sm font-normal" data-drawer-count></span>
+            </h2>
+          </div>
+          <div class="flex items-center gap-1">
+            {# Full-cart link as a shopping-bag icon (replaces the clear-cart button). #}
+            <a href="{{ url_for('cart_page') }}" class="drawer-icon-btn" aria-label="{{ t_view_cart }}" title="{{ t_view_cart }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </a>
+          <button
+            type="button"
+            command="close"
+            commandfor="cart-drawer-dialog"
+            class="hover:bg-secondary flex size-8 items-center justify-center rounded-full"
+            aria-label="{{ t_close }}"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line
+                x1="18"
+                y1="6"
+                x2="6"
+                y2="18"
+              />
+              <line
+                x1="6"
+                y1="6"
+                x2="18"
+                y2="18"
+              />
+            </svg>
+          </button>
+          </div>
+        </header>
+
+        {% if show_shipping %}
+          <div class="px-5 py-3" data-drawer-shipping hidden style="--ship-track: {{ ship_track_color }}; --ship-fill: {{ ship_fill_color }}; --ship-text: {{ ship_text_color }};">
+            <div class="flex flex-col gap-2" data-free-shipping-bar>
+              <p class="text-xs uppercase tracking-wide flex items-center justify-center gap-1.5" style="color: var(--ship-text);">
+                <span class="drawer-ship-ic" aria-hidden="true">
+                  <svg class="drawer-ship-ic__truck" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+                  <svg class="drawer-ship-ic__done" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L12 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>
+                </span>
+                <span data-drawer-shipping-msg></span>
+              </p>
+              <div class="relative flex items-center">
+                <div class="relative h-1.5 w-full rounded-lg" style="background-color: var(--ship-track);">
+                  <div class="absolute inset-y-0 start-0 rounded-lg transition-all duration-300" style="width:0%; background-color: var(--ship-fill);" data-drawer-shipping-fill></div>
+                  <div class="absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300" style="inset-inline-start: calc(0% - 12px); background-color: var(--ship-fill);" data-drawer-shipping-truck>
+                    {% include 'components/cart/_truck-icon.jinja' %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        <div
+          class="flex-1 overflow-y-auto p-5"
+          data-drawer-body
+        >
+          {# Loading skeleton #}
+          <div
+            class="space-y-4"
+            data-drawer-loading
+          >
+            {% for i in range(3) %}
+              <div class="flex gap-3">
+                <div class="bg-secondary aspect-square w-12 animate-pulse rounded"></div>
+                <div class="flex-1 space-y-2 py-2">
+                  <div class="bg-secondary h-4 w-3/4 animate-pulse rounded"></div>
+                  <div class="bg-secondary h-3 w-1/2 animate-pulse rounded"></div>
+                  <div class="bg-secondary h-3 w-1/3 animate-pulse rounded"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          {# Empty state #}
+          <div
+            class="hidden flex-col items-center justify-center gap-4 py-12 text-center"
+            data-drawer-empty
+          >
+            {% if empty_image %}
+              <img
+                src="{{ image_url(empty_image, w=200, q=85, f='auto') }}"
+                alt=""
+                class="h-32 w-auto object-contain opacity-90"
+              />
+            {% else %}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="text-muted"
+              >
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            {% endif %}
+            <p class="text-muted">{{ t_empty }}</p>
+            <a href="/" class="drawer-checkout-btn" style="flex: 0 0 auto; padding: 0.75rem 1.5rem;">{{ t_start_shop }}</a>
+          </div>
+
+          <ul
+            class="hidden space-y-4"
+            data-drawer-items
+          ></ul>
+
+          {% if show_recommended %}
+            <div
+              class="border-border-light mt-6 hidden border-t pt-6"
+              data-drawer-recommended
+              data-recommended-count="{{ recommended_count }}"
+              data-recommended-manual="{{ recommended_manual }}"
+              {% if recommended_cat and recommended_cat.id %}data-recommended-category="{{ recommended_cat.id }}"{% endif %}
+            >
+              <h3 class="mb-0.5 text-sm font-semibold">{{ t_recommended }}</h3>
+              <p class="text-muted mb-3 text-xs">{{ 'أضِفها لطلبك الآن قبل نفاد الكمية — اختارها عملاؤنا غالبًا مع طلبهم ✨' if (session.lang or '').startswith('ar') else 'Add them now before they sell out — customers often pair these with their order ✨' }}</p>
+              <div class="cart-drawer-rec-viewport">
+                <div
+                  class="cart-drawer-rec-track -mx-1 flex gap-3 overflow-x-auto pb-2"
+                  data-recommended-track
+                >
+                  {# Filled by JS via window.zid.products.list() #}
+                </div>
+                {# Swipe hint — primary animated icon (trailing edge); toggled by drawer.js. #}
+                <div class="cart-drawer-rec-hint" data-recommended-hint aria-hidden="true">
+                  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M30.509,7l-3.254,3.254l-0.51-0.509l2.386-2.386h-9.796c-0.096,1.677-0.844,3.254-2.102,4.37l-0.478-0.539c1.194-1.058,1.878-2.585,1.878-4.19c0-3.11-2.53-5.64-5.64-5.64S7.354,3.89,7.354,7c0,1.605,0.685,3.133,1.879,4.19l-0.478,0.539C7.407,10.535,6.634,8.811,6.634,7c0-3.507,2.853-6.36,6.36-6.36c3.385,0,6.154,2.661,6.342,6h9.795l-2.386-2.386l0.51-0.509L30.509,7z M26.36,18.776v4.01c0,4.453-1.041,8.574-8.591,8.574c-5.067,0-7.409-2.218-10.404-5.602c-0.844-0.953-3.435-3.76-3.435-3.76l-0.5-0.554c-1.217-1.339-1.79-2.018-1.79-2.459c0-0.541,0.374-1.022,1.052-1.357c1.188-0.586,3.129-0.646,4.319,0.269c0.895,0.688,2.677,2.611,3.629,3.663V7c0-1.388,0.968-2.357,2.354-2.36c0,0,0,0,0.001,0c0,0,0.001,0,0.003,0c0.001,0,0.002,0,0.003,0C14.391,4.643,15.36,5.612,15.36,7v7.64h6.552C24.448,14.64,26.36,16.418,26.36,18.776z M25.64,18.776c0-1.948-1.603-3.417-3.728-3.417H15c-0.199,0-0.36-0.161-0.36-0.36V7c0-0.98-0.66-1.639-1.642-1.64C12.019,5.361,11.36,6.02,11.36,7v15.5c0,0.149-0.092,0.283-0.232,0.337c-0.139,0.054-0.298,0.015-0.397-0.099c-0.03-0.033-2.983-3.368-4.158-4.271c-0.925-0.709-2.588-0.673-3.562-0.192c-0.413,0.203-0.65,0.463-0.65,0.711c0.057,0.274,1.063,1.38,1.603,1.975l0.502,0.556c0.002,0.002,2.595,2.811,3.44,3.767c2.865,3.236,5.099,5.357,9.865,5.357c6.532,0,7.87-3.14,7.87-7.854L25.64,18.776L25.64,18.776z" fill="currentColor"/>
+                  </svg>
+                </div>
+              </div>
+              {# Dots — built by drawer.js after the cards render. #}
+              <div class="cart-drawer-rec-dots" data-recommended-dots aria-hidden="true"></div>
+            </div>
+          {% endif %}
+        </div>
+
+        <footer
+          class="border-border-light hidden space-y-3 border-t p-5"
+          data-drawer-footer
+        >
+          {% if show_coupon %}
+            <form class="drawer-coupon-form" data-drawer-coupon-form>
+              <input type="text" placeholder="{{ t_coupon_ph }}" class="drawer-coupon-input" data-drawer-coupon-input />
+              <button type="submit" class="drawer-coupon-btn" data-drawer-coupon-btn>{{ t_apply }}</button>
+            </form>
+            <div
+              class="bg-secondary hidden items-center justify-between rounded px-3 py-2 text-sm"
+              data-drawer-coupon-applied
+            >
+              <span class="inline-flex items-center gap-2">
+                <strong data-drawer-coupon-code></strong>
+                <span
+                  class="hidden rounded bg-success/10 px-1.5 py-0.5 text-xs font-semibold text-success"
+                  data-drawer-coupon-percent
+                ></span>
+              </span>
+              <button
+                type="button"
+                class="text-muted hover:text-destructive"
+                data-drawer-coupon-remove
+                aria-label="{{ t_remove }}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line
+                    x1="18"
+                    y1="6"
+                    x2="6"
+                    y2="18"
+                  />
+                  <line
+                    x1="6"
+                    y1="6"
+                    x2="18"
+                    y2="18"
+                  />
+                </svg>
+              </button>
+            </div>
+          {% endif %}
+
+          {% if show_breakdown %}
+            <div
+              class="text-sm"
+              data-drawer-breakdown
+            ></div>
+          {% endif %}
+
+          {# Total is rendered inside [data-drawer-breakdown] as the emphasised
+             "المجموع" row (subtotal == total in the drawer). #}
+          <div class="flex items-stretch gap-2">
+            {% if show_continue %}
+              <button type="button" command="close" commandfor="cart-drawer-dialog" class="drawer-continue-btn">
+                {{ t_continue }}
+              </button>
+            {% endif %}
+            <a href="{{ url_for('cart_page') }}" data-drawer-checkout class="drawer-checkout-btn">
+              {{ t_checkout }}
+            </a>
+          </div>
+
+          {# Full-width outlined link to the full cart page — secondary CTA
+             below the continue/checkout row. #}
+          <a href="{{ url_for('cart_page') }}" class="drawer-cart-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+              <path d="M3 6h18" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            {{ t_cart_full }}
+          </a>
+
+          {% if show_secure %}
+            {# Secure-payment trust badge. Custom image (merchant upload) takes
+               precedence; otherwise Zid's default payment-icons SVG is used. #}
+            <div class="drawer-secure">
+              <span class="drawer-secure__title">{{ secure_title }}</span>
+              <img
+                class="drawer-secure__img"
+                src="{{ image_url(secure_image, w=360, q=90, f='auto') if secure_image else ('images/cart-secure-payments.svg' | asset_url) }}"
+                alt="{{ secure_title }}"
+                loading="lazy"
+              />
+            </div>
+          {% endif %}
+        </footer>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+
+{# Translations consumed by assets/js/cart/drawer.js. All keys are rendered
+   through gettext so translators touch the .po files, not this template. #}
+<script type="application/json" data-cart-drawer-i18n>
+  {{ {
+    'quickAdd':            _('Add'),
+    'view':                _('Choose option'),
+    'added':               _('Added'),
+    'newVariantAdded':     _('New variant added'),
+    'yesRemoveOld':        _('Yes, remove old'),
+    'noKeepBoth':          _('No, keep both'),
+    'oldVariantRemoved':   _('Old variant removed'),
+    'couldNotAdd':         _('Could not add'),
+    'unavailable':         _('This product is unavailable'),
+    'changeVariant':       _('Change variant'),
+    'edit':                _('Edit'),
+    'itemsCount':          _('Items'),
+    'productWord':         ('منتج' if (session.lang or '').startswith('ar') else 'item'),
+    'subtotalLbl':         _('Subtotal'),
+    'totalLbl':            _('Total'),
+    'shippingLbl':         _('Shipping'),
+    'taxLbl':              _('Tax'),
+    'discountLbl':         _('Discount'),
+    'discountsLbl':        ('إجمالي الخصومات' if (session.lang or '').startswith('ar') else 'Total discounts'),
+    'savingsLbl':          'وفّرت',
+    'weightLbl':           _('Total weight'),
+    'calcAtCheckout':      _('Calculated at checkout'),
+    'kg':                  _('kg'),
+    'g':                   _('g'),
+    'cartNotice':          _('Cart notice'),
+    'variantChanged':      _('Variant changed'),
+    'couldNotChange':      _('Could not change variant'),
+    'couponInvalid':       _('Invalid coupon code'),
+    'couponApplied':       _('Coupon applied'),
+    'couponRemoved':       _('Coupon removed'),
+    'couponFailed':        _("Couldn't apply the coupon"),
+    'couponUnavailable':   _('This coupon is not available right now'),
+    'noLongerAvailable':   _('no longer available'),
+    'priceChanged':        _('price changed'),
+    'qtyNotAvailable':     _('requested qty not available'),
+    'removeOldVariantTpl': _('Remove the old "{label}" from your cart?'),
+    'attachedFile':        t_attached_file,
+    'pointsEarn':          t_points_earn,
+    'pointsUnit':          t_points_unit,
+    'remove':              t_remove,
+    'decreaseQty':         _('Decrease quantity'),
+    'increaseQty':         _('Increase quantity'),
+  } | tojson }}
+</script>
+
+{# ── Compact cross-sell cards + tiny line-item thumbnails ──
+   Rendered inline (served directly by the theme) so it takes effect
+   WITHOUT a CSS rebuild and overrides the built styles.css. #}
+<style>
+  /* "قد يعجبك أيضاً" — كروت وصور أصغر بكثير */
+  [data-cart-drawer] .rec-card { flex: 0 0 108px !important; }
+  [data-cart-drawer] .rec-card__qv {
+    width: 24px !important; height: 24px !important;
+    top: 0.25rem !important; left: 0.25rem !important;
+  }
+  [data-cart-drawer] .rec-card__qv svg { width: 13px !important; height: 13px !important; }
+  [data-cart-drawer] .rec-card__body { padding: 0.4rem 0.4rem 0.5rem !important; gap: 0.3rem !important; }
+  [data-cart-drawer] .rec-card__title { font-size: 0.7rem !important; min-height: 0 !important; }
+  [data-cart-drawer] .rec-card__price,
+  [data-cart-drawer] .rec-card__price-original { font-size: 0.66rem !important; }
+  [data-cart-drawer] .rec-card__btn--icon { width: 30px !important; height: 30px !important; }
+  [data-cart-drawer] .rec-card__btn--icon svg { width: 15px !important; height: 15px !important; }
+  [data-cart-drawer] .rec-card__btn { padding: 0.35rem 0.5rem !important; font-size: 0.62rem !important; }
+
+  /* صورة المنتج في سطر السلة — صغيرة جداً */
+  [data-cart-drawer] [data-drawer-line] > a:first-child { width: 44px !important; }
+
+  /* منع قص الصور: تظهر المنتجات كاملة (contain) بدل cover على كل الأجهزة */
+  [data-cart-drawer] [data-drawer-line] > a:first-child { background: #fff !important; }
+  [data-cart-drawer] [data-drawer-line] > a:first-child img { object-fit: contain !important; padding: 2px; }
+  [data-cart-drawer] .rec-card__media { background: #fff !important; }
+  [data-cart-drawer] .rec-card__media img { object-fit: contain !important; padding: 4px; }
+</style>
+

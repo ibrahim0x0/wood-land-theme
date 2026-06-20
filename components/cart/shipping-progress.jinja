@@ -1,0 +1,41 @@
+{% if cart.free_shipping_rule and cart.free_shipping_rule.code %}
+  {% set subtotal_condition = cart.free_shipping_rule.subtotal_condition %}
+  {% set status = cart.free_shipping_rule.subtotal_condition.status | default('') %}
+  {% set remaining_amount = subtotal_condition.remaining | default("0") %}
+  {% set percentage = subtotal_condition.products_subtotal_percentage_from_min | default(0) %}
+
+  <div
+    class="bg-secondary mt-6 flex flex-col gap-4 rounded-none p-4"
+    data-free-shipping-bar
+  >
+    <p
+      class="text-foreground text-xs uppercase tracking-wide text-center"
+      data-free-shipping-message
+    >
+      {% if status == 'min_not_reached' %}
+        {{ _("You are") }} <strong>{{ remaining_amount }}</strong>
+        {{ _("away from free shipping") }}
+      {% elif status == 'applied' %}
+        {{ _("You've unlocked free shipping!") }}
+      {% else %}
+        {{ _("Free shipping available") }}
+      {% endif %}
+    </p>
+    <div class="relative flex items-center">
+      <div class="bg-background relative h-1.5 w-full rounded-lg">
+        <div
+          class="bg-accent absolute inset-y-0 start-0 rounded-lg transition-all duration-300"
+          style="width: {{ percentage if status != 'applied' else 100 }}%"
+          data-free-shipping-progress-bar
+        ></div>
+        <div
+          class="bg-accent absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300"
+          style="inset-inline-start: calc({{ percentage if status != 'applied' else 100 }}% - 12px)"
+          data-free-shipping-truck
+        >
+          {% include 'components/cart/_truck-icon.jinja' %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}

@@ -1,0 +1,478 @@
+{
+  "template": "sections/products.jinja",
+  "name": {
+    "ar": "قائمة المنتجات",
+    "en": "Products"
+  },
+  "settings": [
+    {
+      "id": "layout",
+      "type": "select",
+      "label": {
+        "ar": "نوع العرض",
+        "en": "Layout"
+      },
+      "options": [
+        {
+          "value": "carousel",
+          "label": {
+            "ar": "كاروسيل",
+            "en": "Carousel"
+          }
+        },
+        {
+          "value": "grid",
+          "label": {
+            "ar": "شبكة",
+            "en": "Grid"
+          }
+        }
+      ],
+      "default": "carousel"
+    },
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "تسمية علوية (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "info": {
+        "ar": "نص قصير فوق العنوان، مثل: \"وصل حديثاً\" أو \"الأكثر مبيعاً\".",
+        "en": "Short label above the title, e.g. \"NEW ARRIVALS\" or \"TRENDING\"."
+      }
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان",
+        "en": "Title"
+      }
+    },
+    {
+      "id": "subtitle",
+      "type": "text",
+      "label": {
+        "ar": "العنوان الفرعي",
+        "en": "Subtitle"
+      }
+    },
+    {
+      "id": "heading_alignment",
+      "type": "select",
+      "label": {
+        "ar": "محاذاة العنوان",
+        "en": "Heading alignment"
+      },
+      "options": [
+        {
+          "value": "start",
+          "label": {
+            "ar": "البداية",
+            "en": "Start"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Center"
+          }
+        },
+        {
+          "value": "end",
+          "label": {
+            "ar": "النهاية",
+            "en": "End"
+          }
+        }
+      ],
+      "default": "start"
+    },
+    {
+      "id": "heading_size",
+      "type": "select",
+      "label": {
+        "ar": "حجم العنوان",
+        "en": "Heading size"
+      },
+      "options": [
+        {
+          "value": "sm",
+          "label": {
+            "ar": "صغير",
+            "en": "Small"
+          }
+        },
+        {
+          "value": "md",
+          "label": {
+            "ar": "متوسط",
+            "en": "Medium"
+          }
+        },
+        {
+          "value": "lg",
+          "label": {
+            "ar": "كبير",
+            "en": "Large"
+          }
+        }
+      ],
+      "default": "md"
+    },
+
+    {
+      "id": "products",
+      "type": "products",
+      "label": {
+        "ar": "اختر قائمة المنتجات",
+        "en": "Select Products"
+      }
+    },
+    {
+      "id": "max_products",
+      "type": "range",
+      "label": {
+        "ar": "── الحد الأقصى للمنتجات المعروضة",
+        "en": "── Max products to display"
+      },
+      "info": {
+        "ar": "عدد المنتجات الأقصى الذي يظهر في هذا القسم. ضع 0 لعرض كل المنتجات الموجودة في المصدر المختار. مفيد لتقصير قوائم طويلة من \"وصل حديثاً\" أو الفئات لإظهار 8 أو 12 منتجًا فقط.",
+        "en": "Maximum number of products to render in this section. Set to 0 to show every product in the selected source. Useful for trimming long lists like \"New arrivals\" or category sources down to 8 or 12 products."
+      },
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "default": 0
+    },
+    {
+      "id": "sort_order",
+      "type": "select",
+      "label": {
+        "ar": "ترتيب عرض المنتجات",
+        "en": "Product display order"
+      },
+      "info": {
+        "ar": "طريقة ترتيب المنتجات داخل هذا القسم. \"الترتيب المختار\" يحافظ على الترتيب اللي اخترته يدويًا. يتم الترتيب قبل تطبيق الحد الأقصى للمنتجات.",
+        "en": "How products are ordered inside this section. \"Manual (selected order)\" keeps the order you picked by hand. Sorting is applied before the max-products limit."
+      },
+      "options": [
+        {
+          "value": "manual",
+          "label": {
+            "ar": "الترتيب المختار (يدوي)",
+            "en": "Manual (selected order)"
+          }
+        },
+        {
+          "value": "newest",
+          "label": {
+            "ar": "الأحدث أولاً",
+            "en": "Newest first"
+          }
+        },
+        {
+          "value": "oldest",
+          "label": {
+            "ar": "الأقدم أولاً",
+            "en": "Oldest first"
+          }
+        },
+        {
+          "value": "price_asc",
+          "label": {
+            "ar": "السعر: من الأقل للأعلى",
+            "en": "Price: low to high"
+          }
+        },
+        {
+          "value": "price_desc",
+          "label": {
+            "ar": "السعر: من الأعلى للأقل",
+            "en": "Price: high to low"
+          }
+        },
+        {
+          "value": "name_asc",
+          "label": {
+            "ar": "الاسم: أ → ي",
+            "en": "Name: A → Z"
+          }
+        },
+        {
+          "value": "name_desc",
+          "label": {
+            "ar": "الاسم: ي → أ",
+            "en": "Name: Z → A"
+          }
+        }
+      ],
+      "default": "manual"
+    },
+    {
+      "id": "more_text",
+      "type": "text",
+      "label": {
+        "ar": "نص زر المزيد",
+        "en": "More Button Text"
+      }
+    },
+    {
+      "id": "display_more",
+      "type": "checkbox",
+      "label": {
+        "ar": "عرض زر المزيد",
+        "en": "Display More Button"
+      },
+      "default": true
+    },
+    {
+      "id": "columns_desktop",
+      "type": "select",
+      "label": {
+        "ar": "الأعمدة (سطح المكتب)",
+        "en": "Columns (desktop)"
+      },
+      "options": [
+        {
+          "value": "4",
+          "label": {
+            "ar": "٤",
+            "en": "4"
+          }
+        },
+        {
+          "value": "5",
+          "label": {
+            "ar": "٥",
+            "en": "5"
+          }
+        },
+        {
+          "value": "6",
+          "label": {
+            "ar": "٦",
+            "en": "6"
+          }
+        }
+      ],
+      "default": "4"
+    },
+    {
+      "id": "columns_mobile",
+      "type": "select",
+      "label": {
+        "ar": "الأعمدة (الجوال)",
+        "en": "Columns (mobile)"
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": {
+            "ar": "١",
+            "en": "1"
+          }
+        },
+        {
+          "value": "2",
+          "label": {
+            "ar": "٢",
+            "en": "2"
+          }
+        }
+      ],
+      "default": "2"
+    },
+    {
+      "id": "image_aspect_ratio",
+      "type": "select",
+      "label": {
+        "ar": "نسبة الصورة",
+        "en": "Image aspect ratio"
+      },
+      "options": [
+        {
+          "value": "adapt",
+          "label": {
+            "ar": "تلقائي",
+            "en": "Adapt"
+          }
+        },
+        {
+          "value": "square",
+          "label": {
+            "ar": "مربع",
+            "en": "Square"
+          }
+        },
+        {
+          "value": "portrait",
+          "label": {
+            "ar": "طولي",
+            "en": "Portrait"
+          }
+        }
+      ],
+      "default": "square"
+    },
+    {
+      "id": "card_density",
+      "type": "select",
+      "label": {
+        "ar": "حجم البطاقة",
+        "en": "Card density"
+      },
+      "info": {
+        "ar": "اختر «افتراضي (من الإعدادات العامة)» لاستخدام الحجم المعرَّف في إعدادات الثيم.",
+        "en": "Pick \"Inherit from theme\" to use the global size defined in theme settings."
+      },
+      "options": [
+        {
+          "value": "inherit",
+          "label": {
+            "ar": "افتراضي (من الإعدادات العامة)",
+            "en": "Inherit from theme"
+          }
+        },
+        {
+          "value": "compact",
+          "label": {
+            "ar": "مضغوط",
+            "en": "Compact"
+          }
+        },
+        {
+          "value": "default",
+          "label": {
+            "ar": "افتراضي",
+            "en": "Default"
+          }
+        },
+        {
+          "value": "large",
+          "label": {
+            "ar": "كبير",
+            "en": "Large"
+          }
+        }
+      ],
+      "default": "inherit"
+    },
+    {
+      "id": "enable_image_swap",
+      "type": "select",
+      "label": {
+        "ar": "تبديل الصورة عند التمرير",
+        "en": "Hover-swap second image"
+      },
+      "info": {
+        "ar": "افتراضي = يستخدم الإعداد العام من إعدادات بطاقة المنتج. اختر \"مُفعَّل\" أو \"معطَّل\" لتجاوز هذا القسم فقط.",
+        "en": "Inherit = use the global setting from Product Card. Pick On/Off to override for this section only."
+      },
+      "options": [
+        {
+          "value": "inherit",
+          "label": {
+            "ar": "افتراضي (من الإعدادات العامة)",
+            "en": "Inherit from theme"
+          }
+        },
+        {
+          "value": "on",
+          "label": {
+            "ar": "مُفعَّل",
+            "en": "On"
+          }
+        },
+        {
+          "value": "off",
+          "label": {
+            "ar": "معطَّل",
+            "en": "Off"
+          }
+        }
+      ],
+      "default": "inherit"
+    },
+    {
+      "id": "autoplay",
+      "type": "checkbox",
+      "label": {
+        "ar": "تشغيل تلقائي (كاروسيل)",
+        "en": "Autoplay (carousel)"
+      },
+      "default": false
+    },
+    {
+      "id": "autoplay_interval",
+      "type": "number",
+      "label": {
+        "ar": "مدة التشغيل (مللي ثانية)",
+        "en": "Autoplay interval (ms)"
+      },
+      "default": 4000
+    },
+    {
+      "id": "show_arrows",
+      "type": "checkbox",
+      "label": {
+        "ar": "عرض أسهم التنقل (كاروسيل)",
+        "en": "Show arrows (carousel)"
+      },
+      "default": true
+    },
+    {
+      "id": "show_progress",
+      "type": "checkbox",
+      "label": {
+        "ar": "شريط التقدم (كاروسيل)",
+        "en": "Show progress bar (carousel)"
+      },
+      "default": true
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

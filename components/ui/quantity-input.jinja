@@ -1,0 +1,154 @@
+{#
+  Quantity Input Component
+
+  A quantity control with +/- buttons.
+
+  Props:
+    - id (string, optional): Unique ID for the input (default: auto-generated)
+    - name (string, optional): Input name attribute (default: 'quantity')
+    - quantity (number, optional): Current quantity (default: 1)
+    - min (number, optional): Minimum quantity (default: 1)
+    - max (number, optional): Maximum quantity (default: none)
+    - sync_target (string, optional): ID of another qty-input to sync with
+    - show_delete (boolean, optional): Show delete icon at qty=1 (default: false)
+    - full_width (boolean, optional): Full width style (default: false)
+    - cart_product_id (string, optional): Cart product ID for cart page integration
+    - product_id (string, optional): Original product ID for cart page integration
+
+  Usage:
+    {% with id='product-quantity', quantity=1, min=1, max=10 %}
+      {% include 'components/ui/quantity-input.jinja' %}
+    {% endwith %}
+
+  Cart page usage:
+    {% with id='cart-qty-' ~ product.id, quantity=product.quantity, cart_product_id=product.id, product_id=product.product_id %}
+      {% include 'components/ui/quantity-input.jinja' %}
+    {% endwith %}
+
+  Sync example (two inputs that stay in sync):
+    {% with id='main-qty', sync_target='sticky-qty' %}
+      {% include 'components/ui/quantity-input.jinja' %}
+    {% endwith %}
+
+    {% with id='sticky-qty', sync_target='main-qty' %}
+      {% include 'components/ui/quantity-input.jinja' %}
+    {% endwith %}
+#}
+
+{% set input_id = id | default('qty-' ~ range(1000, 9999) | random) %}
+{% set input_name = name | default('quantity') %}
+{% set qty = quantity | default(1) %}
+{% set min_qty = min | default(1) %}
+{% set max_qty = max %}
+{% set has_max = max is not none and max %}
+{% set has_delete = show_delete | default(false) %}
+{% set is_full_width = full_width | default(false) %}
+{% set cart_id = cart_product_id %}
+{% set orig_product_id = product_id %}
+
+{# Icon definitions #}
+{% set delete_icon %}
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M11.3333 6V12.6667H4.66667V6H11.3333ZM10.1667 2H5.83333L5 2.83333H2V4.5H14V2.83333H11L10.1667 2ZM13 4.33333H3V12.6667C3 13.5833 3.75 14.3333 4.66667 14.3333H11.3333C12.25 14.3333 13 13.5833 13 12.6667V4.33333Z"
+      fill="currentColor"
+    />
+  </svg>
+{% endset %}
+
+
+{% set minus_icon %}
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M4 7.44444V8.55556H12V7.44444H4Z"
+      fill="currentColor"
+    />
+  </svg>
+{% endset %}
+
+
+{% set plus_icon %}
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12.6667 8.66667H8.66667V12.6667H7.33333V8.66667H3.33333V7.33333H7.33333V3.33333H8.66667V7.33333H12.6667V8.66667Z"
+      fill="currentColor"
+    />
+  </svg>
+{% endset %}
+
+<div
+  class="qty-input{{ ' qty-input-full' if is_full_width else ' w-fit' }}"
+  data-qty-input="{{ input_id }}"
+  {% if sync_target %}data-qty-sync="{{ sync_target }}"{% endif %}
+  {% if cart_id %}data-cart-product-id="{{ cart_id }}"{% endif %}
+  {% if orig_product_id %}data-product-id="{{ orig_product_id }}"{% endif %}
+>
+  {% if has_delete %}
+    {# Delete button (visible when qty = 1) #}
+    <button
+      type="button"
+      class="qty-input-btn"
+      aria-label="{{ _('Remove') }}"
+      data-qty-action="remove"
+      {% if qty > 1 %}hidden{% endif %}
+    >
+      {{ delete_icon }}
+    </button>
+
+    {# Minus button (visible when qty > 1) #}
+    <button
+      type="button"
+      class="qty-input-btn"
+      aria-label="{{ _('Decrease quantity') }}"
+      data-qty-action="decrease"
+      {% if qty == 1 %}hidden{% endif %}
+    >
+      {{ minus_icon }}
+    </button>
+  {% else %}
+    {# Minus button (always visible) #}
+    <button
+      type="button"
+      class="qty-input-btn"
+      aria-label="{{ _('Decrease quantity') }}"
+      data-qty-action="decrease"
+    >
+      {{ minus_icon }}
+    </button>
+  {% endif %}
+
+  {# Quantity input #}
+  <input
+    type="number"
+    id="{{ input_id }}"
+    name="{{ input_name }}"
+    value="{{ qty }}"
+    min="{{ min_qty }}"
+    {% if has_max %}max="{{ max_qty }}"{% endif %}
+    class="qty-input-field"
+    aria-label="{{ _('Quantity') }}"
+    data-qty-value
+  />
+
+  {# Plus button #}
+  <button
+    type="button"
+    class="qty-input-btn"
+    aria-label="{{ _('Increase quantity') }}"
+    data-qty-action="increase"
+  >
+    {{ plus_icon }}
+  </button>
+</div>

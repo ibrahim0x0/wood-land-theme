@@ -1,0 +1,671 @@
+/* ═══════════════════════════════════════════════════════════════════
+   QUICK VIEW — compact anchored popover
+   ──────────────────────────────────────────────────────────────────
+   Markup lives in `components/products/quick-view-modal.jinja`.
+   Positioning + DOM moves (thumbnail + header → .qv3-header-row,
+   quantity + actions → .qv3-cta-row) are handled in
+   `assets/js/product/quick-view.js`.
+
+   DEPENDENCY NOTE: the popover reshapes the fetched product page
+   (`#product-main-section` and its descendants: `.product-gallery-column`,
+   `.product-details-column`, `#header`, `[data-quantity-wrapper]`,
+   `[data-product-actions]`, `#product-form`, `.product-options__*`,
+   `.qty-input*`). If Zid's product template changes these selectors,
+   this file needs updating — there's no automatic fallback.
+
+   `!important` is used deliberately on geometry rules because the
+   injected elements carry Tailwind utility chains (`grid w-full`,
+   `flex flex-col gap-3 pt-2`, etc.) that would otherwise beat our
+   unlayered selectors.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Single source of truth for sizes / spacing — tweak here, not in
+   dozens of scattered px values. */
+.qv3-panel {
+  --qv-thumb-size: 240px; /* hero image (desktop); mobile shrinks it */
+  --qv-qty-width: 100px;
+  --qv-row-height: 40px;
+  --qv-pad-x: 1.375rem; /* 22px gutters */
+  --qv-radius: 0; /* squared per request */
+  --qv-radius-lg: 0;
+  --qv-border-strength: 10%;
+  --qv-surface-tint: color-mix(in srgb, var(--foreground) 4%, transparent);
+  /* Border strength bumped from 14% → 22% now that chips/qty are outlined
+     (no fill to carry the edge, so the border itself has to read). Matches
+     .drawer-qty / .drawer-variants__select-wrap in the cart drawer. */
+  --qv-border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  --qv-border-soft: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  --qv-border-focus: 1px solid var(--primary);
+  /* Outlined surface — transparent fill so controls (qty, option chips)
+     read as flat outlined pills on the white panel. Border carries the
+     weight instead of the fill. */
+  --qv-surface-grad: transparent;
+  --qv-shadow-inset: none;
+  --qv-shadow-cta: 0 4px 12px -4px color-mix(in srgb, var(--primary) 40%, transparent);
+  --qv-shadow-cta-hover: 0 8px 20px -6px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+/* Zid platform overlays (checkout / login are Material-UI dialogs) must always
+   sit ABOVE the quick-view popover (panel z-index:50). Without this, a guest's
+   "Login" screen triggered by Buy Now can render UNDERNEATH the popover and look
+   like nothing happened. A very high z-index keeps the platform dialog on top
+   even in the brief moment before the popover finishes closing. */
+.MuiModal-root,
+.MuiDialog-root,
+.MuiPopover-root {
+  z-index: 2147483000 !important;
+}
+
+/* The <dialog> itself is unchromed — no centered box. JS positions the
+   panel inside it with fixed coordinates relative to the trigger. */
+.qv3-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+.qv3-dialog::backdrop { background: transparent; }
+
+/* Dim overlay — scrims the page behind the modal and catches clicks for
+   dismiss. Fades via the `transition-opacity data-closed:*` utilities in the
+   markup. */
+.qv3-backdrop { background: rgba(0, 0, 0, 0.5); pointer-events: auto; }
+
+/* ─── Panel ───────────────────────────────────────────────────────
+   Centered modal on every viewport — `inset:0 + margin:auto` centers it,
+   `height:fit-content` keeps it hugging the content (so `margin:auto`
+   can center vertically) up to `max-height`, where .qv3-content scrolls. */
+.qv3-panel {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 92%;
+  max-width: 420px;
+  height: fit-content;
+  max-height: 85vh;
+  max-height: 85dvh; /* dynamic viewport — dodges mobile URL-bar jumps */
+  /* The whole modal scrolls as one unit (no sticky header/CTA/footer). */
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: var(--background);
+  border-radius: var(--qv-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--foreground) var(--qv-border-strength), transparent);
+  box-shadow:
+    var(--qv-shadow-inset),
+    0 24px 60px -12px rgba(0, 0, 0, 0.4),
+    0 10px 24px -10px rgba(0, 0, 0, 0.25);
+  z-index: 50;
+}
+
+/* Arrow removed — the quick view is a centered modal, not an anchored popover. */
+.qv3-arrow { display: none; }
+
+/* Close button */
+.qv3-close {
+  position: absolute;
+  top: 0.5rem;
+  inset-inline-end: 0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 9999px;
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.qv3-close:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+.qv3-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+/* ─── Skeleton ──────────────────────────────────────────────────── */
+/* `:not(.hidden)` guard is critical — this CSS loads outside any
+   @layer and would otherwise beat Tailwind's `.hidden { display: none }`. */
+.qv3-skeleton:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1.25rem var(--qv-pad-x) 1rem;
+}
+.qv3-skel {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-radius: 8px;
+  animation: qv3-pulse 1.5s ease-in-out infinite;
+}
+.qv3-skel-image { width: 96px; height: 96px; border-radius: 12px; align-self: center; }
+.qv3-skel-title { height: 1.125rem; width: 75%; }
+.qv3-skel-price { height: 1.25rem; width: 45%; }
+.qv3-skel-row   { height: 1.75rem; width: 100%; }
+@keyframes qv3-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* ─── Content (scrollable) ──────────────────────────────────────── */
+.qv3-content {
+  /* Plain block section now — the whole .qv3-panel scrolls as one unit. */
+  padding: 1.125rem var(--qv-pad-x) 0.75rem;
+}
+/* `#product-main-section` becomes a pass-through — gallery + header have
+   been moved to .qv3-header-row, only the details column has the rest. */
+.qv3-content #product-main-section {
+  display: block;
+  gap: 0;
+}
+
+/* ─── Header row (thumbnail + title/rating/price) ───────────────── */
+.qv3-header-row:not(.hidden) {
+  display: flex;
+  flex-direction: column; /* hero image on top, title/price beneath */
+  align-items: center;
+  text-align: center;
+  gap: 0.875rem;
+  padding: 1.5rem var(--qv-pad-x) 0.5rem; /* top room clears the close button */
+  flex-shrink: 0; /* never compress — only .qv3-content scrolls */
+}
+
+/* Gallery column — 240×240 hero (mobile shrinks it). The injected gallery has
+   a deeply nested wrapper chain; collapse every layer to full-size block, show
+   only the first slide, and `contain`-fit the img inside the box. */
+.qv3-header-row .product-gallery-column,
+.qv3-content .product-gallery-column {
+  display: block !important;
+  width: var(--qv-thumb-size) !important;
+  height: var(--qv-thumb-size) !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--qv-surface-tint);
+  flex-shrink: 0;
+}
+.qv3-content .product-gallery-column > div,
+.qv3-content .product-gallery-column .space-y-3,
+.qv3-content .product-gallery-column .space-y-3 > div,
+.qv3-content .product-gallery-column .product-gallery,
+.qv3-content .product-gallery-column .product-gallery__container {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: static !important;
+}
+.qv3-content .product-gallery-column .product-gallery__slide {
+  flex: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  aspect-ratio: auto !important;
+  position: static !important;
+}
+/* Hide every slide after the first so we always show the hero.
+   Zid's SDK updates the first slide's <img> on variant change. */
+.qv3-content .product-gallery-column .product-gallery__slide ~ .product-gallery__slide {
+  display: none !important;
+}
+.qv3-content .product-gallery-column img {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  /* `contain` shows the whole product photo letterboxed inside the box;
+     the surface tint fills any remaining area. */
+  object-fit: contain !important;
+  aspect-ratio: auto !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  position: static !important;
+}
+/* Hide everything that isn't the hero image — thumb strip, carousel
+   arrows, mobile arrows, progress/pagination UI. */
+.qv3-content .product-gallery-column button,
+.qv3-content .product-gallery-column .product-gallery-thumbs,
+.qv3-content .product-gallery-column .product-gallery__prev,
+.qv3-content .product-gallery-column .product-gallery__next,
+.qv3-content .product-gallery-column .product-gallery__prev-mobile,
+.qv3-content .product-gallery-column .product-gallery__next-mobile,
+.qv3-content .product-gallery-column .product-gallery__progress {
+  display: none !important;
+}
+
+/* Details column — natural flow; qty/actions moved to CTA row. */
+.qv3-content .product-details-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* Title — applies whether #header is in the header row or the details
+   column (defensive in case the JS move didn't run). */
+.qv3-header-row h1,
+.qv3-content .product-details-column h1 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Header content — tight vertical rhythm to match the 88px thumbnail. */
+.qv3-header-row #header {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.375rem;
+  padding: 0;
+  margin: 0;
+}
+.qv3-header-row #header > * { margin: 0; }
+.qv3-header-row #header .space-y-4 > * + * { margin-top: 0.375rem !important; }
+.qv3-header-row #header .space-y-1 > * + * { margin-top: 0.25rem !important; }
+/* "See reviews" link is noise in the compact header. */
+.qv3-header-row #header a[href="#reviews"] { display: none; }
+/* Gold stars — override `.text-muted-foreground` inherited from the
+   product page template; matches the product-card star treatment. */
+.qv3-header-row #header .text-muted-foreground,
+.qv3-content .product-details-column #header .text-muted-foreground {
+  color: var(--warning) !important;
+  fill: var(--warning) !important;
+}
+/* Compactness: drop merchant badges, sold-count, SKU tag. */
+.qv3-header-row #header #product-badges,
+.qv3-header-row #header [data-sold-count-badge],
+.qv3-header-row #header [data-low-stock-badge],
+.qv3-header-row #header [data-product-sku-wrapper],
+/* Urgency/social-proof block is noise in the compact popover. */
+.qv3-header-row #header [data-product-urgency],
+.qv3-content [data-product-urgency] {
+  display: none !important;
+}
+
+/* ─── Hide non-essential sections ───────────────────────────────── */
+/* Specific classes preferred over `[class*=...]` for better selector
+   performance (these are known Zid-rendered class names). */
+.qv3-content [data-product-reviews],
+.qv3-content [data-product-questions],
+.qv3-content [data-related-products],
+.qv3-content #recently-viewed-products,
+.qv3-content [data-sticky-product],
+/* Social share row — between price and form, uses a .border-t .pt-4 wrapper. */
+.qv3-content .product-details-column .border-t.pt-4,
+/* Loyalty + payment widgets (Zid-platform injections). */
+.qv3-content .loyalty-points-products-section,
+.qv3-content [data-payment-widget],
+.qv3-content [data-apple-pay],
+/* Full description block. */
+.qv3-content [data-product-description],
+.qv3-content #product-description,
+/* Product badges + reviews link — already moved to the header row; any
+   remaining copies in the details column are redundant. */
+.qv3-content #product-badges,
+.qv3-content .product-details-column a[href="#reviews"],
+/* Trust/secure-payment badge, SKU line, and the Apple Pay quick-checkout
+   widget — clutter the compact quick view. The full product page keeps them. */
+.qv3-content .pdp-trust,
+.qv3-content [data-product-sku-wrapper],
+.qv3-content #apple_pay_quick_checkout_widget,
+/* Quick-share button — lives in #header (moved to the header row). */
+.qv3-header-row [data-share-btn],
+.qv3-content [data-share-btn],
+/* Quantity wrapper is relocated to the CTA row; hide any copy still sitting
+   in the content so the "Quantity" label + empty stepper box don't orphan. */
+.qv3-content [data-quantity-wrapper] {
+  display: none !important;
+}
+
+/* ─── Variant options (size, color, etc.) ───────────────────────── */
+.qv3-content .product-options { gap: 0.625rem !important; }
+.qv3-content .product-options__group { gap: 0.375rem !important; }
+.qv3-content .product-options__label {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent) !important;
+}
+.qv3-content .product-options__list { gap: 0.375rem !important; }
+.qv3-content .product-options__item {
+  min-width: 2.5rem;
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: var(--foreground) !important;
+  background: var(--qv-surface-grad) !important;
+  border: var(--qv-border) !important;
+  /* Track the merchant's global "Button Roundness" setting. */
+  border-radius: var(--button-radius) !important;
+  /* Outlined — no inset highlight, no drop shadow. Flat pill. */
+  box-shadow: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease,
+    background 150ms ease, color 150ms ease, transform 120ms ease;
+}
+.qv3-content .product-options__item:hover {
+  border-color: color-mix(in srgb, var(--foreground) 35%, transparent) !important;
+}
+.qv3-content .product-options__item.active {
+  color: var(--primary-foreground) !important;
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 10px -4px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.qv3-content .product-options__item:active { transform: scale(0.97); }
+
+/* Inherited spacing overrides from the product page layout. */
+.qv3-content .product-details-column .space-y-4 > * + * { margin-top: 0.375rem; }
+.qv3-content .product-details-column .space-y-6 > * + * { margin-top: 0.5rem; }
+.qv3-content .product-details-column .gap-4 { gap: 0.4rem; }
+.qv3-content .product-details-column .gap-6 { gap: 0.5rem; }
+.qv3-content .product-details-column .pt-4 { padding-top: 0.25rem; }
+.qv3-content .product-details-column .mt-6 { margin-top: 0.375rem; }
+
+/* ─── Sticky CTA row (qty + add-to-cart) ────────────────────────── */
+.qv3-cta-row:not(.hidden) {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: stretch;
+  gap: 0.625rem;
+  padding: 0.75rem var(--qv-pad-x);
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+  border-top: var(--qv-border-soft);
+  flex-shrink: 0;
+}
+
+/* Qty stepper — fixed-width column 1, overriding the Tailwind `grid`. */
+.qv3-cta-row [data-quantity-wrapper] {
+  display: flex !important;
+  flex: 0 0 var(--qv-qty-width) !important;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+.qv3-cta-row [data-quantity-wrapper] .form-label,
+.qv3-cta-row [data-quantity-wrapper] > label { display: none !important; }
+
+/* Re-skin the injected `.qty-input` to match `.drawer-qty`. Without
+   this the product-page default (h-12, strong foreground border,
+   bg-white/10 chip buttons) sits awkwardly next to the drawer-styled CTA. */
+.qv3-cta-row .qty-input,
+.qv3-cta-row [data-qty-input] {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: space-between;
+  width: 100% !important;
+  max-width: 100px !important;
+  height: var(--qv-row-height) !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: var(--qv-surface-grad) !important;
+  border: var(--qv-border) !important;
+  /* Track the merchant's global "Button Roundness" setting. */
+  border-radius: var(--button-radius) !important;
+  /* Outlined — no inset highlight, no drop shadow. */
+  box-shadow: none;
+  overflow: hidden !important;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.qv3-cta-row .qty-input:hover,
+.qv3-cta-row [data-qty-input]:hover {
+  border-color: color-mix(in srgb, var(--foreground) 35%, transparent) !important;
+}
+.qv3-cta-row .qty-input:focus-within,
+.qv3-cta-row [data-qty-input]:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent) !important;
+}
+.qv3-cta-row .qty-input-btn {
+  width: 28px !important;
+  height: 100% !important;
+  background: var(--primary) !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--primary-foreground);
+  cursor: pointer;
+  padding: 0 !important;
+  flex-shrink: 0;
+  transition: background 140ms ease, opacity 140ms ease;
+}
+.qv3-cta-row .qty-input-btn:hover {
+  background: color-mix(in srgb, var(--primary) 88%, #000) !important;
+}
+.qv3-cta-row .qty-input-btn:active {
+  background: color-mix(in srgb, var(--primary) 78%, #000) !important;
+}
+.qv3-cta-row .qty-input-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: var(--primary) !important;
+}
+.qv3-cta-row .qty-input-btn svg { width: 14px !important; height: 14px !important; }
+.qv3-cta-row .qty-input-field {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  color: var(--foreground);
+  text-align: center;
+  background: transparent !important;
+  border: 0 !important;
+  outline: none;
+}
+
+/* Flatten the actions wrappers with `display: contents` so the qty stepper,
+   Add-to-cart and Buy Now all become direct flex children of the wrapping
+   `.qv3-cta-row`. That lets Buy Now span the FULL row width (under the qty
+   stepper) on its own line instead of being indented to the actions column. */
+.qv3-cta-row [data-product-actions] { display: contents !important; }
+
+/* Respect `.hidden` — only the active stock state participates. */
+.qv3-cta-row [data-product-actions] [data-in-stock]:not(.hidden) {
+  display: contents !important;
+}
+/* OOS keeps its own column box (it has a nested wrapper); span full width. */
+.qv3-cta-row [data-product-actions] [data-out-of-stock]:not(.hidden) {
+  display: flex !important;
+  flex: 1 1 100% !important;
+  width: 100%;
+  gap: 0.5rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-direction: column;
+}
+/* Wishlist in the actions row is redundant (the product card has one). */
+.qv3-cta-row [data-product-actions] [data-wishlist-btn] {
+  display: none !important;
+}
+
+/* In the popover's OOS state, hide the greyed-out "Add to cart" so
+   only the active "Notify me" button shows. The product page renders
+   both stacked, but the popover only has room for one CTA — the
+   active Notify Me communicates the OOS state perfectly well alone.
+   Selector specificity (0,4,3) beats the primary-CTA styling rule
+   below (0,4,2) so this `display: none` wins the cascade. */
+.qv3-cta-row [data-product-actions] [data-out-of-stock]:not(.hidden) > button:first-of-type:disabled,
+.qv3-cta-row [data-product-actions] [data-out-of-stock]:not(.hidden) > button:first-of-type[disabled] {
+  display: none !important;
+}
+
+/* And hide the qty stepper too — picking a quantity for an OOS variant
+   doesn't make sense. Uses `:has()` on the row so it triggers off the
+   sibling [data-product-actions] state. */
+.qv3-cta-row:has([data-product-actions] [data-out-of-stock]:not(.hidden)) [data-quantity-wrapper] {
+  display: none !important;
+}
+
+/* Primary button — mirrors `.drawer-checkout-btn`. Selector is narrow
+   so it doesn't catch the wishlist heart or any hidden buttons. */
+.qv3-cta-row [data-product-actions] [data-add-to-cart-form],
+.qv3-cta-row [data-product-actions] [data-notify-me-btn],
+.qv3-cta-row [data-product-actions] [data-out-of-stock]:not(.hidden) > button:first-of-type {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: var(--qv-row-height) !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem !important;
+  padding: 0 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  color: var(--primary-foreground) !important;
+  background: var(--primary) !important;
+  border: 1px solid var(--primary) !important;
+  /* Track the merchant's global "Button Roundness" setting, same as `.btn`. */
+  border-radius: var(--button-radius) !important;
+  text-decoration: none;
+  box-shadow: var(--qv-shadow-cta) !important;
+  transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  cursor: pointer;
+}
+
+/* Buy Now — secondary/outlined CTA. Not covered by the primary rule above,
+   so without this it kept its product-page `flex-1` width and overflowed
+   next to the full-width Add-to-cart. `flex-basis: 100%` drops it onto its
+   own line beneath Add-to-cart (the in-stock row wraps). */
+.qv3-cta-row [data-product-actions] .product-buy-now-btn {
+  flex: 1 0 100% !important;
+  width: 100% !important;
+  height: var(--qv-row-height) !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem !important;
+  padding: 0 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  color: #fff !important;
+  background: #000 !important;
+  border: 1px solid #000 !important;
+  border-radius: var(--button-radius) !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.qv3-cta-row [data-product-actions] .product-buy-now-btn:hover {
+  border-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+.qv3-cta-row [data-product-actions] .product-buy-now-btn:active { transform: scale(0.99); }
+.qv3-cta-row [data-product-actions] .product-buy-now-btn svg { width: 18px !important; height: 18px !important; }
+.qv3-cta-row [data-product-actions] [data-add-to-cart-form]:hover,
+.qv3-cta-row [data-product-actions] [data-notify-me-btn]:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow: var(--qv-shadow-cta-hover) !important;
+}
+.qv3-cta-row [data-product-actions] [data-add-to-cart-form]:active,
+.qv3-cta-row [data-product-actions] [data-notify-me-btn]:active {
+  transform: translateY(0);
+}
+.qv3-cta-row [data-product-actions] [data-add-to-cart-form]:disabled,
+.qv3-cta-row [data-product-actions] [data-notify-me-btn]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none !important;
+}
+
+/* ─── Footer link ───────────────────────────────────────────────── */
+.qv3-footer {
+  padding: 0.75rem var(--qv-pad-x) 1.5rem;
+  text-align: center;
+  border-top: var(--qv-border-soft);
+  flex-shrink: 0; /* never compress — only .qv3-content scrolls */
+}
+.qv3-full-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: var(--qv-row-height);
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: transparent;
+  border: var(--qv-border);
+  border-radius: var(--button-radius);
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease, color 150ms ease;
+}
+.qv3-full-link:hover {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+/* ─── Mobile: centered modal ─────────────────────────────────────────
+   Replaces the old bottom sheet. Centered with `inset:0 + margin:auto +
+   height:fit-content` — deliberately NOT `transform`: the panel's
+   enter/leave animation is driven by the dialog library through
+   `transform` (the `transform transition-all data-closed:translate-y-1`
+   utilities in the markup), and the reduced-motion rule zeroes that
+   transform. Centering via margins keeps both of those working and can't
+   be knocked off-center. */
+@media (max-width: 639px) {
+  /* Panel sizing, centering, and arrow removal are the shared base now —
+     the modal is centered on every viewport. The vertical hero layout (column header row, centered title/price,
+     outlined view-details button) is now the shared base. Mobile only
+     shrinks the hero image and lets the title wrap to 3 lines. */
+  .qv3-header-row .product-gallery-column {
+    width: min(58%, 210px) !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+  .qv3-header-row h1,
+  .qv3-content .product-details-column h1 {
+    font-size: 1.0625rem;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* Focus rings for interactive elements inside */
+.qv3-panel button:focus-visible,
+.qv3-panel a:focus-visible,
+.qv3-panel input:focus-visible,
+.qv3-panel select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qv3-panel { transition: opacity 100ms ease !important; transform: none !important; }
+  .qv3-skel { animation: none; }
+}

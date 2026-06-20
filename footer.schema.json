@@ -1,0 +1,847 @@
+{
+  "icon": "fa fa-square",
+  "name": {
+    "ar": "أسفل الصفحة",
+    "en": "Footer"
+  },
+  "groups": [
+    {
+      "id": "logo",
+      "icon": "fa fa-image",
+      "name": {
+        "ar": "الشعار",
+        "en": "Logo"
+      },
+      "settings": [
+        {
+          "id": "logo_desktop",
+          "type": "image",
+          "label": {
+            "ar": "شعار سطح المكتب",
+            "en": "Desktop Logo"
+          },
+          "info": {
+            "ar": "سيتم عرضه على الشاشات الكبيرة",
+            "en": "Will be displayed on large screens"
+          }
+        },
+        {
+          "id": "logo_mobile",
+          "type": "image",
+          "label": {
+            "ar": "شعار الجوال",
+            "en": "Mobile Logo"
+          },
+          "info": {
+            "ar": "سيتم عرضه على الشاشات الصغيرة",
+            "en": "Will be displayed on small screens"
+          }
+        },
+        {
+          "id": "logo_height",
+          "type": "range",
+          "label": {
+            "ar": "── ارتفاع الشعار",
+            "en": "── Logo height"
+          },
+          "info": {
+            "ar": "العرض يتبع نسبة الصورة الطبيعية. ضع 0 لاستخدام الحجم الطبيعي.",
+            "en": "Width follows the image's natural aspect. Set 0 to use the image's natural size."
+          },
+          "min": 0,
+          "max": 96,
+          "step": 4,
+          "unit": "px",
+          "default": 44
+        }
+      ]
+    },
+    {
+      "id": "link_groups",
+      "icon": "fa fa-link",
+      "name": {
+        "ar": "مجموعات الروابط",
+        "en": "Link Groups"
+      },
+      "settings": [
+        {
+          "id": "items",
+          "type": "list",
+          "label": {
+            "ar": "مجموعات الروابط",
+            "en": "Link Groups"
+          },
+          "info": {
+            "ar": "حتى 6 مجموعات. كل مجموعة تظهر في عمود منفصل على سطح المكتب وتنطوي على شكل أكورديون على الجوال (يمكن إيقافه من إعدادات المظهر).",
+            "en": "Up to 6 groups. Each renders as its own column on desktop and collapses into an accordion on mobile (toggleable in Appearance settings)."
+          },
+          "max_items": 6,
+          "settings": [
+            {
+              "id": "hide",
+              "type": "checkbox",
+              "label": {
+                "ar": "إخفاء",
+                "en": "Hide"
+              }
+            },
+            {
+              "id": "title",
+              "type": "text",
+              "label": {
+                "ar": "العنوان",
+                "en": "Title"
+              }
+            },
+            {
+              "id": "links",
+              "type": "list",
+              "label": {
+                "ar": "الروابط",
+                "en": "Links"
+              },
+              "info": {
+                "ar": "حتى 12 رابطًا لكل مجموعة. الروابط الخارجية تتطلب https://. الروابط بصيغة javascript: وغيرها يتم رفضها لأسباب أمنية.",
+                "en": "Up to 12 links per group. External URLs need https://. javascript: and other unsafe schemes are rejected for security."
+              },
+              "max_items": 12,
+              "settings": [
+                {
+                  "id": "title",
+                  "type": "text",
+                  "label": {
+                    "ar": "العنوان",
+                    "en": "Title"
+                  }
+                },
+                {
+                  "id": "url",
+                  "type": "url",
+                  "label": {
+                    "ar": "الرابط",
+                    "en": "URL"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "about_us",
+      "icon": "fa fa-info-circle",
+      "name": {
+        "ar": "عن المتجر",
+        "en": "About us"
+      },
+      "settings": [
+        {
+          "id": "about_us",
+          "type": "richtext",
+          "label": {
+            "ar": "النص",
+            "en": "Description"
+          }
+        },
+        {
+          "id": "info_items",
+          "type": "list",
+          "label": {
+            "ar": "── معلومات إضافية",
+            "en": "── Additional info items"
+          },
+          "info": {
+            "ar": "أضف معلومات إضافية تظهر تحت وصف المتجر في عمود العلامة التجارية. مفيدة للسجل التجاري، الرقم الضريبي، الشهادات (عضوي، حلال، ISO، إلخ)، أو أي بيانات اعتماد أخرى. كل عنصر يمكن أن يحتوي على نص فقط، صورة فقط، أو الاثنين معًا. يمكن جعل العنصر رابطًا قابلًا للنقر بإضافة URL.",
+            "en": "Add extra info that shows below the store description in the brand column. Useful for commercial register, tax number, certificates (organic, halal, ISO, etc.), or any other credentials. Each item can have just text, just an image, or both. Add a URL to make the item clickable."
+          },
+          "max_items": 8,
+          "settings": [
+            {
+              "id": "label",
+              "type": "text",
+              "label": { "ar": "التسمية", "en": "Label" },
+              "info": { "ar": "نص صغير يظهر فوق القيمة. مثال: \"السجل التجاري\".", "en": "Small text shown above the value. e.g. \"Commercial Register\"." }
+            },
+            {
+              "id": "value",
+              "type": "text",
+              "label": { "ar": "القيمة النصية (اختياري)", "en": "Text value (optional)" },
+              "info": { "ar": "النص الذي يظهر تحت التسمية. مثال: \"476071\". اتركه فارغًا إذا كنت ستستخدم صورة فقط.", "en": "Text shown under the label. e.g. \"476071\". Leave empty if you're only using an image." }
+            },
+            {
+              "id": "image",
+              "type": "image",
+              "label": { "ar": "صورة / شهادة (اختياري)", "en": "Image / certificate (optional)" },
+              "info": { "ar": "ارفع صورة الشهادة أو الشعار. SVG أو PNG شفاف يعمل أفضل. الحجم المقترح: ارتفاع 60-80 بكسل.", "en": "Upload a certificate image or logo. SVG or transparent PNG works best. Recommended height: 60-80 pixels." }
+            },
+            {
+              "id": "url",
+              "type": "url",
+              "label": { "ar": "رابط (اختياري)", "en": "URL (optional)" },
+              "info": { "ar": "إذا أضفت رابطًا، يصبح العنصر قابلًا للنقر (يفتح في تبويب جديد). مفيد للروابط إلى صفحات الشهادات الرسمية.", "en": "If a URL is provided, the item becomes clickable (opens in new tab). Useful for linking to official certificate pages." }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "newsletter",
+      "icon": "fa fa-envelope",
+      "name": {
+        "ar": "النشرة البريدية",
+        "en": "Newsletter"
+      },
+      "settings": [
+        {
+          "id": "newsletter_hide",
+          "type": "checkbox",
+          "label": {
+            "ar": "إخفاء قسم النشرة البريدية",
+            "en": "Hide newsletter section"
+          },
+          "info": {
+            "ar": "إذا لم يكن لديك نظام نشرة بريدية متصل، أبقِ هذا مفعّلاً.",
+            "en": "If you don't have a newsletter system connected, keep this checked."
+          },
+          "default": true
+        },
+        {
+          "id": "newsletter_title",
+          "type": "text",
+          "label": {
+            "ar": "العنوان",
+            "en": "Title"
+          },
+          "default": ""
+        },
+        {
+          "id": "newsletter_description",
+          "type": "text",
+          "label": {
+            "ar": "الوصف",
+            "en": "Description"
+          },
+          "default": ""
+        },
+        {
+          "id": "newsletter_placeholder",
+          "type": "text",
+          "label": {
+            "ar": "نص حقل الإدخال",
+            "en": "Input placeholder"
+          },
+          "default": ""
+        },
+        {
+          "id": "newsletter_button_label",
+          "type": "text",
+          "label": {
+            "ar": "نص الزر",
+            "en": "Button label"
+          },
+          "default": ""
+        },
+        {
+          "id": "newsletter_action_url",
+          "type": "text",
+          "label": {
+            "ar": "رابط الاشتراك (اختياري)",
+            "en": "Subscribe endpoint URL (optional)"
+          },
+          "info": {
+            "ar": "إذا تركته فارغًا يرسل النموذج إلى /newsletter/subscribe الافتراضي. يمكن استبداله برابط Mailchimp / Klaviyo / غيره.",
+            "en": "Leave empty to POST to the default /newsletter/subscribe endpoint. Replace with a Mailchimp/Klaviyo/etc. URL if integrating with an external service."
+          },
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "icon": "fa fa-share-alt",
+      "name": {
+        "ar": "روابط اجتماعية إضافية",
+        "en": "Additional social links"
+      },
+      "settings": [
+        {
+          "id": "title",
+          "type": "text",
+          "label": {
+            "ar": "عنوان قسم وسائل التواصل",
+            "en": "Social section title"
+          },
+          "info": {
+            "ar": "عنوان مخصص لعمود وسائل التواصل في الفوتر. مثال: \"تابعنا\". اتركه فارغًا لاستخدام عنوان الاتصال من إعدادات زد، أو \"تابعنا\" الافتراضي.",
+            "en": "Custom heading for the social column in the footer. e.g. \"Follow us\". Leave empty to use the contact title from your Zid settings, or the default \"Follow us\"."
+          },
+          "default": ""
+        },
+        {
+          "id": "items",
+          "type": "list",
+          "label": {
+            "ar": "حسابات إضافية",
+            "en": "Additional accounts"
+          },
+          "info": {
+            "ar": "تُضاف بعد الأيقونات الاجتماعية الأساسية (فيسبوك، انستغرام، إكس، سناب، تيك توك) المُعدَّة من إعدادات الاتصال في الزد. مفيدة لإضافة LinkedIn، YouTube، Pinterest، WhatsApp، Threads، Telegram.",
+            "en": "Rendered after the primary 5 social icons (Facebook/Instagram/X/Snapchat/TikTok) which are wired to your Zid Contact settings. Use for LinkedIn, YouTube, Pinterest, WhatsApp, Threads, Telegram."
+          },
+          "max_items": 8,
+          "settings": [
+            {
+              "id": "platform",
+              "type": "select",
+              "label": {
+                "ar": "المنصة",
+                "en": "Platform"
+              },
+              "options": [
+                { "value": "linkedin",  "label": { "ar": "لينكدإن", "en": "LinkedIn" } },
+                { "value": "youtube",   "label": { "ar": "يوتيوب", "en": "YouTube" } },
+                { "value": "pinterest", "label": { "ar": "بينتريست", "en": "Pinterest" } },
+                { "value": "whatsapp",  "label": { "ar": "واتساب", "en": "WhatsApp" } },
+                { "value": "threads",   "label": { "ar": "ثريدز", "en": "Threads" } },
+                { "value": "telegram",  "label": { "ar": "تيليجرام", "en": "Telegram" } },
+                { "value": "custom",    "label": { "ar": "مخصص (رابط فقط)", "en": "Custom (URL only)" } }
+              ],
+              "default": "linkedin"
+            },
+            {
+              "id": "url",
+              "type": "url",
+              "label": {
+                "ar": "الرابط الكامل",
+                "en": "Full URL"
+              },
+              "info": {
+                "ar": "مثال: https://www.linkedin.com/company/your-brand. للواتساب: https://wa.me/9665XXXXXXXX (أرقام فقط بدون +).",
+                "en": "e.g. https://www.linkedin.com/company/your-brand. For WhatsApp: https://wa.me/9665XXXXXXXX (digits only, no +)."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "contact_info",
+      "icon": "fa fa-address-book",
+      "name": {
+        "ar": "معلومات الاتصال",
+        "en": "Contact Information"
+      },
+      "settings": [
+        {
+          "id": "title",
+          "type": "text",
+          "label": {
+            "ar": "عنوان القسم",
+            "en": "Section Title"
+          },
+          "info": {
+            "ar": "اتركه فارغًا لاستخدام \"تواصل معنا\" الافتراضي. بيانات الاتصال (البريد، الهاتف، العنوان) تُسحب من إعدادات الاتصال في لوحة الزد.",
+            "en": "Leave empty for the default \"Contact us\". Contact data (email, phone, address) is pulled from your Zid admin's Contact settings."
+          },
+          "default": ""
+        },
+        {
+          "id": "items",
+          "type": "list",
+          "label": { "ar": "── عناصر اتصال مخصصة", "en": "── Custom contact items" },
+          "info": {
+            "ar": "أضف عناصر اتصال بتسمية ورقم/قيمة وأيقونة اختيارية. مثال: التسمية \"للأسئلة والإستفسارات\"، القيمة \"96551726070\". تظهر هذه العناصر أعلى عمود التواصل قبل بيانات الاتصال المسحوبة من إعدادات زد. الأرقام تتحول لروابط قابلة للاتصال تلقائيًا حسب النوع.",
+            "en": "Add labeled contact items with optional custom icons. e.g. label \"For inquiries\", value \"96551726070\". These render at the top of the contact column, above the platform-pulled email/address/phone. Numbers become clickable links automatically based on the type field."
+          },
+          "max_items": 6,
+          "settings": [
+            {
+              "id": "label",
+              "type": "text",
+              "label": { "ar": "التسمية", "en": "Label" },
+              "info": { "ar": "نص صغير يظهر أعلى القيمة. مثال: \"للأسئلة والإستفسارات\".", "en": "Small text shown above the value. e.g. \"For inquiries\"." }
+            },
+            {
+              "id": "value",
+              "type": "text",
+              "label": { "ar": "القيمة (الرقم أو البريد أو النص)", "en": "Value (number / email / text)" },
+              "info": { "ar": "ما يظهر تحت التسمية. للهاتف ضع الرقم بدون رمز الدولة (مثل 96551726070).", "en": "Shown under the label. For phone, type the number with country code (e.g. 96551726070)." }
+            },
+            {
+              "id": "type",
+              "type": "select",
+              "label": { "ar": "النوع", "en": "Type" },
+              "options": [
+                { "value": "phone",    "label": { "ar": "هاتف (قابل للاتصال)",    "en": "Phone (clickable tel:)" } },
+                { "value": "whatsapp", "label": { "ar": "واتساب",                 "en": "WhatsApp" } },
+                { "value": "email",    "label": { "ar": "بريد إلكتروني",          "en": "Email" } },
+                { "value": "url",      "label": { "ar": "رابط مخصص",              "en": "Custom link" } },
+                { "value": "text",     "label": { "ar": "نص فقط (غير قابل للنقر)", "en": "Plain text (not clickable)" } }
+              ],
+              "default": "phone"
+            },
+            {
+              "id": "url",
+              "type": "url",
+              "label": { "ar": "── الرابط (للنوع \"رابط مخصص\")", "en": "── URL (for type=Custom link)" },
+              "info": { "ar": "يستخدم فقط عند اختيار النوع \"رابط مخصص\".", "en": "Used only when type is set to Custom link." },
+              "visible_if": { "type": "url" }
+            },
+            {
+              "id": "icon",
+              "type": "image",
+              "label": { "ar": "أيقونة مخصصة (اختياري)", "en": "Custom icon (optional)" },
+              "info": { "ar": "ارفع SVG أو PNG شفاف ~24×24 بكسل. اتركه فارغًا لاستخدام أيقونة افتراضية مناسبة للنوع.", "en": "Upload SVG or transparent PNG, ~24×24 pixels. Leave empty for a default icon matching the type." }
+            },
+            {
+              "id": "emphasized",
+              "type": "checkbox",
+              "label": { "ar": "تكبير القيمة", "en": "Emphasize value" },
+              "info": { "ar": "يجعل النص أكبر وأثقل — مناسب لأرقام الاتصال الرئيسية.", "en": "Renders the value larger and bolder — good for primary contact numbers." },
+              "default": true
+            },
+            {
+              "id": "visibility_countries",
+              "type": "text",
+              "label": { "ar": "── إظهار في دول محددة (اختياري)", "en": "── Show in specific countries (optional)" },
+              "info": {
+                "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار العنصر في كل الدول. مفيد لأرقام مخصصة لكل دولة (مثل رقم سعودي للزوار من السعودية، ورقم كويتي للزوار من الكويت). الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+                "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show this item in all countries. Useful for country-specific contact numbers (e.g. a Saudi number for SA visitors and a Kuwaiti number for KW visitors). Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+              },
+              "default": ""
+            },
+            {
+              "id": "visibility_mode",
+              "type": "select",
+              "label": { "ar": "── وضع الاستهداف", "en": "── Targeting mode" },
+              "info": {
+                "ar": "إظهار في: يظهر العنصر فقط للزوار من الدول المحددة. إخفاء في: يخفى العنصر عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+                "en": "Show in: this item appears only for visitors from the listed countries. Hide in: this item hides from visitors in the listed countries. Only takes effect when the country list above has values."
+              },
+              "options": [
+                { "value": "show_in", "label": { "ar": "إظهار في الدول المحددة (افتراضي)", "en": "Show in listed countries (default)" } },
+                { "value": "hide_in", "label": { "ar": "إخفاء في الدول المحددة",          "en": "Hide in listed countries" } }
+              ],
+              "default": "show_in"
+            }
+          ]
+        },
+        {
+          "id": "show_email",
+          "type": "checkbox",
+          "label": { "ar": "── إظهار البريد الإلكتروني (من إعدادات زد)", "en": "── Show email (from Zid settings)" },
+          "default": true
+        },
+        {
+          "id": "show_address",
+          "type": "checkbox",
+          "label": { "ar": "── إظهار العنوان والموقع (من إعدادات زد)", "en": "── Show address & location (from Zid settings)" },
+          "info": { "ar": "أوقفه عند استخدام عناوين خاصة بكل دولة في القائمة المخصصة بدلاً من العنوان الرئيسي.", "en": "Turn off when you're using country-specific addresses in the custom items list instead of the main address." },
+          "default": true
+        },
+        {
+          "id": "show_phone",
+          "type": "checkbox",
+          "label": { "ar": "── إظهار الهاتف (من إعدادات زد)", "en": "── Show phone (from Zid settings)" },
+          "default": true
+        },
+        {
+          "id": "show_instagram_handle",
+          "type": "checkbox",
+          "label": { "ar": "── إظهار حساب الانستغرام كرابط", "en": "── Show Instagram handle as a link" },
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "hours",
+      "icon": "fa fa-clock-o",
+      "name": {
+        "ar": "ساعات العمل",
+        "en": "Working Hours"
+      },
+      "settings": [
+        {
+          "id": "display",
+          "type": "checkbox",
+          "label": { "ar": "إظهار قسم ساعات العمل", "en": "Display working hours" },
+          "info": {
+            "ar": "كتلة صغيرة تظهر ساعات عمل المتجر/المعرض الفعلي. مفيدة للمتاجر التي لها موقع فعلي بجانب المتجر الإلكتروني.",
+            "en": "Small block showing physical-store hours. Useful for merchants with a brick-and-mortar location alongside the online store."
+          },
+          "default": false
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "label": { "ar": "── عنوان القسم", "en": "── Section title" },
+          "default": "",
+          "info": { "ar": "اتركه فارغًا لاستخدام \"ساعات العمل\".", "en": "Leave empty for default \"Working hours\"." },
+          "visible_if": { "display": true }
+        },
+        {
+          "id": "position",
+          "type": "select",
+          "label": { "ar": "── الموقع", "en": "── Position" },
+          "options": [
+            { "value": "brand_col",   "label": { "ar": "في عمود العلامة", "en": "In brand column" } },
+            { "value": "contact_col", "label": { "ar": "في عمود التواصل", "en": "In contact column" } }
+          ],
+          "default": "contact_col",
+          "visible_if": { "display": true }
+        },
+        {
+          "id": "lines",
+          "type": "list",
+          "label": { "ar": "── الأيام والساعات", "en": "── Days and hours" },
+          "info": {
+            "ar": "صف لكل مجموعة أيام. مثال: \"السبت - الخميس\" / \"9 ص - 10 م\".",
+            "en": "One row per day-group. e.g. \"Saturday - Thursday\" / \"9 AM - 10 PM\"."
+          },
+          "max_items": 7,
+          "visible_if": { "display": true },
+          "settings": [
+            { "id": "label", "type": "text", "label": { "ar": "اليوم/الأيام", "en": "Day(s)" } },
+            { "id": "value", "type": "text", "label": { "ar": "الساعات",      "en": "Hours" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "countries",
+      "icon": "fa fa-globe",
+      "name": {
+        "ar": "روابط حسب الدولة",
+        "en": "Links by Country"
+      },
+      "settings": [
+        {
+          "id": "items",
+          "type": "list",
+          "label": { "ar": "الدول", "en": "Countries" },
+          "info": {
+            "ar": "أضف صفًا لكل دولة تخدمها. كل دولة لها قائمة روابط خاصة (سياسة الشحن، الإرجاع، الشروط، إلخ). الزائر يرى تلقائيًا روابط دولته بناءً على موقعه الجغرافي. إذا لم يُكتشف بلده، يُعرض الدولة الافتراضية أو أول دولة في القائمة.",
+            "en": "Add a row per country you serve. Each country has its own link list (shipping policy, returns, terms, etc.). Visitors automatically see the links for their detected country. If their country isn't detected, the default-marked country (or the first row) is shown."
+          },
+          "max_items": 12,
+          "settings": [
+            {
+              "id": "code",
+              "type": "text",
+              "label": { "ar": "رمز الدولة — بحرفين (SA, AE, KW, BH, QA, OM, EG)", "en": "Country code — 2 letters (SA, AE, KW, BH, QA, OM, EG)" },
+              "info": {
+                "ar": "ISO 3166-1 alpha-2. الخليج: SA / AE / KW / BH / QA / OM. الشرق الأوسط: EG / JO / IQ / LB. الأحرف الكبيرة أو الصغيرة كلاهما يعمل (sa أو SA كلاهما يطابق الزائر السعودي). نفس الترميز المستخدم في زر واتساب العائم.",
+                "en": "ISO 3166-1 alpha-2. Gulf: SA / AE / KW / BH / QA / OM. Middle East: EG / JO / IQ / LB. Case-insensitive — both `sa` and `SA` match a Saudi visitor. Same encoding used by the WhatsApp FAB country list."
+              }
+            },
+            {
+              "id": "name",
+              "type": "text",
+              "label": { "ar": "اسم الدولة (للعرض)", "en": "Display name" },
+              "info": { "ar": "الاسم الذي يظهر كعنوان لمجموعة الروابط. مثال: \"السعودية\".", "en": "Shown as the heading of the link group. e.g. \"Saudi Arabia\"." }
+            },
+            {
+              "id": "flag",
+              "type": "text",
+              "label": { "ar": "العلم (إيموجي اختياري)", "en": "Flag emoji (optional)" },
+              "info": { "ar": "الصق إيموجي العلم بجانب الاسم. مثال: 🇸🇦. اتركه فارغًا إذا لم ترغب في عرض علم.", "en": "Paste a flag emoji to display next to the country name. e.g. 🇸🇦. Leave empty to hide the flag." }
+            },
+            {
+              "id": "is_default",
+              "type": "checkbox",
+              "label": { "ar": "افتراضي عند عدم اكتشاف الدولة", "en": "Default when country not detected" },
+              "info": {
+                "ar": "إذا كان موقع الزائر غير معروف أو لا يطابق أي دولة في القائمة، تُعرض روابط هذه الدولة. يجب تعليم دولة واحدة فقط كافتراضية.",
+                "en": "Shown when the visitor's location is unknown or doesn't match any country in the list. Mark only ONE country as default."
+              },
+              "default": false
+            },
+            {
+              "id": "links",
+              "type": "list",
+              "label": { "ar": "── الروابط", "en": "── Links" },
+              "info": { "ar": "حتى 12 رابطًا لكل دولة. مثال: سياسة الشحن، الإرجاع، الشروط، تواصل معنا.", "en": "Up to 12 links per country. e.g. Shipping Policy, Returns, Terms, Contact." },
+              "max_items": 12,
+              "settings": [
+                { "id": "title", "type": "text", "label": { "ar": "العنوان", "en": "Title" } },
+                { "id": "url",   "type": "url",  "label": { "ar": "الرابط",  "en": "URL" } }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "show_detection_hint",
+          "type": "checkbox",
+          "label": { "ar": "إظهار شارة \"تم اكتشاف موقعك\"", "en": "Show \"Detected location\" pill" },
+          "info": {
+            "ar": "شارة صغيرة تظهر عندما يكون الزائر من دولة موجودة في القائمة، لتأكيد أنه يرى محتوى مخصصًا له.",
+            "en": "Small pill shown when the visitor's country matches a row in the list — confirms they're seeing content tailored to their location."
+          },
+          "default": false
+        },
+        {
+          "id": "debug",
+          "type": "checkbox",
+          "label": { "ar": "وضع التشخيص (مؤقت)", "en": "Debug mode (temporary)" },
+          "info": {
+            "ar": "يطبع تعليق HTML غير مرئي قبل قسم الدول يحوي قيم session.country / session.locale المتوفرة في متجرك. مفيد لمعرفة أي مفتاح يحمل رمز الدولة على متجرك. أوقفه بعد التشخيص.",
+            "en": "Emits an invisible HTML comment before the country block showing the actual session.country / session.locale values your store exposes. Useful to figure out which key carries the country code on your specific Zid store. Turn off after debugging."
+          },
+          "default": false
+        },
+        {
+          "id": "show_on",
+          "type": "select",
+          "label": { "ar": "إظهار على", "en": "Show on" },
+          "info": {
+            "ar": "كل الأجهزة (افتراضي): تظهر الروابط الخاصة بالدولة على الجوال وسطح المكتب والتابلت. الجوال فقط: تظهر فقط على الشاشات ≤767 بكسل.",
+            "en": "All devices (default): country-specific links show on mobile, tablet, and desktop. Mobile only: visible only on screens ≤767px."
+          },
+          "options": [
+            { "value": "always",      "label": { "ar": "كل الأجهزة (افتراضي)", "en": "All devices (default)" } },
+            { "value": "mobile_only", "label": { "ar": "الجوال فقط",           "en": "Mobile only" } }
+          ],
+          "default": "always"
+        }
+      ]
+    },
+    {
+      "id": "footer_highlights",
+      "icon": "fa fa-star",
+      "name": {
+        "ar": "شريط المزايا أعلى الفوتر",
+        "en": "Trust Strip (above footer)"
+      },
+      "settings": [
+        {
+          "id": "display",
+          "type": "checkbox",
+          "label": { "ar": "إظهار شريط المزايا أعلى الفوتر", "en": "Display trust strip above footer" },
+          "info": {
+            "ar": "شريط مزايا (شحن مجاني، إرجاع، دفع آمن، إلخ) يظهر أعلى الفوتر — مفيد للتأكيد على نقاط الثقة قبل أن يغادر العميل الصفحة.",
+            "en": "USP / trust badges row above the footer (free shipping, returns, secure payment, etc.) — reinforces trust right before the customer leaves the page."
+          },
+          "default": false
+        },
+        {
+          "id": "points",
+          "type": "list",
+          "label": { "ar": "── العناصر", "en": "── Items" },
+          "info": { "ar": "حتى 4 عناصر.", "en": "Up to 4 items." },
+          "max_items": 4,
+          "visible_if": { "display": true },
+          "settings": [
+            { "id": "image",       "type": "image", "label": { "ar": "الأيقونة", "en": "Icon" } },
+            { "id": "title",       "type": "text",  "label": { "ar": "العنوان", "en": "Title" } },
+            { "id": "description", "type": "text",  "label": { "ar": "الوصف",  "en": "Description" } }
+          ]
+        },
+        {
+          "id": "container_style",
+          "type": "select",
+          "label": { "ar": "── أسلوب العرض", "en": "── Display style" },
+          "options": [
+            { "value": "unified", "label": { "ar": "شريط موحد", "en": "Unified bar" } },
+            { "value": "cards",   "label": { "ar": "بطاقات",     "en": "Separate cards" } },
+            { "value": "bare",    "label": { "ar": "بدون حدود",  "en": "No borders" } }
+          ],
+          "default": "unified",
+          "visible_if": { "display": true }
+        }
+      ]
+    },
+    {
+      "id": "certs",
+      "icon": "fa fa-certificate",
+      "name": {
+        "ar": "شهادات وموثوقية",
+        "en": "Certifications & Trust Logos"
+      },
+      "settings": [
+        {
+          "id": "display",
+          "type": "checkbox",
+          "label": { "ar": "إظهار شارات الشهادات", "en": "Display certification logos" },
+          "info": {
+            "ar": "صف صغير من شعارات الشهادات (عضوي، حلال، ISO، سلامة الغذاء، إلخ) داخل الإطار قبل شريط الدفع. مهم لمتاجر المنتجات الطبيعية والصحية.",
+            "en": "Small horizontal row of certification badges (organic, halal, ISO, food safety, etc.) inside the frame above the payments strip. Critical for natural/health-product stores."
+          },
+          "default": false
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "label": { "ar": "── عنوان القسم (اختياري)", "en": "── Section label (optional)" },
+          "default": "",
+          "info": { "ar": "مثال: \"شهاداتنا\". اتركه فارغًا لإخفاء العنوان.", "en": "e.g. \"Our certifications\". Leave empty to hide the label." },
+          "visible_if": { "display": true }
+        },
+        {
+          "id": "logos",
+          "type": "list",
+          "label": { "ar": "── الشعارات", "en": "── Logos" },
+          "info": { "ar": "حتى 8 شعارات. SVG أو PNG شفاف بحجم ~100×60 بكسل.", "en": "Up to 8 logos. SVG or transparent PNG, ~100×60 pixels." },
+          "max_items": 8,
+          "visible_if": { "display": true },
+          "settings": [
+            { "id": "image", "type": "image", "label": { "ar": "الشعار", "en": "Logo" } },
+            { "id": "label", "type": "text",  "label": { "ar": "الاسم (اختياري)", "en": "Name (optional)" }, "info": { "ar": "يظهر كنص بديل وعند التمرير.", "en": "Used as alt text and tooltip." } },
+            { "id": "url",   "type": "url",   "label": { "ar": "الرابط (اختياري)", "en": "URL (optional)" } }
+          ]
+        },
+        {
+          "id": "style",
+          "type": "select",
+          "label": { "ar": "── نمط الشعارات", "en": "── Logo style" },
+          "options": [
+            { "value": "color",     "label": { "ar": "ألوان كاملة",       "en": "Full color" } },
+            { "value": "grayscale", "label": { "ar": "رمادي (ملوّن عند التمرير)", "en": "Grayscale (color on hover)" } }
+          ],
+          "default": "grayscale",
+          "visible_if": { "display": true }
+        }
+      ]
+    },
+    {
+      "id": "appearance",
+      "icon": "fa fa-paint-brush",
+      "name": {
+        "ar": "المظهر والتخطيط",
+        "en": "Appearance & layout"
+      },
+      "settings": [
+        {
+          "id": "frame_enabled",
+          "type": "checkbox",
+          "label": {
+            "ar": "إطار مدور حول المحتوى",
+            "en": "Rounded frame around content"
+          },
+          "info": {
+            "ar": "يحيط محتوى الفوتر بإطار خفيف مدور الزوايا، ويفصل الشريط السفلي (وسائل الدفع + الشعار النصي) عنه. مظهر دافئ يناسب متاجر العسل والمنتجات الطبيعية.",
+            "en": "Wraps the footer content in a soft rounded card and separates the bottom strip (payments + tagline) below it. Warm look suited to honey and natural-product brands."
+          },
+          "default": true
+        },
+        {
+          "id": "frame_color",
+          "type": "color",
+          "label": {
+            "ar": "── لون الإطار والشريط السفلي",
+            "en": "── Frame & accent color"
+          },
+          "info": {
+            "ar": "اللون البرتقالي/الذهبي الدافئ المستخدم لحدود الإطار والشريط السفلي. اتركه فارغًا لاستخدام لون التمييز للقالب.",
+            "en": "Warm orange / amber used for the frame border and the bottom accent strip. Leave empty to use the theme accent color."
+          },
+          "default": ""
+        },
+        {
+          "id": "frame_radius",
+          "type": "range",
+          "label": {
+            "ar": "── انحناء حواف الإطار",
+            "en": "── Frame corner radius"
+          },
+          "min": 0,
+          "max": 48,
+          "step": 2,
+          "unit": "px",
+          "default": 24
+        },
+        {
+          "id": "tagline",
+          "type": "text",
+          "label": {
+            "ar": "الشعار النصي (الشريط السفلي)",
+            "en": "Tagline (bottom strip)"
+          },
+          "info": {
+            "ar": "نص قصير يظهر مع وسائل الدفع في الشريط السفلي. مثال: \"عالم صحي عالم مفيد\".",
+            "en": "Short tagline shown next to payment methods on the bottom strip. e.g. \"Healthy world, useful world\"."
+          },
+          "default": ""
+        },
+        {
+          "id": "column_alignment",
+          "type": "select",
+          "label": {
+            "ar": "── محاذاة الأعمدة",
+            "en": "── Column alignment"
+          },
+          "info": {
+            "ar": "بداية السطر (افتراضي): يسار في اللغات الإنجليزية، يمين في العربية — يطابق التدفق الطبيعي للقراءة. وسط: محاذاة عمودية وسطية لكل عناصر الفوتر.",
+            "en": "Start (default): left in LTR, right in RTL — matches natural reading flow. Center: vertically-centered alignment for all footer items."
+          },
+          "options": [
+            { "value": "start",  "label": { "ar": "بداية السطر (افتراضي)", "en": "Start (default — left LTR / right RTL)" } },
+            { "value": "center", "label": { "ar": "وسط",                   "en": "Center" } }
+          ],
+          "default": "start"
+        },
+        {
+          "id": "background",
+          "type": "select",
+          "label": {
+            "ar": "الخلفية",
+            "en": "Background"
+          },
+          "info": {
+            "ar": "ثانوي = الافتراضي (يتباين قليلاً مع المحتوى). داكن = خلفية ذات تباين عالٍ (لون النص الأساسي للقالب). كريمي = خلفية كريمية مناسبة لمنتجات العسل والمنتجات الطبيعية.",
+            "en": "Secondary = default (slight contrast with page content). Dark = high-contrast (theme foreground color). Warm cream = cream tint suited to honey / natural-product brands."
+          },
+          "options": [
+            { "value": "secondary",  "label": { "ar": "ثانوي (افتراضي)",       "en": "Secondary (default)" } },
+            { "value": "background", "label": { "ar": "خلفية الصفحة",          "en": "Page background" } },
+            { "value": "warm",       "label": { "ar": "كريمي دافئ",            "en": "Warm cream" } },
+            { "value": "dark",       "label": { "ar": "داكن (تباين عالٍ)",     "en": "Dark (high contrast)" } },
+            { "value": "primary",    "label": { "ar": "اللون الأساسي للعلامة", "en": "Primary brand color" } }
+          ],
+          "default": "secondary"
+        },
+        {
+          "id": "mobile_accordion",
+          "type": "checkbox",
+          "label": {
+            "ar": "طي مجموعات الروابط على الجوال",
+            "en": "Collapse link groups on mobile"
+          },
+          "info": {
+            "ar": "تظهر مجموعات الروابط كقوائم قابلة للطي على الجوال (≤768 بكسل) بدلاً من قائمة طويلة. يقلل التمرير العمودي بشكل ملحوظ.",
+            "en": "Renders link groups as collapsible accordions on mobile (≤768px) instead of stacked open. Cuts vertical scroll noticeably."
+          },
+          "default": true
+        },
+        {
+          "id": "heading_size",
+          "type": "select",
+          "label": {
+            "ar": "حجم عناوين المجموعات",
+            "en": "Group heading size"
+          },
+          "options": [
+            { "value": "sm", "label": { "ar": "صغير (افتراضي)", "en": "Small (default)" } },
+            { "value": "md", "label": { "ar": "متوسط",          "en": "Medium" } },
+            { "value": "lg", "label": { "ar": "كبير",           "en": "Large" } }
+          ],
+          "default": "sm"
+        },
+        {
+          "id": "heading_weight",
+          "type": "select",
+          "label": {
+            "ar": "سُمك عناوين المجموعات",
+            "en": "Group heading weight"
+          },
+          "options": [
+            { "value": "medium",   "label": { "ar": "متوسط (افتراضي)", "en": "Medium (default)" } },
+            { "value": "semibold", "label": { "ar": "نصف ثقيل",        "en": "Semibold" } },
+            { "value": "bold",     "label": { "ar": "ثقيل",            "en": "Bold" } }
+          ],
+          "default": "medium"
+        }
+      ]
+    }
+  ]
+}

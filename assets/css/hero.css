@@ -1,0 +1,519 @@
+/* ============================================================================
+   Hero Banner — always-dynamic layout, with optional min-height floor.
+   ----------------------------------------------------------------------------
+   Foreground <picture> + <img> carries the section's height via the image's
+   natural aspect ratio. Content is absolutely positioned over the image and
+   vertically centered. A merchant-controlled min-height floor prevents the
+   banner from collapsing when the image is short or fails to load.
+
+   All visual knobs come from data-* attributes on .section-hero. Mobile-first
+   sizing: `-mobile` data attrs set the default; non-mobile attrs override
+   inside `@media (min-width: 768px)`.
+   ============================================================================ */
+
+.section-hero {
+  min-height: var(--min-h-mobile, 0);
+  margin-top: var(--hero-top-space-mobile, 0);
+  /* Explicit overflow:hidden — a Tailwind class on the element provides
+   this too, but we declare it here so the banner clips correctly even
+   if the Tailwind purger ever misses the class. Required for the
+   clip-path + border-radius combo to work reliably on all browsers. */
+  overflow: hidden;
+  /* `isolation: isolate` creates a fresh stacking context on the
+     section. Without this, the inner `<div class="absolute inset-0
+     -z-10">` (the video/image/overlay wrapper) has a negative z-index
+     that escapes the section's local stack and goes BEHIND the
+     section's own background-color. Result: when `data-no-image="true"`
+     paints `background: var(--secondary)`, that grey covers the video.
+     Isolating contains the negative z-index so the wrapper stays inside
+     the section's stack — below content layers, but above the section's
+     background. */
+  isolation: isolate;
+}
+@media (min-width: 768px) {
+  .section-hero {
+    min-height: var(--min-h-desktop, 0);
+    margin-top: var(--hero-top-space, 0);
+  }
+}
+
+/* When no image is uploaded, give the banner a neutral theme-aware
+   backdrop so a video-only or text-only config doesn't render on a
+   transparent section (which would show the page background and look
+   broken). Also covers the reduced-motion + video-only edge case:
+   when the video is hidden, this backdrop is visible. */
+.section-hero[data-no-image="true"] {
+  background: var(--secondary);
+}
+
+/* Banner width — full vs contained (corner radius + outer margin).
+   Mobile values apply up to 768px; desktop overrides above.
+   `clip-path` with rounded inset is used instead of relying on
+   `overflow: hidden` + `border-radius` alone, because Chrome/Safari
+   occasionally fail to clip transformed descendants (e.g. the hover
+   scale on .hero-bg-img) to a rounded parent — which caused the
+   corners to look un-rounded during hover. clip-path clips reliably. */
+.section-hero[data-banner-width="contained"] {
+  width: calc(100% - 2 * var(--section-margin-mobile, 0px));
+  max-width: 1440px;
+  margin-inline: auto;
+  /* Combine the all-sides container margin with the optional top-space
+     so both stack cleanly (contained + custom top gap both land). */
+  margin-top: calc(var(--section-margin-mobile, 0px) + var(--hero-top-space-mobile, 0px));
+  margin-bottom: var(--section-margin-mobile, 0px);
+  border-radius: var(--banner-radius-mobile, 0px);
+}
+@media (min-width: 768px) {
+  .section-hero[data-banner-width="contained"] {
+    width: calc(100% - 2 * var(--section-margin, 0px));
+    margin-top: calc(var(--section-margin, 0px) + var(--hero-top-space, 0px));
+    margin-bottom: var(--section-margin, 0px);
+    border-radius: var(--banner-radius, 0px);
+  }
+}
+/* clip-path only when the merchant actually picked a non-zero radius.
+   The flag is stamped on the section in hero.jinja via:
+     data-rounded="true" if banner_width=='contained' and radius>0
+   Without this gating, zero-radius contained banners pay the repaint
+   cost of clip-path with no visual benefit. */
+.section-hero[data-rounded="true"] {
+  clip-path: inset(0 round var(--banner-radius-mobile, 0px));
+}
+@media (min-width: 768px) {
+  .section-hero[data-rounded="true"] {
+    clip-path: inset(0 round var(--banner-radius, 0px));
+  }
+}
+
+/* Foreground image (dynamic mode) — dictates section height via natural
+   aspect. The fixed-mode image is styled inline with object-cover via
+   Tailwind classes, so this selector targets the dynamic case. */
+.section-hero--dynamic .hero-picture,
+.section-hero--dynamic .hero-bg-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Subtle hover zoom on desktop only. `will-change` scoped to
+   hover-capable devices so touch-only screens don't permanently
+   promote the image to its own compositing layer (a small but real
+   memory + GPU cost for an animation that can't fire there). */
+.section-hero .hero-bg-img {
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) and (min-width: 768px) {
+  .section-hero .hero-bg-img {
+    will-change: transform;
+  }
+  .section-hero:hover .hero-bg-img {
+    transform: scale(1.04);
+  }
+}
+
+/* ── Background video ────────────────────────────────────────────
+   Absolutely covers the banner above the image, below the overlay +
+   content. The image stays as a fallback (poster, mobile-when-off,
+   reduced-motion) — no black rectangle if the video fails or is
+   suppressed. Pointer-events off so clicks pass through to the
+   banner-link overlay or buttons above. */
+.section-hero .hero-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+  /* Start hidden so the static .hero-bg-img behind shows while the deferred
+     video downloads + decodes. JS adds `.is-playing` on the first painted
+     frame, cross-fading image → video with no black/empty flash on swap. */
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+.section-hero .hero-bg-video.is-playing {
+  opacity: 1;
+}
+
+/* Breakpoint-scoped variants. Two <video> elements can be emitted
+   (desktop + mobile). Only one is ever visible at a time so both
+   can safely coexist in the DOM; the hidden one doesn't preload
+   video data in modern browsers thanks to `display: none`. */
+.section-hero .hero-bg-video--desktop { display: none; }
+.section-hero .hero-bg-video--mobile  { display: block; }
+@media (min-width: 768px) {
+  .section-hero .hero-bg-video--desktop { display: block; }
+  .section-hero .hero-bg-video--mobile  { display: none; }
+}
+
+/* Reduced motion: hide any video with the opt-in attribute (WCAG
+   2.1 compliance + respectful to vestibular-sensitive users). */
+@media (prefers-reduced-motion: reduce) {
+  .section-hero .hero-bg-video[data-respect-motion] {
+    display: none;
+  }
+}
+
+/* Content layer — `.hero-overlay-layer` styling lives entirely in
+   the markup via Tailwind utilities (`absolute inset-0 flex
+   items-center px-4 md:px-16`). The empty ruleset that used to be
+   here was removed — no rules, no cascade contribution. */
+
+/* ── Whole-banner link overlay ───────────────────────────────────
+   When the merchant sets a banner link, an invisible anchor covers
+   the full section (over the image, under the content layer). The
+   content layer above disables pointer events so clicks pass through
+   to this link — except on interactive children (buttons) which
+   re-enable pointer-events so they keep their own URLs. */
+.section-hero .hero-link-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  /* Visually hide the aria-label content but keep it discoverable by
+     screen readers. Modern technique using clip-path + size:0 — the
+     previous `text-indent: -9999px` trick is from the IE6 era and can
+     cause reflow issues on some layouts. The aria-label is purely clickable
+     chrome, the visible label lives in the heading. */
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  /* Document order: overlay comes AFTER <picture> so it stacks above the
+     image naturally. Content layer comes AFTER the overlay in the DOM and
+     handles stacking above via document order — no explicit z-index
+     needed anywhere, which keeps the clip-path working on hover. */
+  outline-offset: 4px;
+}
+.section-hero .hero-link-overlay:focus-visible {
+  outline: 2px solid var(--primary);
+}
+.section-hero[data-has-link="true"] .hero-overlay-layer {
+  pointer-events: none;
+}
+.section-hero[data-has-link="true"] .hero-overlay-layer a,
+.section-hero[data-has-link="true"] .hero-overlay-layer button {
+  pointer-events: auto;
+}
+/* Fixed-mode has no `.hero-overlay-layer`; instead content sits in
+   `.theme-container` as a direct child. Apply the same pattern there. */
+.section-hero[data-has-link="true"]:not(.section-hero--dynamic) > .theme-container {
+  pointer-events: none;
+}
+.section-hero[data-has-link="true"]:not(.section-hero--dynamic) > .theme-container a,
+.section-hero[data-has-link="true"]:not(.section-hero--dynamic) > .theme-container button {
+  pointer-events: auto;
+}
+/* A cursor hint on the image when the banner is clickable. */
+.section-hero[data-has-link="true"] {
+  cursor: pointer;
+}
+
+/* Overlay variants. */
+.section-hero .hero-overlay--dark     { background: #000; }
+.section-hero .hero-overlay--primary  { background: var(--primary); }
+.section-hero .hero-overlay--gradient {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.55) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+/* ── Optional logo / small image above the badge ────────────────── */
+/* Size driven by two CSS custom properties set on <section> (px).
+   Fallbacks match the old defaults for merchants who haven't picked
+   a size yet. `align-self` (not margin-inline) is used for horizontal
+   positioning so the logo tracks the same alignment-propagation path
+   as the badge and description — matching the parent's `items-*`. */
+.hero-logo {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+  height: var(--hero-logo-size-mobile, 32px);
+  /* Pin to the leading edge by default — matches start-aligned content.
+     Without this, an <img> in a flex column with `align-items: stretch`
+     is left to browser defaults, and some engines end up stretching the
+     image across the full cross axis which makes the logo drift away
+     from the heading's start edge (especially in RTL). Explicit
+     `align-self` forces the image to its intrinsic size and the flex
+     engine positions it at the leading edge. */
+  align-self: flex-start;
+}
+@media (min-width: 768px) {
+  .hero-logo { height: var(--hero-logo-size, 40px); }
+}
+.section-hero[data-content-align="center"] .hero-logo { align-self: center; }
+.section-hero[data-content-align="end"]    .hero-logo { align-self: flex-end; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY SCALE — mobile-first.
+   Mobile attributes set the baseline; desktop attributes override at 768px+.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Heading ─────────────────────────────────────────────────────
+   Font size is driven by two CSS custom properties set per-section
+   inline on <section>: --hero-heading-size-mobile (below 768px) and
+   --hero-heading-size (768px and up). Each takes a merchant-supplied
+   px value. Fallbacks match the previous sm/md/lg defaults. */
+.section-hero .hero-heading {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+  font-size: var(--hero-heading-size-mobile, 30px);
+}
+@media (min-width: 768px) {
+  .section-hero .hero-heading {
+    font-size: var(--hero-heading-size, 48px);
+  }
+}
+
+/* ── Description ───────────────────────────────────────────────── */
+.section-hero .hero-description {
+  line-height: 1.55;
+  max-width: 56ch;
+  margin: 0;
+  font-size: var(--hero-description-size-mobile, 15px);
+}
+@media (min-width: 768px) {
+  .section-hero .hero-description {
+    font-size: var(--hero-description-size, 17px);
+  }
+}
+/* Soften the description ONLY in light-text mode (on top of dark
+   overlay / dark image). In dark-text mode the description sits on
+   a light background and multiplying by 0.9 can push contrast below
+   WCAG AA 4.5:1 — keep full opacity there. */
+.section-hero[data-text-color="light"] .hero-description {
+  opacity: 0.9;
+}
+
+/* ── Badge — pill chip, two color modes + size scale ────────────── */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.hero-badge::before {
+  content: "";
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  /* Follows `--badge-dot-color` when the merchant sets a custom badge
+     color (inline on the badge element); otherwise uses the brand primary
+     for the light-text mode or overrides below for the dark-text mode. */
+  background: var(--badge-dot-color, var(--primary));
+}
+/* Size — driven by --hero-badge-size custom properties (px). Padding
+   scales proportionally with font-size using a CSS clamp so the pill
+   stays well-proportioned across the whole range. */
+.section-hero .hero-badge {
+  font-size: var(--hero-badge-size-mobile, 11px);
+  padding: 0.375em 0.9em;
+  gap: 0.45em;
+}
+@media (min-width: 768px) {
+  .section-hero .hero-badge {
+    font-size: var(--hero-badge-size, 13px);
+  }
+}
+/* Color modes */
+.section-hero[data-text-color="light"] .hero-badge {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.section-hero[data-text-color="light"] .hero-badge::before {
+  background: var(--badge-dot-color, #fff);
+}
+.section-hero[data-text-color="dark"] .hero-badge {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 15%, transparent);
+}
+
+/* ── Content alignment — propagate down to grandchildren ────────── */
+.section-hero[data-content-align="center"] .hero-content { margin-inline: auto; }
+.section-hero[data-content-align="center"] .hero-badge,
+.section-hero[data-content-align="center"] .hero-description { align-self: center; }
+.section-hero[data-content-align="center"] .hero-ctas { justify-content: center; }
+
+.section-hero[data-content-align="end"] .hero-content { margin-inline-start: auto; }
+.section-hero[data-content-align="end"] .hero-badge,
+.section-hero[data-content-align="end"] .hero-description { align-self: flex-end; }
+.section-hero[data-content-align="end"] .hero-ctas { justify-content: flex-end; }
+
+/* ── Content vertical position (top / center / bottom) ────────────
+   Per breakpoint, mobile-first: data-content-position-mobile drives
+   the base styles, data-content-position overrides at 768px+. Two
+   flex parents exist depending on height mode: the section itself in
+   fixed mode, and `.hero-overlay-layer` in dynamic mode — both get
+   the override. The double selector (.section-hero[attr])
+   out-specifies the Tailwind `items-center` utility regardless of
+   stylesheet order.
+
+   Mobile center needs no rule (Tailwind `items-center` already does
+   it), but the desktop block must spell out ALL three values —
+   including center — so a mobile top/bottom is reset when the
+   desktop choice differs. */
+.section-hero[data-content-position-mobile="top"],
+.section-hero[data-content-position-mobile="top"] .hero-overlay-layer {
+  align-items: flex-start;
+}
+.section-hero[data-content-position-mobile="bottom"],
+.section-hero[data-content-position-mobile="bottom"] .hero-overlay-layer {
+  align-items: flex-end;
+}
+/* Breathing room when pinned to an edge — centered content never
+   touches the edges, but top/bottom-pinned content would without
+   this. Applied to the flex parent in each mode. */
+.section-hero[data-content-position-mobile="top"] .hero-overlay-layer,
+.section-hero[data-content-position-mobile="bottom"] .hero-overlay-layer,
+.section-hero:not(.section-hero--dynamic)[data-content-position-mobile="top"],
+.section-hero:not(.section-hero--dynamic)[data-content-position-mobile="bottom"] {
+  padding-block: 1.5rem;
+}
+@media (min-width: 768px) {
+  .section-hero[data-content-position="top"],
+  .section-hero[data-content-position="top"] .hero-overlay-layer {
+    align-items: flex-start;
+  }
+  .section-hero[data-content-position="center"],
+  .section-hero[data-content-position="center"] .hero-overlay-layer {
+    align-items: center;
+  }
+  .section-hero[data-content-position="bottom"],
+  .section-hero[data-content-position="bottom"] .hero-overlay-layer {
+    align-items: flex-end;
+  }
+  .section-hero[data-content-position="top"] .hero-overlay-layer,
+  .section-hero[data-content-position="bottom"] .hero-overlay-layer,
+  .section-hero:not(.section-hero--dynamic)[data-content-position="top"],
+  .section-hero:not(.section-hero--dynamic)[data-content-position="bottom"] {
+    padding-block: 3rem;
+  }
+  .section-hero[data-content-position="center"] .hero-overlay-layer,
+  .section-hero:not(.section-hero--dynamic)[data-content-position="center"] {
+    padding-block: 0;
+  }
+}
+
+/* ── Buttons — variants + size scale (mobile + desktop) ─────────── */
+.section-hero .hero-btn {
+  /* Follows the global "Button Roundness" theme setting
+     (--button-radius, stamped on :root in layout.jinja). Fallback
+     keeps the previous pill shape if the variable is ever absent. */
+  border-radius: var(--button-radius, 9999px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  /* Substantial minimum width so CTAs read as prominent buttons.
+     Mobile: 200px; desktop bumps to 300px (see media query below).
+     max-width:100% keeps a single button from overflowing a narrow
+     container — the .hero-ctas row is `flex-wrap`, so two buttons just
+     stack when they can't fit side by side. */
+  min-width: 200px;
+  max-width: 100%;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, border-color 180ms ease;
+}
+@media (min-width: 768px) {
+  .section-hero .hero-btn { min-width: 300px; }
+}
+.section-hero .hero-btn:hover { transform: translateY(-1px); }
+
+/* Mobile sizes (< 768) */
+.section-hero .hero-ctas[data-button-size-mobile="sm"] .hero-btn {
+  height: 2.25rem; padding-inline: 1rem;    font-size: 0.8125rem;
+}
+.section-hero .hero-ctas[data-button-size-mobile="md"] .hero-btn {
+  height: 2.625rem; padding-inline: 1.125rem; font-size: 0.875rem;
+}
+.section-hero .hero-ctas[data-button-size-mobile="lg"] .hero-btn {
+  height: 3rem;    padding-inline: 1.375rem; font-size: 0.9375rem;
+}
+/* Desktop sizes (≥ 768) */
+@media (min-width: 768px) {
+  .section-hero .hero-ctas[data-button-size="sm"] .hero-btn {
+    height: 2.5rem; padding-inline: 1.125rem; font-size: 0.875rem;
+  }
+  .section-hero .hero-ctas[data-button-size="md"] .hero-btn {
+    height: 2.875rem; padding-inline: 1.375rem; font-size: 0.9375rem;
+  }
+  .section-hero .hero-ctas[data-button-size="lg"] .hero-btn {
+    height: 3.125rem; padding-inline: 1.625rem; font-size: 1rem;
+  }
+}
+
+/* Primary — Filled */
+.section-hero .hero-btn--filled {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+}
+.section-hero .hero-btn--filled:hover {
+  background: color-mix(in srgb, var(--primary) 92%, #000);
+}
+
+/* Primary — Outlined on-image */
+.section-hero .hero-btn--outlined {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  color: inherit;
+}
+.section-hero[data-text-color="light"] .hero-btn--outlined { color: #fff; }
+.section-hero[data-text-color="dark"]  .hero-btn--outlined { color: var(--foreground); }
+.section-hero .hero-btn--outlined:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* Primary — Ghost */
+.section-hero .hero-btn--ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+}
+.section-hero[data-text-color="light"] .hero-btn--ghost { color: #fff; }
+.section-hero[data-text-color="dark"]  .hero-btn--ghost { color: var(--foreground); }
+.section-hero .hero-btn--ghost:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/* Secondary — always outlined */
+.section-hero .hero-btn--secondary {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  color: inherit;
+  opacity: 0.92;
+}
+.section-hero[data-text-color="light"] .hero-btn--secondary { color: #fff; }
+.section-hero[data-text-color="dark"]  .hero-btn--secondary { color: var(--foreground); }
+.section-hero .hero-btn--secondary:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  opacity: 1;
+}
+
+.section-hero .hero-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-hero .hero-bg-img,
+  .section-hero .hero-btn,
+  .section-hero .hero-bg-video {
+    transition: none;
+  }
+  .section-hero:hover .hero-bg-img,
+  .section-hero .hero-btn:hover {
+    transform: none;
+  }
+}

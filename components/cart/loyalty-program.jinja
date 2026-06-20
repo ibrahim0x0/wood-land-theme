@@ -1,0 +1,185 @@
+{% set loyalty_enabled = store.settings.checkout.is_loyalty_enabled | default(false) %}
+
+{% if loyalty_enabled %}
+  <div
+    class="flex flex-col gap-2 pb-4"
+    data-loyalty-section
+  >
+    <h3 class="text-foreground text-xs tracking-wide uppercase">{{ _("Loyalty program") }}</h3>
+    <div
+      class="border-foreground flex items-center gap-2 rounded border p-4"
+      data-loyalty-earn-card
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="19"
+        height="18"
+        viewBox="0 0 19 18"
+        class="text-accent size-4 shrink-0"
+      >
+        <path
+          d="M5.27748 14.8017L9.11873 12.5055L12.96 14.8267L11.928 10.4782L15.3062 7.538L10.852 7.15L9.11873 3.04575L7.38548 7.131L2.93123 7.513L6.30948 10.4472L5.27748 14.8017ZM9.11873 14.4887L4.45673 17.3005C4.29956 17.3958 4.13598 17.4383 3.96598 17.428C3.79614 17.4177 3.64489 17.3648 3.51223 17.2695C3.37956 17.1743 3.28106 17.0511 3.21673 16.8997C3.15256 16.7486 3.13906 16.5777 3.17623 16.387L4.40723 11.075L0.295475 7.488C0.146142 7.3595 0.0549753 7.21442 0.0219753 7.05275C-0.0110247 6.89125 -0.006858 6.73383 0.0344753 6.5805C0.0718087 6.42717 0.157809 6.29775 0.292475 6.19225C0.426975 6.08658 0.589559 6.02542 0.780226 6.00875L6.21698 5.53375L8.32298 0.51575C8.39764 0.341917 8.51064 0.212499 8.66198 0.127499C8.81314 0.0424994 8.96539 0 9.11873 0C9.27206 0 9.42431 0.0424994 9.57548 0.127499C9.72681 0.212499 9.83981 0.341917 9.91448 0.51575L12.0205 5.53375L17.4632 6.00875C17.6499 6.02542 17.8105 6.08658 17.945 6.19225C18.0796 6.29775 18.1656 6.42717 18.203 6.5805C18.2443 6.73383 18.2485 6.89125 18.2155 7.05275C18.1825 7.21442 18.0913 7.3595 17.942 7.488L13.8302 11.075L15.0612 16.387C15.0984 16.5777 15.0849 16.7486 15.0207 16.8997C14.9564 17.0511 14.8579 17.1743 14.7252 17.2695C14.5926 17.3648 14.4413 17.4177 14.2715 17.428C14.1015 17.4383 13.9379 17.3958 13.7807 17.3005L9.11873 14.4887Z"
+          fill="currentColor"
+        ></path>
+      </svg>
+      <p class="text-foreground flex-1 text-sm">
+        {# Guest message - shown via JS when not authenticated #}
+        <span data-auth-guest>
+          <span data-loyalty-calculated-points>0</span>
+          {{ _("point can be earned by purchasing this product.") }}
+          <a
+            href="/auth/login?redirect_to=/cart"
+            class="underline"
+            data-action="login"
+            data-redirect="/cart"
+            data-add-to-url="false"
+            >{{ _("Log in") }}</a
+          >
+          {{ _("to collect and redeem points") }}
+        </span>
+        {# Authenticated message - shown via JS when authenticated #}
+        <span
+          data-auth-user
+          class="hidden"
+        >
+          <span data-loyalty-calculated-points>0</span>
+          {{ _("point can be earned by purchasing this product.") }}
+        </span>
+      </p>
+    </div>
+
+    {# Logged in: Redemption Section - shown via JS when authenticated #}
+    <div
+      class="hidden flex-col gap-2"
+      data-loyalty-redemption-section
+      data-auth-user
+    >
+      <p
+        class="text-foreground text-xs"
+        data-loyalty-balance-text
+      >
+        {{ _("You have") }} <span data-loyalty-customer-points>0</span> {{ _("points to redeem") }}
+      </p>
+      <div
+        class="{{ 'hidden' if cart.loyalty_applied_redemption_method }} flex items-center gap-2"
+        data-loyalty-redemption-form
+      >
+        <el-select
+          id="loyalty-redemption-select"
+          class="flex-1"
+          data-loyalty-redemption-select
+        >
+          <button
+            type="button"
+            class="border-input text-foreground hover:ring-input focus:border-foreground flex min-h-12 w-full items-center justify-between gap-2 rounded border px-3 py-2 text-start text-sm transition-[border-color] hover:ring-1 focus:border-2 focus:outline-none"
+          >
+            <el-selectedcontent class="flex-1">
+              <span class="text-muted-foreground">{{ _("Select redemption") }}</span>
+            </el-selectedcontent>
+            <svg
+              class="text-foreground shrink-0 transition-transform duration-200 group-aria-expanded:rotate-180"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M6 9L12 15L18 9"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </button>
+          <el-options
+            popover
+            anchor="bottom end"
+            class="bg-background border-border-light max-h-60 w-[var(--anchor-width)] origin-top overflow-y-auto rounded border py-2 shadow-lg transition transition-discrete [--anchor-gap:--spacing(1)] data-closed:scale-95 data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+            data-loyalty-options
+          >
+            {# Options will be populated by JS #}
+          </el-options>
+        </el-select>
+        <button
+          class="btn btn-filled btn-lg"
+          disabled
+          data-action="loyalty-apply"
+          data-loyalty-apply-btn
+        >
+          <span data-loyalty-apply-text>{{ _("Apply") }}</span>
+          <svg
+            class="hidden size-5 animate-spin"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            data-loyalty-apply-spinner
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="{{ 'hidden' if not cart.loyalty_applied_redemption_method }} flex flex-col gap-2"
+        data-loyalty-applied-section
+      >
+        <p
+          class="text-foreground text-xs"
+          data-loyalty-applied-message
+        >
+          {% if cart.loyalty_applied_redemption_method %}
+            {{ _("Loyalty points has been applied! You have now") }}
+            <span data-loyalty-remaining-points>0</span>
+            {{ _("points.") }}
+          {% endif %}
+        </p>
+        <div
+          class="border-border inline-flex w-fit items-center gap-1 rounded border px-2 py-1"
+          data-loyalty-applied-tag
+        >
+          <span
+            class="text-foreground text-xs tracking-wide uppercase"
+            data-loyalty-applied-points
+          >
+            {% if cart.loyalty_applied_redemption_method %}
+              {{ cart.loyalty_applied_redemption_method.points_to_redeem }}
+              {{ _("points") }}
+            {% endif %}
+          </span>
+          <button
+            type="button"
+            class="text-foreground hover:text-destructive transition-colors"
+            data-action="loyalty-remove"
+            aria-label="{{ _('Remove') }}"
+            data-loyalty-remove-btn
+          >
+            <svg
+              class="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              data-loyalty-remove-icon
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+            <svg
+              class="hidden size-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              data-loyalty-remove-spinner
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}

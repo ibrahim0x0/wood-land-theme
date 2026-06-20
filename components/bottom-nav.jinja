@@ -1,0 +1,213 @@
+{# ───────────────────────────────────────────────────────────────────
+   Mobile bottom navigation bar.
+
+   Renders a fixed-position nav at the bottom of the viewport on mobile
+   (<lg) only. Contains five items: Home, Categories, Search, Account,
+   Cart. Each item shows an icon + Arabic label.
+
+   The Account button toggles between "Login" (when not authenticated)
+   and "Profile" (when authenticated) by reading the same auth-state
+   pattern the header uses (see header.jinja:160-173). For server
+   rendering we default to login; client-side JS in features/layout.js
+   may swap them.
+
+   The Cart button opens the cart drawer when `cart_drawer` is true,
+   otherwise links to the cart page — same as the header cart icon.
+
+   Visibility: ALL widths < 1024px. The mobile-only behaviour is
+   enforced via an explicit `@media (min-width: 1024px) { display: none }`
+   inside the inline <style> block below — NOT via Tailwind's
+   `lg:hidden` utility, which can be lost to class-purging when the
+   class only appears inside a Jinja partial.
+
+   Safe-area: padding-bottom uses env(safe-area-inset-bottom) so iOS
+   home-indicator doesn't overlap the buttons.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set _cart_drawer = settings.cart_drawer | default(true) %}
+
+<nav class="bottom-nav" aria-label="{{ _('Mobile navigation') }}">
+  {# Home #}
+  <a href="{{ url_for('home') }}" class="bottom-nav__item" aria-label="{{ _('Home') }}">
+    <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15.0002 17C14.2007 17.6224 13.1504 18 12.0002 18C10.8499 18 9.79971 17.6224 9.00018 17"/>
+      <path d="M2.35157 13.2135C1.99855 10.9162 1.82204 9.76763 2.25635 8.74938C2.69065 7.73112 3.65421 7.03443 5.58132 5.64106L7.02117 4.6C9.41847 2.86667 10.6171 2 12.0002 2C13.3832 2 14.5819 2.86667 16.9792 4.6L18.419 5.64106C20.3462 7.03443 21.3097 7.73112 21.744 8.74938C22.1783 9.76763 22.0018 10.9162 21.6488 13.2135L21.3478 15.1724C20.8473 18.4289 20.5971 20.0572 19.4292 21.0286C18.2613 22 16.5538 22 13.139 22H10.8614C7.44652 22 5.73909 22 4.57118 21.0286C3.40327 20.0572 3.15305 18.4289 2.65261 15.1724L2.35157 13.2135Z"/>
+    </svg>
+    <span class="bottom-nav__label">{{ _("Home") }}</span>
+  </a>
+
+  {# Categories #}
+  <a href="{{ url_for('list_categories') }}" class="bottom-nav__item" aria-label="{{ _('Categories') }}">
+    <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <path d="M2 18C2 16.4596 2 15.6893 2.34673 15.1235C2.54074 14.8069 2.80693 14.5407 3.12353 14.3467C3.68934 14 4.45956 14 6 14C7.54044 14 8.31066 14 8.87647 14.3467C9.19307 14.5407 9.45926 14.8069 9.65327 15.1235C10 15.6893 10 16.4596 10 18C10 19.5404 10 20.3107 9.65327 20.8765C9.45926 21.1931 9.19307 21.4593 8.87647 21.6533C8.31066 22 7.54044 22 6 22C4.45956 22 3.68934 22 3.12353 21.6533C2.80693 21.4593 2.54074 21.1931 2.34673 20.8765C2 20.3107 2 19.5404 2 18Z"/>
+      <path d="M14 18C14 16.4596 14 15.6893 14.3467 15.1235C14.5407 14.8069 14.8069 14.5407 15.1235 14.3467C15.6893 14 16.4596 14 18 14C19.5404 14 20.3107 14 20.8765 14.3467C21.1931 14.5407 21.4593 14.8069 21.6533 15.1235C22 15.6893 22 16.4596 22 18C22 19.5404 22 20.3107 21.6533 20.8765C21.4593 21.1931 21.1931 21.4593 20.8765 21.6533C20.3107 22 19.5404 22 18 22C16.4596 22 15.6893 22 15.1235 21.6533C14.8069 21.4593 14.5407 21.1931 14.3467 20.8765C14 20.3107 14 19.5404 14 18Z"/>
+      <path d="M2 6C2 4.45956 2 3.68934 2.34673 3.12353C2.54074 2.80693 2.80693 2.54074 3.12353 2.34673C3.68934 2 4.45956 2 6 2C7.54044 2 8.31066 2 8.87647 2.34673C9.19307 2.54074 9.45926 2.80693 9.65327 3.12353C10 3.68934 10 4.45956 10 6C10 7.54044 10 8.31066 9.65327 8.87647C9.45926 9.19307 9.19307 9.45926 8.87647 9.65327C8.31066 10 7.54044 10 6 10C4.45956 10 3.68934 10 3.12353 9.65327C2.80693 9.45926 2.54074 9.19307 2.34673 8.87647C2 8.31066 2 7.54044 2 6Z"/>
+      <path d="M14 6C14 4.45956 14 3.68934 14.3467 3.12353C14.5407 2.80693 14.8069 2.54074 15.1235 2.34673C15.6893 2 16.4596 2 18 2C19.5404 2 20.3107 2 20.8765 2.34673C21.1931 2.54074 21.4593 2.80693 21.6533 3.12353C22 3.68934 22 4.45956 22 6C22 7.54044 22 8.31066 21.6533 8.87647C21.4593 9.19307 21.1931 9.45926 20.8765 9.65327C20.3107 10 19.5404 10 18 10C16.4596 10 15.6893 10 15.1235 9.65327C14.8069 9.45926 14.5407 9.19307 14.3467 8.87647C14 8.31066 14 7.54044 14 6Z"/>
+    </svg>
+    <span class="bottom-nav__label">{{ _("Categories") }}</span>
+  </a>
+
+  {# Search — opens the same dialog the header uses #}
+  <button type="button" command="show-modal" commandfor="search-dialog" class="bottom-nav__item" aria-label="{{ _('Search') }}">
+    <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z"/>
+      <path d="M17.502 17.5001L13.877 13.8751"/>
+    </svg>
+    <span class="bottom-nav__label">{{ _("Search") }}</span>
+  </button>
+
+  {# Account — Login button (default) + Profile button (hidden) follow
+     the same auth-swap pattern as header.jinja:160-173. The theme's
+     auth detection JS toggles their visibility. #}
+  <button type="button" id="bottom-nav-login-btn" onclick="typeof handleLoginAction==='function'&&handleLoginAction()" class="bottom-nav__item" aria-label="{{ _('Login') }}">
+    <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M16.6693 17.5V15.8333C16.6693 14.9493 16.3181 14.1014 15.693 13.4763C15.0678 12.8512 14.22 12.5 13.3359 12.5H6.66927C5.78522 12.5 4.93737 12.8512 4.31225 13.4763C3.68713 14.1014 3.33594 14.9493 3.33594 15.8333V17.5"/>
+      <path d="M9.9974 9.16667C11.8383 9.16667 13.3307 7.67428 13.3307 5.83333C13.3307 3.99238 11.8383 2.5 9.9974 2.5C8.15645 2.5 6.66406 3.99238 6.66406 5.83333C6.66406 7.67428 8.15645 9.16667 9.9974 9.16667Z"/>
+    </svg>
+    <span class="bottom-nav__label">{{ _("Account") }}</span>
+  </button>
+  <a id="bottom-nav-profile-btn" href="{{ url_for('profile') }}" class="bottom-nav__item" style="display: none;" aria-label="{{ _('Profile') }}">
+    <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="5"/>
+      <path d="M20 21a8 8 0 0 0-16 0"/>
+    </svg>
+    <span class="bottom-nav__label">{{ _("Profile") }}</span>
+  </a>
+
+  {# Cart with badge — same opener as header (drawer when enabled,
+     page link otherwise). Badge is hidden when count = 0; the cart
+     JS updates it by setting `data-cart-badge` and removing `hidden`. #}
+  {% if _cart_drawer %}
+    <button type="button" command="show-modal" commandfor="cart-drawer-dialog" class="bottom-nav__item bottom-nav__item--cart" aria-label="{{ _('Cart') }}">
+  {% else %}
+    <a href="{{ url_for('cart_page') }}" class="bottom-nav__item bottom-nav__item--cart" aria-label="{{ _('Cart') }}">
+  {% endif %}
+      <span class="bottom-nav__icon-wrap">
+        <svg class="bottom-nav__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936ZM6.1853 7.75C6.1853 7.92259 6.04539 8.0625 5.8728 8.0625C5.70021 8.0625 5.5603 7.92259 5.5603 7.75C5.5603 7.57741 5.70021 7.4375 5.8728 7.4375C6.04539 7.4375 6.1853 7.57741 6.1853 7.75ZM12.4353 7.75C12.4353 7.92259 12.2954 8.0625 12.1228 8.0625C11.9502 8.0625 11.8103 7.92259 11.8103 7.75C11.8103 7.57741 11.9502 7.4375 12.1228 7.4375C12.2954 7.4375 12.4353 7.57741 12.4353 7.75Z"/>
+        </svg>
+        <span data-cart-badge hidden class="bottom-nav__badge">0</span>
+      </span>
+      <span class="bottom-nav__label">{{ _("Cart") }}</span>
+  {% if _cart_drawer %}
+    </button>
+  {% else %}
+    </a>
+  {% endif %}
+</nav>
+
+<style>
+  /* ===========================================================
+     BOTTOM NAV — fixed mobile-only navigation strip.
+     ----------------------------------------------------------
+     Visibility: shown ONLY on viewports < 1024px. Hiding is done
+     here via an explicit media query (NOT via Tailwind's
+     `lg:hidden`) because Tailwind's class purger may not pick up
+     classes inside inline `<style>` blocks. This guarantees the
+     bar disappears on desktop regardless of build config.
+
+     Layout: flex row of 5 items, equal width via flex: 1.
+     Each item is icon + label stacked vertically.
+
+     Safe-area: padding-block-end uses env(safe-area-inset-bottom)
+     so the home-indicator on iOS doesn't overlap the items.
+
+     Z-index: above page content (40), below modal/dialog (50+).
+     =========================================================== */
+  .bottom-nav {
+    position: fixed;
+    inset-block-end: 0;
+    inset-inline: 0;
+    z-index: 40;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    background: var(--background);
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    box-shadow: 0 -2px 8px -4px color-mix(in srgb, var(--foreground) 16%, transparent);
+    padding-block-end: env(safe-area-inset-bottom, 0);
+  }
+  /* Hide on tablet/desktop. Tailwind's lg breakpoint is 1024px; we
+     match it here so the bar disappears at the same point the
+     existing header icons become roomy enough on their own. */
+  @media (min-width: 1024px) {
+    .bottom-nav {
+      display: none;
+    }
+  }
+
+  .bottom-nav__item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    color: var(--foreground);
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: color 180ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav__item:hover,
+  .bottom-nav__item:active {
+    color: var(--primary);
+  }
+
+  .bottom-nav__icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .bottom-nav__label {
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Cart badge — small red pill on the icon corner. The wrap span
+     sets up positioning context so the badge anchors to the icon. */
+  .bottom-nav__icon-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+  .bottom-nav__badge {
+    position: absolute;
+    inset-block-start: -4px;
+    inset-inline-end: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 9999px;
+    background: var(--destructive, #dc2626);
+    color: var(--destructive-foreground, #ffffff);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bottom-nav__badge[hidden] { display: none; }
+
+  /* Body padding so page content (especially the footer's bottom
+     yellow accent) doesn't get hidden behind the fixed nav. Only
+     applied when the nav is actually rendered on the page — using
+     `:has()` so we don't add padding on devices without the nav.
+     Mirrors the nav's `display: none` breakpoint (1024px+). */
+  @media (max-width: 1023.98px) {
+    body:has(.bottom-nav) {
+      padding-block-end: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+</style>

@@ -1,0 +1,122 @@
+{
+  "template": "sections/custom-html.jinja",
+  "name": {
+    "ar": "HTML مخصص",
+    "en": "Custom HTML"
+  },
+  "settings": [
+    {
+      "id": "html_content",
+      "type": "textarea",
+      "label": {
+        "ar": "كود HTML — ألصق HTML (script و iframe يعملان، Jinja لا يُعالج، Tailwind متاح)",
+        "en": "HTML code — paste raw HTML (script + iframe execute, Jinja not evaluated, Tailwind available)"
+      },
+      "default": "<!-- ─── Custom HTML ───\n\n  HOW TO USE:\n   • Paste your own HTML below (replace this comment).\n   • Tailwind utilities work, plus these theme classes:\n        theme-container   max-width wrapper\n        btn btn-filled    primary button\n        btn btn-outline   secondary button\n        text-foreground   main text color\n        text-muted        muted/secondary text color\n        bg-secondary      muted background\n   • Script and iframe tags will execute on the live page.\n   • Jinja syntax (double-brace variables) is NOT evaluated — plain HTML only.\n\n  EXAMPLES — uncomment one and edit:\n\n   ── Promo banner with CTA ──\n   <div class=\"theme-container px-4 md:px-16 text-center py-12\">\n     <h2 class=\"text-2xl md:text-4xl font-bold mb-4\">Your headline</h2>\n     <p class=\"text-muted mb-6\">Short supporting text.</p>\n     <a href=\"/products\" class=\"btn btn-filled btn-lg\">Shop now</a>\n   </div>\n\n   ── Two-column image + text ──\n   <div class=\"theme-container px-4 md:px-16 grid md:grid-cols-2 gap-8 items-center py-12\">\n     <img src=\"https://example.com/image.jpg\" alt=\"\" class=\"w-full rounded\" />\n     <div>\n       <h2 class=\"text-2xl font-bold mb-4\">Heading</h2>\n       <p class=\"text-muted\">Description text here.</p>\n     </div>\n   </div>\n\n   ── YouTube embed ──\n   <div class=\"theme-container px-4 md:px-16\">\n     <div class=\"aspect-video\">\n       <iframe class=\"w-full h-full\" src=\"https://www.youtube.com/embed/VIDEO_ID\" allowfullscreen loading=\"lazy\"></iframe>\n     </div>\n   </div>\n\n   ── Tracking pixel / script ──\n   <script>\n     // Your analytics code here\n   </script>\n\n─── -->"
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "الخلفية",
+        "en": "Background"
+      },
+      "options": [
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي",
+            "en": "Secondary"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "background"
+    },
+    {
+      "id": "padding_top",
+      "type": "range",
+      "label": {
+        "ar": "المسافة العلوية (سطح المكتب)",
+        "en": "Top padding (desktop)"
+      },
+      "info": {
+        "ar": "على الموبايل: 75% من القيمة المُختارة هنا.",
+        "en": "On mobile: 75% of this value is applied automatically."
+      },
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "id": "padding_bottom",
+      "type": "range",
+      "label": {
+        "ar": "المسافة السفلية (سطح المكتب)",
+        "en": "Bottom padding (desktop)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 52
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

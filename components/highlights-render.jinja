@@ -1,0 +1,106 @@
+{# ───────────────────────────────────────────────────────────────────
+   Highlights render partial — shared between the header instance
+   (components/header-highlights.jinja) and the standalone page
+   section (sections/highlights.jinja).
+
+   Expects in scope:
+     • `hl`         — dict of resolved settings:
+                        points          — list of { image, title, description }
+                        container_style — 'unified' | 'cards' | 'bare'
+                        item_radius     — px (number)
+                        background      — 'secondary' | 'background' | 'transparent'
+                        show_on_mobile  — bool (defaults true)
+                        show_on_desktop — bool (defaults true)
+                        is_lazy         — bool, drop loading="lazy" on icons
+     • `instance_id`— string identifying this instance (used for the
+                      wrapping element's `id` and inner `data-instance`).
+                      Pass `sectionId` for the section, 'header' for
+                      the header copy.
+
+   The inline <style> uses universal selectors (`.section-highlights`)
+   so duplicate <style> blocks across multiple instances stay
+   idempotent — but the per-instance radius is scoped to the instance
+   element via inline `style="--highlights-radius: …"`.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set _points     = hl.points or [] %}
+{% set _count      = _points | length %}
+{% set _style      = hl.container_style or 'unified' %}
+{% set _bg_token   = hl.background or 'secondary' %}
+{% set _radius_px  = hl.item_radius if hl.item_radius is not none else 12 %}
+{% set _is_lazy    = hl.is_lazy %}
+{% set _variant    = hl.variant or 'section' %}
+
+{# Default inline icons — used when an item has no uploaded image.
+   Cycled by position so a typical 3-point trust strip reads as
+   quality → support → fast-delivery out of the box. Stroked with
+   currentColor so they inherit the strip's text color. #}
+{% set _default_icons = [
+  'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+  'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z',
+  'M13 10V3L4 14h7v7l9-11h-7z'
+] %}
+
+{% set _bg_class_map = {
+  'background': 'bg-background',
+  'secondary':  'bg-secondary',
+  'transparent':''
+} %}
+{% set _bg_class = _bg_class_map[_bg_token] | default('bg-secondary') %}
+
+{# Mobile / desktop visibility — drive via classes the shared CSS
+   below understands, so the section markup itself doesn't disappear
+   in the DOM (script-driven UIs may want to find it). #}
+{% set _vis_classes = '' %}
+{% if hl.show_on_mobile is sameas false %}{% set _vis_classes = _vis_classes ~ ' is-hidden-mobile' %}{% endif %}
+{% if hl.show_on_desktop is sameas false %}{% set _vis_classes = _vis_classes ~ ' is-hidden-desktop' %}{% endif %}
+
+{% if _count > 0 %}
+  <section
+    {% if instance_id %}section-id="{{ instance_id }}"{% endif %}
+    class="section-highlights {{ _bg_class }}{{ _vis_classes }}"
+    data-item-count="{{ _count }}"
+    data-style="{{ _style }}"
+    data-variant="{{ _variant }}"
+    data-instance="{{ instance_id or 'highlights' }}"
+    style="--highlights-radius: {{ _radius_px }}px;"
+  >
+    {# Header variant uses a custom 1500px-capped container; the
+       section variant uses the theme-wide 1440px theme-container. #}
+    <div class="{{ 'highlights-header-container' if _variant == 'header' else 'theme-container' }}">
+      <div class="highlights-grid highlights-grid--{{ _style }}">
+        {% for item in _points %}
+          <div class="highlights-item">
+            {% if item.image %}
+              <img
+                src="{{ image_url(item.image, w=96, q=90, f='auto') }}"
+                alt=""
+                aria-hidden="true"
+                class="highlights-icon"
+                {% if _is_lazy %}loading="lazy"{% endif %}
+                decoding="async"
+              />
+            {% else %}
+              <svg class="highlights-icon highlights-icon--default" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ _default_icons[loop.index0 % (_default_icons | length)] }}"/>
+              </svg>
+            {% endif %}
+            <div class="highlights-text">
+              {% if item.title and item.title | trim %}
+                <h3 class="highlights-title">{{ item.title }}</h3>
+              {% endif %}
+              {% if item.description and item.description | trim %}
+                <p class="highlights-description">{{ item.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# Static rules live in `assets/css/highlights.css` (imported via
+     tailwindcss.css), so per-instance markup ships zero extra CSS.
+     Per-instance variation (the `--highlights-radius` value) is set
+     inline on the section element above via `style="--highlights-radius:..."`. #}
+{% endif %}

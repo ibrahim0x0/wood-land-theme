@@ -1,0 +1,269 @@
+{# Premium global toast notification system #}
+{% set is_ar = session.lang == 'ar' %}
+{% set t_position     = settings.cart_toast_position or 'top-start' %}
+{% set t_duration     = settings.cart_toast_duration or 3000 %}
+{% set t_bg_add       = settings.cart_toast_bg_add or '#16A34A' %}
+{% set t_bg_update    = settings.cart_toast_bg_update or '#0F172A' %}
+{% set t_bg_remove    = settings.cart_toast_bg_remove or '#B45309' %}
+{% set t_text_color   = settings.cart_toast_text_color or '#FFFFFF' %}
+{% set t_progress     = settings.cart_toast_show_progress | default(true) %}
+
+<div
+  id="toast-container"
+  popover="manual"
+  dir="{{ 'rtl' if is_ar else 'ltr' }}"
+  lang="{{ 'ar' if is_ar else 'en' }}"
+  data-position="{{ t_position }}"
+  data-duration="{{ t_duration }}"
+  data-show-progress="{{ 'true' if t_progress else 'false' }}"
+  data-msg-add="{{ 'تمت إضافة المنتج إلى السلة' if is_ar else 'Added to cart' }}"
+  data-msg-update="{{ 'تم تحديث الكمية' if is_ar else 'Quantity updated' }}"
+  data-msg-remove="{{ 'تمت إزالة المنتج من السلة' if is_ar else 'Removed from cart' }}"
+></div>
+
+<style>
+  #toast-container {
+    --toast-add: {{ t_bg_add }};
+    --toast-update: {{ t_bg_update }};
+    --toast-remove: {{ t_bg_remove }};
+    --toast-text: {{ t_text_color }};
+  }
+  /* Popover defaults — strip them and let our positioning take over */
+  #toast-container,
+  #toast-container:popover-open {
+    position: fixed;
+    inset: auto;
+    background: transparent;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    pointer-events: none;
+    max-width: min(420px, calc(100vw - 2rem));
+    /* The toast is a `popover="manual"` so it sits in the browser's
+       top layer. The cart drawer (<dialog> + showModal) also goes to
+       the top layer, and whichever entered last wins by default —
+       which makes the drawer cover toasts triggered from a quick-view
+       add-to-cart. Bumping z-index forces the toast above any
+       same-tier overlay. */
+    z-index: 2147483647;
+  }
+
+  /* Position presets (logical properties so RTL is automatic) */
+  /* top-start is pinned flush to the physical top-left corner (no offset). */
+  #toast-container[data-position="top-start"]     { top: 0; left: 0; }
+  #toast-container[data-position="top-end"]       { top: 1.25rem; inset-inline-end: 1.25rem;   align-items: flex-end; }
+  #toast-container[data-position="top-center"]    { top: 1.25rem; left: 50%; transform: translateX(-50%); align-items: center; }
+  #toast-container[data-position="bottom-start"]  { bottom: 1.25rem; inset-inline-start: 1.25rem; }
+  #toast-container[data-position="bottom-end"]    { bottom: 1.25rem; inset-inline-end: 1.25rem;   align-items: flex-end; }
+  #toast-container[data-position="bottom-center"] { bottom: 1.25rem; left: 50%; transform: translateX(-50%); align-items: center; }
+
+  /* Slide-in direction depends on whether toast appears at top or bottom */
+  #toast-container[data-position^="top"]    .toast { transform: translateY(-16px) scale(0.96); }
+  #toast-container[data-position^="bottom"] .toast { transform: translateY(16px)  scale(0.96); }
+
+  .toast {
+    pointer-events: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 260px;
+    max-width: 100%;
+    padding: 0.875rem 1rem 0.875rem 0.875rem;
+    border-radius: 0.875rem;
+    background: var(--toast-bg, var(--toast-update));
+    color: var(--toast-text);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 12px 32px -8px rgba(0, 0, 0, 0.28),
+      0 4px 12px -4px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    overflow: hidden;
+    opacity: 0;
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+  }
+  .toast.is-visible {
+    transform: translateY(0) scale(1) !important;
+    opacity: 1;
+  }
+  .toast.is-leaving {
+    opacity: 0;
+    transform: scale(0.96) !important;
+  }
+
+  /* Variant tints */
+  .toast--add    { --toast-bg: var(--toast-add); }
+  .toast--update { --toast-bg: var(--toast-update); }
+  .toast--remove { --toast-bg: var(--toast-remove); }
+
+  /* Icon bubble */
+  .toast__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+  .toast__icon svg { width: 18px; height: 18px; }
+
+  /* Body */
+  .toast__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .toast__title { font-weight: 600; }
+  .toast__sub   { font-size: 0.6875rem; opacity: 0.85; }
+
+  /* Close button */
+  .toast__close {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 150ms ease, background 150ms ease;
+  }
+  .toast__close:hover { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+
+  /* Progress bar (countdown to dismiss) */
+  .toast__progress {
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    width: 100%;
+    transform-origin: inset-inline-start;
+    animation: toast-countdown var(--toast-duration, 3000ms) linear forwards;
+  }
+  @keyframes toast-countdown {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+  .toast:hover .toast__progress { animation-play-state: paused; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast { transition: opacity 100ms ease; transform: none !important; }
+    .toast__progress { animation: none; }
+  }
+</style>
+
+<script type="module">
+  {
+    const container = document.getElementById('toast-container');
+    if (container) {
+      const messages = {
+        add:    container.dataset.msgAdd,
+        update: container.dataset.msgUpdate,
+        remove: container.dataset.msgRemove,
+      };
+      const duration     = Number(container.dataset.duration) || 3000;
+      const showProgress = container.dataset.showProgress === 'true';
+
+      const icons = {
+        add:    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+        update: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>',
+        remove: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+      };
+      const closeIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+      const ensureOpen = () => {
+        try {
+          // Always hide+show, not just show-if-closed. `showPopover()`
+          // on an already-open popover is a no-op, but we *need* it to
+          // re-enter the top layer so the toast renders above any
+          // dialog (e.g. the cart drawer opened via showModal) that
+          // entered the top layer AFTER the toast first appeared. Both
+          // calls happen in the same JS task — no paint in between, no
+          // flicker on existing toasts attached to the container.
+          if (container.matches(':popover-open')) container.hidePopover();
+          container.showPopover();
+        } catch {}
+      };
+
+      const dismiss = (el) => {
+        if (el.dataset.leaving) return;
+        el.dataset.leaving = '1';
+        el.classList.add('is-leaving');
+        el.classList.remove('is-visible');
+        setTimeout(() => el.remove(), 320);
+      };
+
+      const show = ({ title, sub = '', variant = 'update', iconHtml = '' }) => {
+        ensureOpen();
+        const el = document.createElement('div');
+        el.className = `toast toast--${variant}`;
+        el.setAttribute('role', 'status');
+        el.style.setProperty('--toast-duration', `${duration}ms`);
+        el.innerHTML = `
+          <span class="toast__icon">${iconHtml}</span>
+          <div class="toast__body">
+            <span class="toast__title">${title}</span>
+            ${sub ? `<span class="toast__sub">${sub}</span>` : ''}
+          </div>
+          <button type="button" class="toast__close" aria-label="Dismiss">${closeIcon}</button>
+          ${showProgress ? '<span class="toast__progress" aria-hidden="true"></span>' : ''}
+        `;
+
+        container.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('is-visible'));
+
+        el.querySelector('.toast__close')?.addEventListener('click', () => dismiss(el));
+
+        const timer = setTimeout(() => dismiss(el), duration);
+        el.addEventListener('mouseenter', () => clearTimeout(timer), { once: true });
+      };
+
+      // Public API
+      window.showToast = (msgOrOpts, variant = 'update') => {
+        if (typeof msgOrOpts === 'string') {
+          show({ title: msgOrOpts, variant, iconHtml: icons[variant] ?? '' });
+        } else {
+          show({ ...msgOrOpts, iconHtml: msgOrOpts.iconHtml ?? icons[msgOrOpts.variant] ?? '' });
+        }
+      };
+
+      window.addEventListener('cart:updated', (e) => {
+        if (e.detail?.silent) return;
+        const action = e.detail?.action;
+        if (!action || !messages[action]) return;
+        show({ title: messages[action], variant: action, iconHtml: icons[action] });
+
+      });
+
+      // When the cart drawer (a <dialog> opened via showModal) enters
+      // the top layer, it stacks above the already-open toast popover.
+      // Watch for the `open` attribute on the drawer and re-stack the
+      // toast on top whenever the drawer opens.
+      const cartDrawer = document.getElementById('cart-drawer-dialog');
+      if (cartDrawer) {
+        new MutationObserver(() => {
+          if (cartDrawer.hasAttribute('open') && container.matches(':popover-open')) {
+            try {
+              container.hidePopover();
+              container.showPopover();
+            } catch {}
+          }
+        }).observe(cartDrawer, { attributes: true, attributeFilter: ['open'] });
+      }
+    }
+  }
+</script>

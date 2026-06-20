@@ -1,0 +1,548 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Logo Strip — two-row scrolling strip of logos in card chrome.
+
+   Use cases (the section is content-agnostic):
+     • Payment methods — top: global (VISA/Mastercard/Apple Pay) /
+       bottom: local (Mada/Tamara/Tabby/STC Pay)
+     • Featured brands — top: premium tier / bottom: standard tier
+     • Press / awards — top: "As seen in..." / bottom: certifications
+     • Trust badges — top: payment trust / bottom: site security
+
+   Pattern: two horizontal rows, each continuously scrolling in
+   OPPOSITE directions (top forward, bottom backward). Creates the
+   visual signature used by Stripe / Vercel / modern SaaS — but the
+   value here is conversion-focused: showing recognized brands
+   measurably reduces customer hesitation.
+
+   Implementation: two Embla AutoScroll instances, one per row.
+   Wiring lives in `assets/js/lib/carousel.js` and is picked up by
+   `main.js` via `data-carousel-autoscroll-direction`.
+
+   Each row repeats its entries N times so the total slide width
+   exceeds the viewport (Embla's loop mode requires overflow). Same
+   repeat-count strategy as the Marquee section.
+
+   Key refinements vs. a basic single-row marquee:
+     • Two SEPARATE row lists in the schema so merchants split
+       content meaningfully (rather than rendering the same logos
+       twice — the visual richness is fake otherwise).
+     • Per-item label field for accessible alt text.
+     • Per-item URL for deep-linking to explainer / brand pages.
+     • Three card-chrome variants (card / bordered / none) so the
+       section integrates with whichever background the merchant picks.
+     • Pause-on-hover so customers can read or click through.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{# ── URL safety helper — same pattern as marquee. Allowlist trusted
+   schemes; downgrade unsafe URLs to no-link rather than exposing
+   merchant-side XSS via `javascript:` etc. #}
+{% macro safe_url(raw) %}
+{%- set u = (raw | trim) if raw else '' -%}
+{%- if u and (
+       u.startswith('/')
+    or u.startswith('#')
+    or u.startswith('http://')
+    or u.startswith('https://')
+    or u.startswith('mailto:')
+    or u.startswith('tel:')
+) -%}
+{{- u -}}
+{%- endif -%}
+{% endmacro %}
+
+{# ── Logo item ──
+   `is_duplicate=true` → render as <div> (not <a>), aria-hidden,
+   force lazy-loading. The first copy carries the meaningful link
+   and label; subsequent copies exist only to give Embla enough
+   content to overflow the viewport.
+
+   `img_w_2x` is the retina-doubled card width passed in by the
+   caller — sizes the fetched image proportional to the actual
+   rendered card size rather than a fixed 240px. Saves bandwidth
+   on small cards, sharpens on large cards. #}
+{% macro logo_item(item, is_lazy, is_duplicate, img_w_2x) %}
+  {% if item.image %}
+    {% set _safe = safe_url(item.url) | trim %}
+    {% set _label = (item.label | trim) if item.label else '' %}
+    {% if _safe and not is_duplicate %}
+      <a class="logo-item" href="{{ _safe }}" rel="noopener"
+         {% if _label %}aria-label="{{ _label }}"{% endif %}>
+    {% else %}
+      <div class="logo-item{% if is_duplicate %} logo-item--clone{% endif %}"
+           {% if is_duplicate %}aria-hidden="true"{% endif %}>
+    {% endif %}
+      <img
+        src="{{ image_url(item.image, w=img_w_2x, q=90, f='auto') }}"
+        alt="{% if not is_duplicate %}{{ _label }}{% endif %}"
+        class="logo-item__img"
+        {% if is_lazy or is_duplicate %}loading="lazy"{% endif %}
+        decoding="async"
+      />
+    {% if _safe and not is_duplicate %}</a>{% else %}</div>{% endif %}
+  {% endif %}
+{% endmacro %}
+
+{# ── Resolve settings ── #}
+{% set top    = settings.top_row %}
+{% set bottom = settings.bottom_row %}
+{% set top_count    = top    | length if top    else 0 %}
+{% set bottom_count = bottom | length if bottom else 0 %}
+
+{% set is_rtl       = session.locale.language.direction == 'rtl' %}
+{% set speed        = settings.speed         if settings.speed is not none else 0.6 %}
+{% set pause_hover  = settings.pause_on_hover if settings.pause_on_hover is not none else true %}
+{% set edge_fade    = settings.edge_fade     if settings.edge_fade is not none else true %}
+{% set card_style   = settings.card_style    | default('card', true) %}
+{% set card_radius  = settings.card_radius   if settings.card_radius is not none else 12 %}
+{% set img_h        = settings.image_height  if settings.image_height is not none else 32 %}
+{% set card_w       = settings.card_width    if settings.card_width is not none else 120 %}
+{% set gap_px       = settings.gap           if settings.gap is not none else 16 %}
+{% set bg           = settings.background    | default('background', true) %}
+{% set padding_y    = settings.padding_y     if settings.padding_y is not none else 32 %}
+{% set margin_y     = settings.margin_y      if settings.margin_y  is not none else 0 %}
+{% set border_top   = settings.border_top    | default(false) %}
+{% set border_bot   = settings.border_bottom | default(false) %}
+{% set is_lazy      = settings.order > 2 %}
+
+{# ── Repeat count for viewport overflow ──
+   Same logic as marquee: Embla's loop mode requires total slide
+   width > viewport. The thresholds below target ≥16 rendered
+   slides total — at the default 120px card width that's 1920px,
+   covering even ultra-wide desktop monitors with safety margin.
+
+   Why 16 not 12: the previous threshold (12 minimum) only covered
+   ~1440px width, which falls short on 1920px+ displays. With the
+   bumped thresholds, even a single-logo merchant gets a strip
+   that overflows on every reasonable viewport. #}
+{% macro repeat_for(count) %}
+{%- if count == 1 -%}16
+{%- elif count == 2 -%}8
+{%- elif count == 3 -%}6
+{%- elif count < 6 -%}4
+{%- elif count < 8 -%}3
+{%- elif count < 16 -%}2
+{%- else -%}1
+{%- endif -%}
+{% endmacro %}
+
+{% set top_repeat    = repeat_for(top_count)    | int %}
+{% set bottom_repeat = repeat_for(bottom_count) | int %}
+
+{# Retina-doubled card width for the image-fetch query. Floats
+   are coerced to int so `image_url(w=…)` gets a clean integer
+   pixel count. Min-clamped at 120px so the fetch is never so
+   small that the logo blurs even on a tiny card. #}
+{% set _img_w_2x = (card_w * 2) | int %}
+{% if _img_w_2x < 120 %}{% set _img_w_2x = 120 %}{% endif %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-logo-strip{% if top_count == 0 and bottom_count == 0 %} section-logo-strip--empty{% endif %} px-4 md:px-16"
+  data-bg="{{ bg }}"
+  data-card-style="{{ card_style }}"
+  data-edge-fade="{{ 'true' if edge_fade else 'false' }}"
+  data-border-top="{{ 'true' if border_top else 'false' }}"
+  data-border-bottom="{{ 'true' if border_bot else 'false' }}"
+  style="
+    --logo-padding-y: {{ padding_y }}px;
+    --logo-margin-y: {{ margin_y }}px;
+    --logo-card-radius: {{ card_radius }}px;
+    --logo-img-h: {{ img_h }}px;
+    --logo-card-w: {{ card_w }}px;
+    --logo-gap: {{ gap_px }}px;
+  "
+>
+  <div class="theme-container">
+    {% if (settings.title and settings.title | trim) or settings.subtitle or settings.eyebrow %}
+      {# Heading via the shared partial — eyebrow / subtitle colors
+         inherit from the theme-wide Section Headings settings, just
+         like every other section. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      {% with
+        eyebrow=settings.eyebrow,
+        title=settings.title,
+        subtitle=settings.subtitle,
+        heading_style=_hs,
+        heading_alignment=heading_alignment_default,
+        heading_icon=heading_icon_default
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    {% endif %}
+
+    {% if top_count == 0 and bottom_count == 0 %}
+      {# Empty-state placeholder — same pattern as marquee /
+         testimonials. Visible target for the Vitrin editor. #}
+      <div class="logo-empty-state">
+        <span class="logo-empty-hint">
+          {{ 'أضف الشعارات من إعدادات القسم' if is_rtl else 'Add logos from the section settings' }}
+        </span>
+      </div>
+    {% else %}
+      <div class="logo-rows">
+        {# === TOP ROW — `forward` direction (R→L in LTR, L→R in RTL).
+             aria-label is bilingual literal so screen readers get
+             context without depending on the i18n catalog. The clones
+             are aria-hidden, so AT only hears each logo once. === #}
+        {% if top_count > 0 %}
+          <div
+            class="logo-row embla"
+            data-carousel
+            data-carousel-loop="true"
+            data-carousel-autoscroll="{{ speed }}"
+            data-carousel-autoscroll-direction="forward"
+            data-carousel-autoscroll-pause-on-hover="{{ 'true' if pause_hover else 'false' }}"
+            data-carousel-align="start"
+            data-carousel-dragfree="true"
+            role="group"
+            aria-label="{{ 'الصف العلوي من الشعارات' if is_rtl else 'Top row of logos' }}"
+          >
+            <div class="embla__viewport" data-carousel-viewport>
+              <div class="embla__container">
+                {% for cycle in range(top_repeat) %}
+                  {% for item in top %}
+                    <div class="embla__slide">
+                      {{ logo_item(item, is_lazy, cycle > 0, _img_w_2x) }}
+                    </div>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        {# === BOTTOM ROW — `backward` direction (opposite of top).
+             The contrast in scroll directions is the visual signature
+             of the two-row pattern. === #}
+        {% if bottom_count > 0 %}
+          <div
+            class="logo-row embla"
+            data-carousel
+            data-carousel-loop="true"
+            data-carousel-autoscroll="{{ speed }}"
+            data-carousel-autoscroll-direction="backward"
+            data-carousel-autoscroll-pause-on-hover="{{ 'true' if pause_hover else 'false' }}"
+            data-carousel-align="start"
+            data-carousel-dragfree="true"
+            role="group"
+            aria-label="{{ 'الصف السفلي من الشعارات' if is_rtl else 'Bottom row of logos' }}"
+          >
+            <div class="embla__viewport" data-carousel-viewport>
+              <div class="embla__container">
+                {% for cycle in range(bottom_repeat) %}
+                  {% for item in bottom %}
+                    <div class="embla__slide">
+                      {{ logo_item(item, is_lazy, cycle > 0, _img_w_2x) }}
+                    </div>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  /* ===========================================================
+     SECTION CONTAINER
+     ----------------------------------------------------------
+     Selector convention: `[section-id]` is unique per instance,
+     so we use it directly for section-level rules — no descendant
+     combinator to .section-logo-strip (that would be a bug, since
+     both selectors target the same element).
+     =========================================================== */
+  [section-id="{{ sectionId }}"] {
+    padding-block: var(--logo-padding-y, 32px);
+    margin-block: var(--logo-margin-y, 0);
+  }
+
+  /* Background tokens — `warm` is the cream tint suited to
+     honey/natural-product brands; default `background` keeps the
+     section integrated with the surrounding page. */
+  [section-id="{{ sectionId }}"][data-bg="background"]  { background: var(--background); }
+  [section-id="{{ sectionId }}"][data-bg="secondary"]   { background: var(--secondary); }
+  [section-id="{{ sectionId }}"][data-bg="warm"]        { background: #FFFDF8; }
+  [section-id="{{ sectionId }}"][data-bg="primary"]     { background: var(--primary); color: var(--primary-foreground); }
+  [section-id="{{ sectionId }}"][data-bg="transparent"] { background: transparent; }
+
+  /* Borders — applied to the .theme-container INSIDE the section,
+     not the section element itself. The section's background is
+     edge-to-edge; the .theme-container is capped at 1440px. By
+     putting the borders on the container, they hug the contained
+     logo strip instead of bleeding to the viewport edges. Vertical
+     padding is redistributed below so the border doesn't kiss the
+     row content directly. */
+  [section-id="{{ sectionId }}"][data-border-top="true"] > .theme-container {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-start: var(--logo-padding-y, 32px);
+  }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] > .theme-container {
+    border-block-end: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-end: var(--logo-padding-y, 32px);
+  }
+  /* When borders are active, lift the section's vertical padding
+     into the container so the border has breathing room above/below
+     instead of kissing the row edge. We zero out the section's own
+     padding for the side that has a border; the visual gap comes
+     from the container's padding (now the bordered element). */
+  [section-id="{{ sectionId }}"][data-border-top="true"] {
+    padding-block-start: 0;
+  }
+  [section-id="{{ sectionId }}"][data-border-bottom="true"] {
+    padding-block-end: 0;
+  }
+
+  /* Heading spacing — the shared partial owns its own typography. */
+  [section-id="{{ sectionId }}"] .theme-container > :first-child {
+    margin-block-end: 24px;
+  }
+
+  /* ===========================================================
+     ROW STACK — two rows with vertical gap between them.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .logo-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Edge fade.
+     We deliberately AVOID `mask-image` over the rows here. A CSS mask on
+     a subtree that animates CONTINUOUSLY (the Embla auto-scroll) forces
+     the browser to re-apply the mask EVERY FRAME on the main thread — that
+     was the marquee feeling laggy / not smooth, especially on mobile.
+     Instead we paint two static gradient strips that fade from the
+     section's background colour to transparent: composited once, never
+     repainted, so the rows underneath keep moving purely on the GPU.
+
+     `--logo-edge-color` mirrors the `data-bg` token so the fade dissolves
+     into whatever background the merchant picked. A `transparent` section
+     has no solid colour to fade into, so it (and only it) keeps the mask. */
+  [section-id="{{ sectionId }}"]                      { --logo-edge-color: var(--background); }
+  [section-id="{{ sectionId }}"][data-bg="secondary"] { --logo-edge-color: var(--secondary); }
+  [section-id="{{ sectionId }}"][data-bg="warm"]      { --logo-edge-color: #FFFDF8; }
+  [section-id="{{ sectionId }}"][data-bg="primary"]   { --logo-edge-color: var(--primary); }
+
+  [section-id="{{ sectionId }}"][data-edge-fade="true"] .logo-rows {
+    position: relative;
+  }
+  /* Physical left/right (not logical) — the fade is symmetric, so the
+     same two strips work in LTR and RTL without direction-specific rules. */
+  [section-id="{{ sectionId }}"][data-edge-fade="true"]:not([data-bg="transparent"]) .logo-rows::before,
+  [section-id="{{ sectionId }}"][data-edge-fade="true"]:not([data-bg="transparent"]) .logo-rows::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    width: 8%;
+    max-width: 64px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  [section-id="{{ sectionId }}"][data-edge-fade="true"]:not([data-bg="transparent"]) .logo-rows::before {
+    left: 0;
+    background: linear-gradient(to right, var(--logo-edge-color), transparent);
+  }
+  [section-id="{{ sectionId }}"][data-edge-fade="true"]:not([data-bg="transparent"]) .logo-rows::after {
+    right: 0;
+    background: linear-gradient(to left, var(--logo-edge-color), transparent);
+  }
+  /* Don't fade over a focused edge link (a11y parity with the old mask). */
+  [section-id="{{ sectionId }}"][data-edge-fade="true"] .logo-rows:focus-within::before,
+  [section-id="{{ sectionId }}"][data-edge-fade="true"] .logo-rows:focus-within::after {
+    opacity: 0;
+  }
+
+  /* Transparent background only: no solid colour to fade into, so retain
+     the mask technique. Acceptable because transparent sections are the
+     exception, not the default. */
+  [section-id="{{ sectionId }}"][data-edge-fade="true"][data-bg="transparent"] .logo-row {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+  }
+  [section-id="{{ sectionId }}"][data-edge-fade="true"][data-bg="transparent"] .logo-row:focus-within {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* ===========================================================
+     EMBLA WIRING — same pattern as marquee. Container is a flex
+     row that Embla translates via JS; slides are content-sized.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .embla__viewport {
+    overflow: hidden;
+  }
+  [section-id="{{ sectionId }}"] .embla__container {
+    display: flex;
+    align-items: center;
+    /* Counter-margin so the first slide's leading padding doesn't
+       offset the row from the section's edge. */
+    margin-inline-start: calc(var(--logo-gap, 16px) * -1);
+    touch-action: pan-y pinch-zoom;
+    /* This element is what Embla translates every frame (auto-scroll).
+       `will-change: transform` keeps it on a stable GPU layer so the
+       continuous motion is composited, not repainted. */
+    will-change: transform;
+  }
+  [section-id="{{ sectionId }}"] .embla__slide {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding-inline-start: var(--logo-gap, 16px);
+  }
+
+  /* ===========================================================
+     LOGO CARD — fixed-width "plate" that normalizes logos with
+     wildly different aspect ratios (Apple Pay wide, Mastercard
+     near-square, Tamara wide-Arabic). Without the fixed-width
+     card the row would feel jagged.
+     =========================================================== */
+  [section-id="{{ sectionId }}"] .logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--logo-card-w, 120px);
+    /* Card is at least the logo height + breathing room.
+       `aspect-ratio` would be cleaner but locks the card shape;
+       we want the merchant to control width independently. */
+    min-height: calc(var(--logo-img-h, 32px) + 28px);
+    flex-shrink: 0;
+    transition:
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Card chrome — three variants.
+     ----------------------------------------------------------
+     The "card" variant uses `var(--background)` (not hardcoded
+     `#fff`) so a dark-themed store gets a dark card with light
+     logos rather than a stark white plate clashing with the
+     palette. A faint hairline border (~6% foreground) gives the
+     card visual definition even when the section background is
+     ALSO `--background` — without the border, white-on-white
+     would render the card invisible on a default install. The
+     soft shadow then layers on top to give the "floating
+     receipt" feel on colored / cream backgrounds. */
+  [section-id="{{ sectionId }}"][data-card-style="card"] .logo-item {
+    background: var(--background);
+    border: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
+    border-radius: var(--logo-card-radius, 12px);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -6px rgba(0, 0, 0, 0.08);
+  }
+  [section-id="{{ sectionId }}"][data-card-style="bordered"] .logo-item {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    border-radius: var(--logo-card-radius, 12px);
+  }
+  [section-id="{{ sectionId }}"][data-card-style="none"] .logo-item {
+    background: transparent;
+    /* No border rule needed — base `.logo-item` doesn't set one. */
+  }
+
+  /* Hover lift — only for the original (linked) items, not clones.
+     Communicates interactivity when the merchant has supplied a URL. */
+  [section-id="{{ sectionId }}"] a.logo-item:hover {
+    transform: translateY(-2px);
+  }
+  [section-id="{{ sectionId }}"][data-card-style="card"] a.logo-item:hover {
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.05),
+      0 10px 24px -10px rgba(0, 0, 0, 0.14);
+  }
+  [section-id="{{ sectionId }}"][data-card-style="bordered"] a.logo-item:hover {
+    border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+  }
+  /* Clones are decorative — no hover, no pointer events. */
+  [section-id="{{ sectionId }}"] .logo-item--clone {
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Logo image — fixed height, auto width with `object-fit: contain`
+     so wildly-shaped logos all sit uniformly inside their fixed-
+     width card. */
+  [section-id="{{ sectionId }}"] .logo-item__img {
+    height: var(--logo-img-h, 32px);
+    /* `max-width: calc(card width - padding)` so logos can't bleed
+       past the card edge. */
+    max-width: calc(var(--logo-card-w, 120px) - 24px);
+    width: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  /* ── Smaller-screen sizing ──
+     Two rows can feel heavy on a narrow viewport. We shrink card
+     width, image height, and the trailing gap below the theme's
+     standard breakpoint (768px) so both rows still fit comfortably
+     without dropping a row entirely (which would lose half the
+     trust signal). The 0.85× scale applied uniformly to width,
+     image height, and min-height padding so card proportions
+     stay consistent — previous version had a width/height scale
+     mismatch that subtly distorted card aspect on mobile. The
+     768px breakpoint matches the theme's other mobile rules
+     (instead of leaving tablets in desktop sizing at 641-1023px
+     like the previous 640px boundary did). */
+  @media (max-width: 768px) {
+    [section-id="{{ sectionId }}"] .logo-item {
+      width: calc(var(--logo-card-w, 120px) * 0.85);
+      min-height: calc(var(--logo-img-h, 32px) * 0.85 + 24px);
+    }
+    [section-id="{{ sectionId }}"] .logo-item__img {
+      height: calc(var(--logo-img-h, 32px) * 0.85);
+      max-width: calc(var(--logo-card-w, 120px) * 0.85 - 20px);
+    }
+    [section-id="{{ sectionId }}"] .logo-rows {
+      gap: 10px;
+    }
+  }
+
+  /* ===========================================================
+     EMPTY STATE — visible target for the editor when section is
+     freshly added. Same pattern as marquee/testimonials.
+     =========================================================== */
+  [section-id="{{ sectionId }}"].section-logo-strip--empty .logo-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    padding: 16px;
+    border: 1px dashed
+      color-mix(in srgb, var(--foreground) 25%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  [section-id="{{ sectionId }}"].section-logo-strip--empty .logo-empty-hint {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-align: center;
+    line-height: 1.3;
+  }
+</style>
+{% endif %}{# /country-visibility guard #}

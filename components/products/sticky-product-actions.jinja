@@ -1,0 +1,312 @@
+{# ── Floating product CTA ─────────────────────────────────────────────
+   A white, fit-width pill that floats above the mobile bottom nav and is
+   ALWAYS visible (no scroll-triggered show/hide). Mirrors the main product
+   add-to-cart. Behaviour (variant sync, add-to-cart proxy, button states)
+   lives in assets/js/product/sticky-bar.js. #}
+<div
+  id="sticky-cta"
+  class="sticky-cta-float"
+  data-sticky-cta
+  aria-hidden="false"
+>
+  {# Product image #}
+  <div class="sticky-cta-float__thumb">
+    {% if product.images and product.images|length > 0 %}
+      {% set img_src = product.images[0].image.thumbnail if product.images[0].image else product.images[0] %}
+      <img
+        src="{{ image_url(img_src, w=128, q=85, f='auto') }}"
+        alt="{{ product.name }}"
+        class="size-full object-cover"
+        data-sticky-cta-image
+      />
+    {% else %}
+      <div class="bg-secondary size-full"></div>
+    {% endif %}
+  </div>
+
+  {# Name + price (name truncates; pill width follows the content up to a cap) #}
+  <div class="sticky-cta-float__info">
+    <h3 class="sticky-cta-float__name truncate" data-sticky-cta-name>
+      {{ product.name }}
+    </h3>
+    {% set _sticky_has_sale = product.formatted_sale_price is not none %}
+    <span class="sticky-cta-float__prices">
+      {# After (current/sale) price #}
+      <span class="sticky-cta-float__price" data-sticky-cta-price>
+        {{ product.formatted_sale_price if _sticky_has_sale else product.formatted_price }}
+      </span>
+      {# Before (original) price — struck through; only when on sale #}
+      <span
+        class="sticky-cta-float__price-old {{ 'hidden' if not _sticky_has_sale }}"
+        data-sticky-cta-price-old
+      >{{ product.formatted_price }}</span>
+    </span>
+    {# Selected options — populated by JS on variant change; hidden while empty #}
+    <p class="sticky-cta-float__options truncate" data-sticky-cta-options></p>
+  </div>
+
+  {# In Stock State #}
+  <div
+    class="{{ 'hidden' if not product.in_stock }} flex items-center gap-2"
+    data-sticky-cta-in-stock
+  >
+    {# Quantity — tight, fixed-width stepper #}
+    <div class="shrink-0">
+      {% with id='sticky-qty', name='sticky_quantity', sync_target='product-quantity' %}
+        {% include 'components/ui/quantity-input.jinja' %}
+      {% endwith %}
+    </div>
+
+    {# Buttons row — add-to-cart + buy-now; wraps to its own row on mobile. #}
+    <div class="sticky-cta-actions flex items-center gap-2">
+    {# Add to Cart Button #}
+    <button
+      type="button"
+      class="btn btn-filled btn-lg shrink-0 transition-all duration-200"
+      data-sticky-cta-add-to-cart
+    >
+      <span class="inline-flex items-center gap-2" data-sticky-cta-btn-default>
+        {# Shopping-bag icon — same as the product card's add-to-cart button. #}
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936ZM6.1853 7.75C6.1853 7.92259 6.04539 8.0625 5.8728 8.0625C5.70021 8.0625 5.5603 7.92259 5.5603 7.75C5.5603 7.57741 5.70021 7.4375 5.8728 7.4375C6.04539 7.4375 6.1853 7.57741 6.1853 7.75ZM12.4353 7.75C12.4353 7.92259 12.2954 8.0625 12.1228 8.0625C11.9502 8.0625 11.8103 7.92259 11.8103 7.75C11.8103 7.57741 11.9502 7.4375 12.1228 7.4375C12.2954 7.4375 12.4353 7.57741 12.4353 7.75Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <span>{{ _("Add to cart") }}</span>
+      </span>
+      <span class="hidden items-center gap-2" data-sticky-cta-btn-loading>
+        <svg class="size-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      </span>
+      <span class="hidden items-center gap-2" data-sticky-cta-btn-success>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>{{ _("Added!") }}</span>
+      </span>
+    </button>
+
+    {# Buy Now — MOBILE only (desktop sticky stays add-to-cart only). Calls the
+       same zidProductBuyNow() as the main button; gated by the same setting. #}
+    {% if pdp_show_buy_now %}
+      <button
+        type="button"
+        onclick="zidProductBuyNow()"
+        aria-label="{{ pdp_buy_now_label or _('Buy Now') }}"
+        class="btn btn-lg shrink-0 grow product-buy-now-btn sm:hidden"
+      >
+        <svg class="buy-now-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+        </svg>
+        <span class="buy-now-progress d-none" role="status" aria-hidden="true"></span>
+        {{ pdp_buy_now_label or _('Buy Now') }}
+      </button>
+    {% endif %}
+    </div>
+  </div>
+
+  {# Out of Stock State #}
+  <div
+    class="{{ 'hidden' if product.in_stock }} flex items-center gap-2"
+    data-sticky-cta-out-of-stock
+  >
+    <button
+      type="button"
+      class="btn btn-filled btn-lg shrink-0"
+      command="show-modal"
+      commandfor="notify-me-dialog"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="hidden sm:block"
+      >
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+      </svg>
+      <span>{{ _("Notify me when available") }}</span>
+    </button>
+  </div>
+</div>
+
+<style>
+  /* ── Floating CTA pill ───────────────────────────────────────────────
+     White, fit-width, centered, always visible. Floats ABOVE the mobile
+     bottom nav (which is ~64px tall, shown < 1024px). */
+  #sticky-cta.sticky-cta-float {
+    display: flex;
+    align-items: center;
+    position: fixed;
+    z-index: 99;
+    background: #fff;
+    right: 0;
+    left: 0;
+    /* `bottom` + `max-width` kept (your snippet omitted them): without `bottom`
+       the bar loses its float anchor; `max-width` stops `width: max-content`
+       from overflowing narrow phones. The media query below lifts it above the
+       mobile bottom nav. */
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100% - 1.5rem);
+    padding: 10px;
+    gap: 10px;
+    box-shadow: 0 0 9px #0000001f;
+    overflow: hidden;
+    width: max-content;
+    margin: auto;
+    border-radius: 16px;
+    transition: opacity 0.18s ease;
+  }
+  /* Lift above the mobile bottom nav (rendered < 1024px, ≈64px + safe-area). */
+  @media (max-width: 1023.98px) {
+    #sticky-cta.sticky-cta-float {
+      bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    }
+  }
+
+  .sticky-cta-float__thumb {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.625rem;
+    background: var(--secondary);
+  }
+
+  .sticky-cta-float__info {
+    min-width: 0;
+    max-width: 13rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* between name and price */
+    line-height: 1.25;
+  }
+  .sticky-cta-float__name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--foreground);
+  }
+  .sticky-cta-float__prices {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.375rem;
+  }
+  .sticky-cta-float__price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--foreground);
+  }
+  .sticky-cta-float__price-old {
+    font-size: 16px;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--foreground) 50%, transparent);
+    text-decoration: line-through;
+  }
+  .sticky-cta-float__options {
+    font-size: 0.6875rem;
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  }
+  /* Hide the options line until JS fills it in. */
+  .sticky-cta-float__options:empty {
+    display: none;
+  }
+
+  /* Quantity stepper — tight + fixed-width so it can't stretch the pill (the
+     wide field/padding was what made it look messy). The pill height is
+     driven by the add-to-cart button; the stepper just matches it. */
+  #sticky-cta .qty-input {
+    padding-inline: 0.375rem;
+    gap: 0.125rem;
+    border-radius: 0;
+  }
+  #sticky-cta .qty-input-btn {
+    width: 1.75rem;
+  }
+  #sticky-cta .qty-input-field {
+    min-width: 1.75rem;
+    width: 1.75rem;
+  }
+
+  /* CTA buttons (add-to-cart + notify): square corners + extra padding. */
+  #sticky-cta .btn {
+    border-radius: 0;
+    padding-inline: 1.5rem;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* Buy Now (sticky) — dark/filled so it's distinct from the orange CTA. */
+  #sticky-cta .product-buy-now-btn {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+  }
+
+  /* Add-to-cart stays the primary brand colour (per request). */
+  #sticky-cta [data-sticky-cta-add-to-cart] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+  }
+
+  /* Mobile: full-width SQUARE bar flush against the bottom nav.
+     Row 1 = price + qty, Row 2 = add-to-cart + buy-now (no thumbnail / name). */
+  @media (max-width: 639px) {
+    #sticky-cta.sticky-cta-float {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      border-radius: 0;
+      bottom: calc(64px + env(safe-area-inset-bottom, 0px)); /* touch the bottom nav */
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: 10px;
+      row-gap: 8px;
+    }
+    #sticky-cta .sticky-cta-float__thumb,
+    #sticky-cta .sticky-cta-float__name {
+      display: none;
+    }
+    /* Flatten the in-stock wrapper so qty + the buttons row become pill items.
+       `:not(.hidden)` keeps the JS in-stock/out-of-stock toggle working. */
+    #sticky-cta [data-sticky-cta-in-stock]:not(.hidden) {
+      display: contents;
+    }
+    /* Buttons drop to their own full-width row and split it. */
+    #sticky-cta .sticky-cta-actions {
+      flex: 0 0 100%;
+      display: flex;
+      gap: 10px;
+    }
+    #sticky-cta .sticky-cta-actions > .btn {
+      flex: 1;
+    }
+    /* Out-of-stock notify: full-width row too. */
+    #sticky-cta [data-sticky-cta-out-of-stock] {
+      flex: 0 0 100%;
+    }
+    #sticky-cta [data-sticky-cta-out-of-stock] > .btn {
+      flex: 1;
+    }
+    #sticky-cta .btn {
+      padding-inline: 0.875rem;
+    }
+  }
+</style>

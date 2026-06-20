@@ -1,0 +1,72 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{#
+  Section Heading — standalone
+  ----------------------------
+  A pure heading block the merchant can drop between other homepage
+  sections as a visual divider / chapter intro. Renders the shared
+  `products/section-heading.jinja` partial with the same five style
+  variants (gradient / classic / editorial / numbered / display)
+  used by the Products section.
+
+  Sits inside the theme container with horizontal padding matching the
+  rest of the home sections so vertical rhythm stays consistent.
+#}
+{% from 'components/_macros.jinja' import resolve_link %}
+
+{# Style resolves 'inherit' → global default from Layout Settings → Section
+   Headings, otherwise the block's own pick. Alignment follows the same
+   fallback chain: section-level → global default → 'start'. #}
+{% set _raw_style  = settings.style      | default('inherit', true) %}
+{% set _style      = heading_style_default if _raw_style == 'inherit' else _raw_style %}
+{% set _alignment  = settings.alignment  | default(heading_alignment_default, true) %}
+{% set _size       = settings.size       | default('md',       true) %}
+{% set _eyebrow    = settings.eyebrow %}
+{% set _title      = settings.title %}
+{% set _subtitle   = settings.subtitle %}
+{% set _more_url   = resolve_link(
+     settings.link_shortcut,
+     settings.link_products,
+     settings.link_url
+   ) | trim %}
+{% set _more_text  = settings.link_text %}
+
+{% if _title or _subtitle or _eyebrow %}
+  <section
+    section-id="{{ sectionId }}"
+    class="section-heading px-4 py-6 md:px-16 md:py-10"
+  >
+    <div class="theme-container">
+      {% with
+        eyebrow=_eyebrow,
+        title=_title,
+        subtitle=_subtitle,
+        heading_alignment=_alignment,
+        heading_size=_size,
+        heading_style=_style,
+        heading_icon=heading_icon_default,
+        more_url=_more_url,
+        more_text=_more_text
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    </div>
+  </section>
+{% endif %}
+{% endif %}{# /country-visibility guard #}

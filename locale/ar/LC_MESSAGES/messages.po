@@ -1,0 +1,1327 @@
+# Arabic translations for Vitrin Theme
+# Copyright (C) 2025 Zid
+# This file is distributed under the same license as the Vitrin Theme project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-17 00:00+0300\n"
+"PO-Revision-Date: 2025-12-17 00:00+0300\n"
+"Last-Translator: \n"
+"Language: ar\n"
+"Language-Team: ar <>\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=0 && n%100<=2 ? 4 : 5);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Manual\n"
+
+# ==============================================================================
+# 404 Page
+# ==============================================================================
+
+msgid "Page Not Found"
+msgstr "الصفحة غير موجودة"
+
+msgid "Sorry about that! We'll redirect you to the homepage in a few seconds, or you can head there now."
+msgstr "عذرًا عن ذلك! سنقوم بتحويلك إلى الصفحة الرئيسية خلال بضع ثوانٍ، أو يمكنك الذهاب إليها الآن."
+
+msgid "HEADING TO THE HOMEPAGE ..."
+msgstr "الانتقال إلى الصفحة الرئيسية..."
+
+msgid "Back to Home"
+msgstr "العودة للرئيسية"
+
+# ==============================================================================
+# Navigation & Layout
+# ==============================================================================
+
+msgid "Home"
+msgstr "الرئيسية"
+
+msgid "Categories"
+msgstr "التصنيفات"
+
+msgid "All Categories"
+msgstr "جميع التصنيفات"
+
+msgid "All Products"
+msgstr "جميع المنتجات"
+
+msgid "More"
+msgstr "المزيد"
+
+msgid "Cart"
+msgstr "السلة"
+
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Log in"
+msgstr "تسجيل الدخول"
+
+msgid "Account"
+msgstr "الحساب"
+
+msgid "Profile"
+msgstr "الملف الشخصي"
+
+msgid "Log out"
+msgstr "تسجيل الخروج"
+
+# ==============================================================================
+# Header & Search
+# ==============================================================================
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Search for"
+msgstr "البحث عن"
+
+msgid "Results"
+msgstr "النتائج"
+
+msgid "Searching..."
+msgstr "جاري البحث..."
+
+msgid "No products found"
+msgstr "لم يتم العثور على منتجات"
+
+msgid "Clear search"
+msgstr "مسح البحث"
+
+msgid "Close search"
+msgstr "إغلاق البحث"
+
+# ==============================================================================
+# Region Selector
+# ==============================================================================
+
+msgid "Delivery to:"
+msgstr "التوصيل إلى:"
+
+msgid "Pickup from:"
+msgstr "الاستلام من:"
+
+msgid "Country"
+msgstr "الدولة"
+
+msgid "Language"
+msgstr "اللغة"
+
+msgid "Save"
+msgstr "وفر"
+
+# ==============================================================================
+# Footer
+# ==============================================================================
+
+msgid "Follow us"
+msgstr "تابعنا"
+
+msgid "Contact us"
+msgstr "تواصل معنا"
+
+msgid "Powered by"
+msgstr "مدعوم من"
+
+msgid "VAT number:"
+msgstr "الرقم الضريبي:"
+
+msgid "The commercial register number:"
+msgstr "رقم السجل التجاري:"
+
+msgid "VAT Certificate"
+msgstr "شهادة ضريبة القيمة المضافة"
+
+msgid "Business Center"
+msgstr "مركز الأعمال"
+
+# ==============================================================================
+# Categories Page
+# ==============================================================================
+
+msgid "Explore Our Categories"
+msgstr "اكتشف تصنيفاتنا"
+
+msgid "Browse our complete collection of products organized by category"
+msgstr "تصفح مجموعتنا الكاملة من المنتجات حسب التصنيف"
+
+msgid "Shop by Categories"
+msgstr "تسوق حسب التصنيفات"
+
+msgid "No categories found"
+msgstr "لا توجد تصنيفات"
+
+msgid "No products found in this category"
+msgstr "لا توجد منتجات في هذا التصنيف"
+
+msgid "View all"
+msgstr "عرض الكل"
+
+# ==============================================================================
+# Product Card
+# ==============================================================================
+
+msgid "Add to cart"
+msgstr "أضف للسلة"
+
+msgid "Select options"
+msgstr "اختر الخيارات"
+
+msgid "Adding..."
+msgstr "جاري الإضافة..."
+
+msgid "Added!"
+msgstr "تمت الإضافة!"
+
+msgid "Error"
+msgstr "خطأ"
+
+msgid "From"
+msgstr "من"
+
+msgid "Discount"
+msgstr "خصم"
+
+msgid "NEW"
+msgstr "جديد"
+
+msgid "SALE"
+msgstr "تخفيض"
+
+msgid "OUT OF STOCK"
+msgstr "غير متوفر"
+
+#, python-format
+msgid "Sold more than %s times"
+msgstr "بيع أكثر من %s مرة"
+
+#, python-format
+msgid "Remaining %s only"
+msgstr "متبقي %s فقط"
+
+# ==============================================================================
+# Quick View Modal
+# ==============================================================================
+
+msgid "Select option"
+msgstr "اختر الخيارات"
+
+msgid "View full details"
+msgstr "عرض كل التفاصيل"
+
+msgid "Loading product..."
+msgstr "جاري تحميل المنتج..."
+
+msgid "Loading product details"
+msgstr "جاري تحميل تفاصيل المنتج"
+
+msgid "Failed to load product. Please try again."
+msgstr "فشل تحميل المنتج. حاول مرة أخرى."
+
+msgid "Failed to load product details. Please try again."
+msgstr "فشل تحميل تفاصيل المنتج. حاول مرة أخرى."
+
+msgid "Failed to add to cart. Please try again."
+msgstr "فشل إضافة المنتج للسلة. حاول مرة أخرى."
+
+msgid "Go to product page"
+msgstr "الذهاب لصفحة المنتج"
+
+# ==============================================================================
+# Product Page
+# ==============================================================================
+
+msgid "Product"
+msgstr "المنتج"
+
+msgid "Buy now"
+msgstr "اشتري الآن"
+
+msgid "Notify me when available"
+msgstr "أعلمني عند التوفر"
+
+msgid "See reviews"
+msgstr "مشاهدة التقييمات"
+
+msgid "Features & details"
+msgstr "المميزات والتفاصيل"
+
+msgid "Weight"
+msgstr "الوزن"
+
+msgid "Product options"
+msgstr "خيارات المنتج"
+
+msgid "FAQ"
+msgstr "الأسئلة الشائعة"
+
+msgid "You may also like"
+msgstr "قد يعجبك أيضاً"
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Qty"
+msgstr "الكمية"
+
+msgid "Products"
+msgstr "المنتجات"
+
+# ==============================================================================
+# Product Sharing
+# ==============================================================================
+
+msgid "Share product"
+msgstr "مشاركة المنتج"
+
+msgid "Check Out this Product"
+msgstr "شاهد هذا المنتج"
+
+msgid "Share on WhatsApp"
+msgstr "مشاركة عبر واتساب"
+
+msgid "Share on Twitter"
+msgstr "مشاركة عبر تويتر"
+
+msgid "Share on Facebook"
+msgstr "مشاركة عبر فيسبوك"
+
+msgid "Copy link"
+msgstr "نسخ الرابط"
+
+# ==============================================================================
+# Product Gallery
+# ==============================================================================
+
+msgid "Image"
+msgstr "صورة"
+
+msgid "Thumbnail"
+msgstr "صورة مصغرة"
+
+msgid "Previous image"
+msgstr "الصورة السابقة"
+
+msgid "Next image"
+msgstr "الصورة التالية"
+
+msgid "Play video"
+msgstr "تشغيل الفيديو"
+
+msgid "Close video"
+msgstr "إغلاق الفيديو"
+
+# ==============================================================================
+# Wishlist
+# ==============================================================================
+
+msgid "Add to wishlist"
+msgstr "أضف للمفضلة"
+
+msgid "Remove from wishlist"
+msgstr "إزالة من المفضلة"
+
+msgid "Added to wishlist"
+msgstr "تمت الإضافة إلى المفضلة"
+
+# ==============================================================================
+# Notify Me Dialog
+# ==============================================================================
+
+msgid "Name"
+msgstr "الاسم"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+msgid "Phone number"
+msgstr "رقم الهاتف"
+
+msgid "Phone number is required"
+msgstr "رقم الهاتف مطلوب"
+
+msgid "Phone number is too short"
+msgstr "رقم الهاتف قصير جداً"
+
+msgid "Phone number is too long"
+msgstr "رقم الهاتف طويل جداً"
+
+msgid "Invalid phone number"
+msgstr "رقم الهاتف غير صحيح"
+
+msgid "Select country code"
+msgstr "اختر رمز الدولة"
+
+msgid "Search country..."
+msgstr "ابحث عن دولة..."
+
+msgid "No country found"
+msgstr "لم يتم العثور على دولة"
+
+msgid "You will be notified when this product is back in stock!"
+msgstr "سيتم إشعارك عند توفر هذا المنتج!"
+
+msgid "Failed to submit. Please try again."
+msgstr "فشل الإرسال. يرجى المحاولة مرة أخرى."
+
+msgid "Please fill in all required fields"
+msgstr "يرجى ملء جميع الحقول المطلوبة"
+
+msgid "Submit"
+msgstr "إرسال"
+
+msgid "Close"
+msgstr "إغلاق"
+
+# ==============================================================================
+# Reviews
+# ==============================================================================
+
+msgid "Customer reviews"
+msgstr "تقييمات العملاء"
+
+msgid "Overall rating"
+msgstr "التقييم العام"
+
+msgid "Rating snapshot"
+msgstr "ملخص التقييمات"
+
+msgid "Write a review"
+msgstr "اكتب تقييم"
+
+msgid "All reviews"
+msgstr "جميع التقييمات"
+
+msgid "reviews"
+msgstr "تقييم"
+
+msgid "out of"
+msgstr "من أصل"
+
+msgid "star"
+msgstr "نجمة"
+
+msgid "stars"
+msgstr "نجوم"
+
+msgid "There are no reviews yet. Be the first one to review this product"
+msgstr "لا توجد تقييمات بعد. كن أول من يقيم هذا المنتج"
+
+msgid "Review image"
+msgstr "صورة التقييم"
+
+msgid "Reply image"
+msgstr "صورة الرد"
+
+msgid "Anonymous"
+msgstr "مجهول"
+
+# Time ago strings for reviews
+msgid "year"
+msgstr "سنة"
+
+msgid "years"
+msgstr "سنوات"
+
+msgid "month"
+msgstr "شهر"
+
+msgid "months"
+msgstr "أشهر"
+
+msgid "week"
+msgstr "أسبوع"
+
+msgid "weeks"
+msgstr "أسابيع"
+
+msgid "day"
+msgstr "يوم"
+
+msgid "days"
+msgstr "أيام"
+
+msgid "hour"
+msgstr "ساعة"
+
+msgid "hours"
+msgstr "ساعات"
+
+msgid "minute"
+msgstr "دقيقة"
+
+msgid "minutes"
+msgstr "دقائق"
+
+#, python-format
+msgid "%s ago"
+msgstr "منذ %s"
+
+msgid "Just now"
+msgstr "الآن"
+
+# ==============================================================================
+# Questions
+# ==============================================================================
+
+msgid "By"
+msgstr "بواسطة"
+
+msgid "View all questions"
+msgstr "عرض جميع الأسئلة"
+
+msgid "There are no questions yet. Be the first one who asks about this product"
+msgstr "لا توجد أسئلة بعد. كن أول من يسأل عن هذا المنتج"
+
+msgid "Ask your question"
+msgstr "اطرح سؤالك"
+
+msgid "Your question"
+msgstr "سؤالك"
+
+msgid "Enter your question here"
+msgstr "أدخل سؤالك هنا"
+
+msgid "Do not show my name in the comments"
+msgstr "لا تعرض اسمي في التعليقات"
+
+msgid "Ask question"
+msgstr "اطرح السؤال"
+
+msgid "Sending..."
+msgstr "جاري الإرسال..."
+
+msgid "Your question has been sent successfully. You will receive a notification if it is answered."
+msgstr "تم إرسال سؤالك بنجاح. ستتلقى إشعارًا عند الإجابة عليه."
+
+msgid "Sent Successfully"
+msgstr "تم الإرسال بنجاح"
+
+msgid "Failed to send your question. Please try again."
+msgstr "فشل إرسال سؤالك. حاول مرة أخرى."
+
+# ==============================================================================
+# Form Validation
+# ==============================================================================
+
+msgid "This field is required"
+msgstr "هذا الحقل مطلوب"
+
+msgid "Email is incorrect"
+msgstr "البريد الإلكتروني غير صالح"
+
+# ==============================================================================
+# Products Filters
+# ==============================================================================
+
+msgid "Filters"
+msgstr "الفلاتر"
+
+msgid "Sort by"
+msgstr "ترتيب حسب"
+
+msgid "Sort"
+msgstr "ترتيب"
+
+msgid "Most popular"
+msgstr "الأكثر شيوعًا"
+
+msgid "Newest"
+msgstr "الأحدث"
+
+msgid "Alphabetically, A-Z"
+msgstr "أبجديًا، من أ إلى ي"
+
+msgid "Alphabetically, Z-A"
+msgstr "أبجديًا، من ي إلى أ"
+
+msgid "Price, low to high"
+msgstr "السعر من الأقل إلى الأعلى"
+
+msgid "Price, high to low"
+msgstr "السعر من الأعلى إلى الأقل"
+
+msgid "Availability"
+msgstr "التوفر"
+
+msgid "All"
+msgstr "الكل"
+
+msgid "In stock"
+msgstr "متوفر"
+
+msgid "Out of stock"
+msgstr "غير متوفر"
+
+msgid "Price"
+msgstr "السعر"
+
+msgid "To"
+msgstr "إلى"
+
+msgid "No limit"
+msgstr "بدون حد"
+
+msgid "Apply"
+msgstr "تطبيق"
+
+msgid "Clear all"
+msgstr "مسح الكل"
+
+msgid "Remove filter"
+msgstr "إزالة الفلتر"
+
+msgid "View more"
+msgstr "عرض المزيد"
+
+msgid "View less"
+msgstr "عرض أقل"
+
+msgid "Close panel"
+msgstr "إغلاق اللوحة"
+
+# ==============================================================================
+# No Results State
+# ==============================================================================
+
+msgid "No results found"
+msgstr "لم يتم العثور على نتائج"
+
+msgid "We couldn't find any products matching your search. Try adjusting your filters or search terms."
+msgstr "لم نتمكن من العثور على منتجات تطابق بحثك. حاول تعديل الفلاتر أو مصطلحات البحث."
+
+msgid "View all products"
+msgstr "عرض جميع المنتجات"
+
+# ==============================================================================
+# Grid Controls
+# ==============================================================================
+
+msgid "Select grid layout"
+msgstr "اختر تخطيط الشبكة"
+
+msgid "1-column grid"
+msgstr "شبكة عمود واحد"
+
+msgid "2-column grid"
+msgstr "شبكة عمودين"
+
+msgid "4-column grid"
+msgstr "شبكة أربعة أعمدة"
+
+msgid "List view"
+msgstr "عرض قائمة"
+
+# ==============================================================================
+# Pagination
+# ==============================================================================
+
+msgid "Products per page"
+msgstr "المنتجات في الصفحة"
+
+msgid "Products on page"
+msgstr "المنتجات في الصفحة"
+
+msgid "Pagination"
+msgstr "ترقيم الصفحات"
+
+msgid "First page"
+msgstr "الصفحة الأولى"
+
+msgid "Previous page"
+msgstr "الصفحة السابقة"
+
+msgid "Next page"
+msgstr "الصفحة التالية"
+
+msgid "Last page"
+msgstr "الصفحة الأخيرة"
+
+#, python-format
+msgid "%(current)s out of %(total)s products"
+msgstr "%(current)s من أصل %(total)s منتج"
+
+# ==============================================================================
+# Cart Page
+# ==============================================================================
+
+msgid "Amount"
+msgstr "الكمية"
+
+msgid "Total"
+msgstr "المجموع"
+
+msgid "Continue shopping"
+msgstr "متابعة التسوق"
+
+msgid "Your cart is empty"
+msgstr "سلة التسوق فارغة"
+
+msgid "Looks like you haven't added anything to your cart yet."
+msgstr "يبدو أنك لم تضف أي منتج إلى سلتك بعد."
+
+#, python-format
+msgid "%(count)s items"
+msgstr "%(count)s منتج"
+
+msgid "items included"
+msgstr "منتجات مضمنة"
+
+msgid "items"
+msgstr "منتجات"
+
+msgid "options selected"
+msgstr "خيارات محددة"
+
+msgid "View bundle items"
+msgstr "عرض منتجات الباقة"
+
+#, python-format
+msgid "Only %(count)s left!"
+msgstr "متبقي %(count)s فقط!"
+
+msgid "Tax free"
+msgstr "معفى من الضريبة"
+
+msgid "per item"
+msgstr "للقطعة"
+
+msgid "Remove"
+msgstr "إزالة"
+
+msgid "Remove from cart"
+msgstr "إزالة من السلة"
+
+msgid "Decrease quantity"
+msgstr "تقليل الكمية"
+
+msgid "Increase quantity"
+msgstr "زيادة الكمية"
+
+msgid "View image"
+msgstr "عرض الصورة"
+
+msgid "Download"
+msgstr "تحميل"
+
+# ==============================================================================
+# Order Summary
+# ==============================================================================
+
+msgid "Order summary"
+msgstr "ملخص الطلب"
+
+#, python-format
+msgid "Includes TAX %(percentage)s"
+msgstr "شامل الضريبة %(percentage)s"
+
+# ==============================================================================
+# Coupon & Discount
+# ==============================================================================
+
+msgid "Coupon code"
+msgstr "كود الخصم"
+
+msgid "Discount Code"
+msgstr "كود الخصم"
+
+msgid "Coupon code or gift card"
+msgstr "كود الخصم أو بطاقة الهدايا"
+
+msgid "Enter code"
+msgstr "أدخل الكود"
+
+msgid "Remove coupon"
+msgstr "إزالة الكوبون"
+
+# ==============================================================================
+# Shipping
+# ==============================================================================
+
+msgid "You are"
+msgstr "أنت على بعد"
+
+msgid "away from free shipping"
+msgstr "من الشحن المجاني"
+
+msgid "You've unlocked free shipping!"
+msgstr "لقد حصلت على الشحن المجاني!"
+
+msgid "Free shipping available"
+msgstr "الشحن المجاني متاح"
+
+msgid "Free shipping applied!"
+msgstr "تم تطبيق الشحن المجاني!"
+
+#, python-format
+msgid "Add %(total)s more to get free shipping"
+msgstr "أضف %(total)s للحصول على شحن مجاني"
+
+#, python-format
+msgid "Free shipping applied for cart total between %(min)s and %(max)s"
+msgstr "الشحن المجاني متاح لإجمالي السلة بين %(min)s و %(max)s"
+
+# ==============================================================================
+# Loyalty Program
+# ==============================================================================
+
+msgid "Loyalty program"
+msgstr "برنامج الولاء"
+
+msgid "Loyalty"
+msgstr "الولاء"
+
+msgid "point can be earned by purchasing this product."
+msgstr "نقطة يمكن كسبها عند شراء هذا المنتج."
+
+msgid "to collect and redeem points"
+msgstr "لجمع واستبدال النقاط"
+
+msgid "You have"
+msgstr "لديك"
+
+msgid "points to redeem"
+msgstr "نقطة للاستبدال"
+
+msgid "points"
+msgstr "نقطة"
+
+msgid "points."
+msgstr "نقطة."
+
+msgid "Select redemption"
+msgstr "اختر طريقة الاستبدال"
+
+#, python-format
+msgid "For %(points)s points get %(discount)s discount"
+msgstr "مقابل %(points)s نقطة احصل على خصم %(discount)s"
+
+msgid "Loyalty points has been applied! You have now"
+msgstr "تم تطبيق نقاط الولاء! لديك الآن"
+
+msgid "Login to earn points on this order"
+msgstr "سجل دخولك لكسب نقاط على هذا الطلب"
+
+msgid "Login now"
+msgstr "سجل الآن"
+
+msgid "Earn points with this purchase"
+msgstr "اكسب نقاط مع هذا الشراء"
+
+# ==============================================================================
+# Gift Order
+# ==============================================================================
+
+msgid "Make it a gift"
+msgstr "اجعلها هدية"
+
+msgid "Send it as a gift order"
+msgstr "أرسلها كطلب هدية"
+
+msgid "Add details"
+msgstr "أضف التفاصيل"
+
+msgid "Edit details"
+msgstr "تعديل التفاصيل"
+
+msgid "Edit gift details"
+msgstr "تعديل تفاصيل الهدية"
+
+msgid "Gift"
+msgstr "هدية"
+
+msgid "Sender"
+msgstr "المرسل"
+
+msgid "Recipient"
+msgstr "المستلم"
+
+msgid "Free"
+msgstr "مجاني"
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Delete"
+msgstr "حذف"
+
+# ==============================================================================
+# Checkout
+# ==============================================================================
+
+msgid "Store is closed"
+msgstr "المتجر مغلق"
+
+msgid "Checkout"
+msgstr "إتمام الطلب"
+
+msgid "Proceed to Checkout"
+msgstr "متابعة الدفع"
+
+msgid "You qualify!"
+msgstr "أنت مؤهل!"
+
+# ==============================================================================
+# Carousel Controls
+# ==============================================================================
+
+msgid "Previous"
+msgstr "السابق"
+
+msgid "Next"
+msgstr "التالي"
+
+# ==============================================================================
+# Countdown Timer
+# ==============================================================================
+
+msgid "Day"
+msgstr "يوم"
+
+msgid "Hour"
+msgstr "ساعة"
+
+msgid "Min"
+msgstr "دقيقة"
+
+msgid "Sec"
+msgstr "ثانية"
+
+# ==============================================================================
+# File Upload
+# ==============================================================================
+
+msgid "Choose File"
+msgstr "اختر ملف"
+
+msgid "No file selected"
+msgstr "لم يتم اختيار ملف"
+
+msgid "Choose"
+msgstr "اختر"
+
+msgid "Preview"
+msgstr "معاينة"
+
+msgid "Select"
+msgstr "اختر"
+
+msgid "Please select"
+msgstr "الرجاء اختيار"
+
+msgid "Please enter"
+msgstr "الرجاء إدخال"
+
+# ==============================================================================
+# Shipping & Payment Page
+# ==============================================================================
+
+msgid "Shipping & Payment"
+msgstr "الشحن والدفع"
+
+msgid "Shipping Options"
+msgstr "خيارات الشحن"
+
+msgid "Payment Options"
+msgstr "خيارات الدفع"
+
+msgid "Bank Accounts"
+msgstr "الحسابات البنكية"
+
+msgid "Shipping Provider"
+msgstr "مزود الشحن"
+
+msgid "Supported Areas"
+msgstr "المناطق المدعومة"
+
+msgid "Shipping Charges"
+msgstr "رسوم الشحن"
+
+msgid "Cash on Delivery"
+msgstr "الدفع عند الاستلام"
+
+msgid "View supported areas"
+msgstr "عرض المناطق المدعومة"
+
+msgid "View areas"
+msgstr "عرض المناطق"
+
+msgid "All areas"
+msgstr "جميع المناطق"
+
+msgid "Available"
+msgstr "متاح"
+
+msgid "Not available"
+msgstr "غير متاح"
+
+msgid "No shipping options available"
+msgstr "لا توجد خيارات شحن متاحة"
+
+msgid "No payment methods available"
+msgstr "لا توجد طرق دفع متاحة"
+
+msgid "No bank accounts available"
+msgstr "لا توجد حسابات بنكية متاحة"
+
+msgid "Payment method"
+msgstr "طريقة الدفع"
+
+msgid "Beneficiary Name"
+msgstr "اسم المستفيد"
+
+msgid "IBAN"
+msgstr "رقم الآيبان"
+
+msgid "Account Number"
+msgstr "رقم الحساب"
+
+msgid "Copy"
+msgstr "نسخ"
+
+msgid "Search for a city"
+msgstr "ابحث عن مدينة"
+
+msgid "No areas found"
+msgstr "لم يتم العثور على مناطق"
+
+msgid "Covered Areas"
+msgstr "المناطق المغطاة"
+
+msgid "Not supported"
+msgstr "غير مدعوم"
+
+msgid "Beneficiary"
+msgstr "المستفيد"
+
+msgid "Account No."
+msgstr "رقم الحساب"
+
+# Mobile shipping cards (lowercase variants)
+msgid "Covered areas"
+msgstr "المناطق المغطاة"
+
+msgid "Shipping charges"
+msgstr "رسوم الشحن"
+
+msgid "Cash on delivery"
+msgstr "الدفع عند الاستلام"
+
+msgid "more"
+msgstr "أخرى"
+
+# ==============================================================================
+# Loyalty Rewards
+# ==============================================================================
+
+msgid "Rewards"
+msgstr "المكافآت"
+
+msgid "For {points} get a discount {percentage}"
+msgstr "مقابل {points} نقطة احصل على خصم {percentage}"
+
+msgid "FAQs"
+msgstr "الأسئلة الشائعة"
+
+msgid "Frequently Asked Questions"
+msgstr "الأسئلة الشائعة"
+
+msgid "No FAQs available"
+msgstr "لا توجد أسئلة شائعة"
+
+msgid "Check back later for frequently asked questions."
+msgstr "تحقق لاحقاً للاطلاع على الأسئلة الشائعة."
+
+msgid "Add review"
+msgstr "أضف تقييم"
+
+msgid "No reviews yet"
+msgstr "لا توجد تقييمات بعد"
+
+msgid "Be the first to review this product"
+msgstr "كن أول من يقيم هذا المنتج"
+
+# ==============================================================================
+# Questions Page
+# ==============================================================================
+
+msgid "Questions"
+msgstr "الأسئلة"
+
+msgid "Have a question?"
+msgstr "لديك سؤال؟"
+
+msgid "Ask about this product and get an answer from the store."
+msgstr "اسأل عن هذا المنتج واحصل على إجابة من المتجر."
+
+msgid "Awaiting answer from the store"
+msgstr "في انتظار الرد من المتجر"
+
+msgid "No questions yet"
+msgstr "لا توجد أسئلة بعد"
+
+msgid "Be the first to ask a question about this product"
+msgstr "كن أول من يسأل عن هذا المنتج"
+
+msgid "Answer image"
+msgstr "صورة الإجابة"
+
+# ==============================================================================
+# Grouped Products
+# ==============================================================================
+
+msgid "Bundle consist of"
+msgstr "الباقة تتكون من"
+
+msgid "Included products"
+msgstr "المنتجات المضمنة"
+
+msgid "Blog"
+msgstr "المدونة"
+
+msgid "Read More"
+msgstr "أقرأ المزيد"
+
+msgid "Total Posts"
+msgstr "مجموع التدوينات"
+
+msgid "No posts found, please visit this page later"
+msgstr "لا توجد تدوينات، يرجى زيارة هذه الصفحة لاحقاً"
+
+# Cart drawer (added by cart code review)
+msgid "Add"
+msgstr "إضافة"
+
+msgid "Added"
+msgstr "تمت الإضافة"
+
+msgid "Attached file"
+msgstr "ملف مرفق"
+
+msgid "Calculated at checkout"
+msgstr "يُحسب عند الدفع"
+
+msgid "Cart notice"
+msgstr "تنبيه في السلة"
+
+msgid "Change variant"
+msgstr "تغيير الخيار"
+
+msgid "Choose option"
+msgstr "اختر خياراً"
+
+msgid "Clear cart"
+msgstr "إفراغ السلة"
+
+msgid "Could not add"
+msgstr "تعذّر الإضافة"
+
+msgid "Could not change variant"
+msgstr "تعذّر تغيير الخيار"
+
+msgid "Coupon applied"
+msgstr "تم تطبيق كود الخصم"
+
+msgid "Coupon removed"
+msgstr "تمت إزالة كود الخصم"
+
+msgid "Couldn't apply the coupon"
+msgstr "تعذّر تطبيق كود الخصم"
+
+msgid "Invalid coupon code"
+msgstr "كود الخصم غير صالح"
+
+msgid "This coupon is not available right now"
+msgstr "كود الخصم غير متاح حالياً"
+
+msgid "This product is unavailable"
+msgstr "هذا المنتج غير متوفر"
+
+msgid "Items"
+msgstr "عدد القطع"
+
+msgid "Subtotal"
+msgstr "المجموع الفرعي"
+
+msgid "Total weight"
+msgstr "الوزن الإجمالي"
+
+msgid "Shipping"
+msgstr "الشحن"
+
+msgid "You saved"
+msgstr "إجمالي التوفير"
+
+msgid "You'll earn"
+msgstr "ستربح"
+
+msgid "New variant added"
+msgstr "تم إضافة الخيار الجديد"
+
+msgid "Old variant removed"
+msgstr "تمت إزالة الخيار القديم"
+
+msgid "Yes, remove old"
+msgstr "نعم، أزل القديم"
+
+msgid "No, keep both"
+msgstr "لا، احتفظ بالاثنين"
+
+msgid "Variant changed"
+msgstr "تم تغيير الخيار"
+
+msgid "Remove the old \"{label}\" from your cart?"
+msgstr "هل تريد إزالة \"{label}\" القديم من السلة؟"
+
+msgid "Remove all items from your cart?"
+msgstr "هل أنت متأكد من حذف جميع المنتجات؟"
+
+msgid "Only {n} left!"
+msgstr "متبقي {n} فقط!"
+
+msgid "Add {amount} more for free shipping"
+msgstr "أضف {amount} للحصول على شحن مجاني"
+
+msgid "no longer available"
+msgstr "لم يعد متوفراً"
+
+msgid "price changed"
+msgstr "تم تغيير سعره"
+
+msgid "requested qty not available"
+msgstr "الكمية المطلوبة غير متوفرة"
+
+msgid "Enter coupon code"
+msgstr "أدخل كود الخصم"
+
+msgid "View full cart"
+msgstr "عرض السلة الكاملة"
+
+msgid "Start shopping"
+msgstr "ابدأ التسوق"
+
+msgid "You might also like"
+msgstr "قد يعجبك أيضاً"
+
+msgid "kg"
+msgstr "كجم"
+
+msgid "g"
+msgstr "جم"
+
+# Mobile drawer (added during mobile-drawer premium refresh)
+msgid "Search products, categories…"
+msgstr "ابحث عن منتجات وفئات…"
+
+msgid "Toggle menu"
+msgstr "فتح القائمة"
+
+msgid "Change region"
+msgstr "تغيير المنطقة"
+
+msgid "Featured"
+msgstr "مختاراتنا"
+
+msgid "Browse categories"
+msgstr "تصفح الأقسام"
+
+msgid "Offer"
+msgstr "عرض"
+
+# Product card
+# Note: this section also uses the msgid "Choose" defined earlier in
+# the file (file-picker section, ~line 904). Both contexts share the
+# same translation ("اختر"), and gettext requires unique msgids — so
+# there's no duplicate "Choose" entry here. "Options" is kept for
+# non-button contexts (the swatches group's aria-label fallback)
+# where a descriptive noun reads better than the action verb.
+msgid "Options"
+msgstr "خيارات"
+
+msgid "New product"
+msgstr "منتج جديد"
+
+msgid "Free shipping"
+msgstr "شحن مجاني"
+
+msgid "Skip to content"
+msgstr "تخطي إلى المحتوى"
+
+msgid "Wishlist"
+msgstr "المفضلة"
+
+msgid "Facebook"
+msgstr "فيسبوك"
+
+msgid "Instagram"
+msgstr "انستغرام"
+
+msgid "Snapchat"
+msgstr "سناب شات"
+
+msgid "TikTok"
+msgstr "تيك توك"
+
+msgid "X (Twitter)"
+msgstr "إكس (تويتر)"
+
+msgid "Download on the App Store"
+msgstr "حمّل من متجر آب ستور"
+
+msgid "Get it on Google Play"
+msgstr "احصل عليه من جوجل بلاي"
+
+msgid "Working hours"
+msgstr "ساعات العمل"
+
+msgid "Detected location"
+msgstr "تم اكتشاف موقعك"
+
+msgid "Call us"
+msgstr "اتصل بنا"
+
+msgid "WhatsApp"
+msgstr "واتساب"
+
+msgid "Email us"
+msgstr "راسلنا"
+
+msgid "Banner link"
+msgstr "رابط البانر"
+
+msgid "Buy Now"
+msgstr "اشتري الآن"
+
+msgid "Available in options"
+msgstr "متوفر بخيارات"
+
+msgid "Secure payments"
+msgstr "ضمان مدفوعات آمنة"
+
+msgid "European quality"
+msgstr "جودة أوروبية"
+
+msgid "Certified"
+msgstr "معتمدة"
+
+msgid "Continuous support"
+msgstr "دعم متواصل"
+
+msgid "Around the clock"
+msgstr "على مدار الساعة"
+
+msgid "Fast delivery"
+msgstr "توصيل سريع"
+
+msgid "Secure packaging"
+msgstr "تغليف آمن"
+
+msgid "Limited quantity"
+msgstr "كمية محدودة"
+
+msgid "people are viewing this now — order before it sells out!"
+msgstr "شخص يتصفحون هذا المنتج الآن — اطلبه قبل نفاد الكمية!"

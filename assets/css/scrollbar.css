@@ -1,0 +1,55 @@
+/* ============================================================================
+   Global scrollbar — primary-tinted
+   ----------------------------------------------------------------------------
+   Unifies all scrollbars (page, cart drawer body, quick-view content, search
+   results, etc.) under a single primary-colored thumb. Falls through to the
+   OS default if the browser doesn't support these properties.
+
+   Pattern:
+     - thumb       → var(--primary) at 55% (soft, doesn't scream)
+     - thumb:hover → var(--primary) at 80% (clearer feedback on interaction)
+     - track       → transparent (lets the surface show through)
+     - width       → 8px on webkit (thin but visible)
+     - radius      → 10px (matches the theme's general control radius)
+   ============================================================================ */
+
+/* Reserve the page scrollbar's gutter at the HTML root so the layout stays
+   rock-steady when dialogs open and lock body scroll. Without this, the
+   `<el-dialog>` wrapper hides the scrollbar then adds padding-right: 10px
+   to compensate — which shows as an empty strip on the right edge now that
+   the scrollbar is styled and noticeable.
+
+   With `stable`: the gutter is always reserved (visible or not), so no JS
+   compensation is needed. Paired with a forced `padding-right: 0` rule in
+   `header.css` so the dialog's padding hack is nullified. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Firefox + modern Chromium (scrollbar-color spec) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 55%, transparent) transparent;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 55%, transparent);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 80%, transparent);
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

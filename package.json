@@ -1,0 +1,48 @@
+{
+  "name": "default-theme-vitrin",
+  "version": "1.0.0",
+  "description": "New default theme for Vitrin",
+  "type": "module",
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:*",
+    "dev:css": "npx @tailwindcss/cli -i assets/tailwindcss.css -o assets/styles.css --watch",
+    "dev:js": "vite build --watch",
+    "build": "npm-run-all build:*",
+    "build:css": "npx @tailwindcss/cli -i assets/tailwindcss.css -o assets/styles.css --minify",
+    "build:js": "cross-env NODE_ENV=production ENTRY=main vite build && cross-env NODE_ENV=production ENTRY=cart vite build && cross-env NODE_ENV=production ENTRY=listing vite build",
+    "build:dev": "cross-env ENTRY=main vite build && cross-env ENTRY=cart vite build && cross-env ENTRY=listing vite build",
+    "format": "prettier --write \"**/*.{css,js,json,jinja,html}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zidsa/growth-theme.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zidsa/growth-theme/issues"
+  },
+  "homepage": "https://github.com/zidsa/growth-theme#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.13",
+    "@tailwindcss/typography": "^0.5.19",
+    "cross-env": "^10.1.0",
+    "npm-run-all2": "^8.0.4",
+    "prettier": "^3.6.2",
+    "prettier-plugin-jinja-template": "^2.1.0",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "tailwindcss": "^4.1.13",
+    "vite": "^7.3.0"
+  },
+  "dependencies": {
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-auto-scroll": "^8.6.0",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-fade": "^8.6.0",
+    "embla-carousel-wheel-gestures": "^8.1.0",
+    "nouislider": "^15.8.1",
+    "photoswipe": "^5.4.4"
+  },
+  "main": "index.js"
+}

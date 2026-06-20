@@ -1,0 +1,288 @@
+{# Product card — single clean design.
+   Visual pattern: bordered white tile → edge-to-edge thumbnail → centered
+   title → centered sale-aware price with discount chip → bottom action row
+   (quick-view eye button + full-width filled CTA). #}
+
+{% set aspect_ratio = card_image_aspect_ratio | default('adapt') %}
+{% set aspect_class = 'aspect-square' if aspect_ratio in ('square', 'adapt') else 'aspect-[3/4]' %}
+
+{% set is_out_of_stock = product.in_stock == false or (product.is_infinite == false and product.quantity is not none and product.quantity <= 0) %}
+{% set has_options = product.has_options or product.has_fields %}
+{% set has_sale = product.formatted_sale_price is not none %}
+{% set product_url = url_for('product_details', slug=product.slug) %}
+
+{# ── Flags with safe defaults.
+   `show_quick_view` / `show_wishlist` are theme-wide only: we read the
+   global (`card_show_quick_view` / `card_show_wishlist` from layout.jinja)
+   directly. No per-section override.
+   `card_density` can be explicitly passed per-section; otherwise it
+   falls back to the hard-coded safe default. Pages outside a Products
+   section typically pass `card_density` from layout globals too. ── #}
+{% set _card_density       = card_density       | default('default') %}
+{% set _show_quick_view    = card_show_quick_view | default(true) %}
+{% set _show_wishlist      = card_show_wishlist   | default(true) %}
+{# When caller (a products section) passes an explicit value, use it. Otherwise
+   fall through to the global `card_enable_image_swap` (Layout Settings →
+   Product Card → Hover-swap second image). Final safety net is `true`. #}
+{% if enable_image_swap is defined and enable_image_swap is not none %}
+  {% set _enable_image_swap = enable_image_swap %}
+{% elif card_enable_image_swap is defined %}
+  {% set _enable_image_swap = card_enable_image_swap %}
+{% else %}
+  {% set _enable_image_swap = true %}
+{% endif %}
+{# Free-shipping badge is a theme-wide toggle only (layout.jinja exposes
+   `card_free_shipping_badge` from the global setting). No per-section
+   override — merchants use the single global checkbox. #}
+{% set _show_free_shipping = card_free_shipping_badge if card_free_shipping_badge is defined else true %}
+
+{# Secondary image for the hover-swap effect. Only emit when the feature is
+   enabled AND a genuine second photo exists (not a duplicate of the main). #}
+{% set secondary_image = product.images[1] if (_enable_image_swap and product.images and product.images|length > 1) else None %}
+
+<div
+  class="product-card group/card group relative flex h-full flex-col"
+  data-product-card="{{ product.id }}"
+  data-card-density="{{ _card_density }}"
+>
+  {# Badges — a row ABOVE the image (not overlaid). Kept as their own block so
+     each badge stays independently clickable. The container collapses when no
+     badge is present (see .product-card__badges:has() in product-card.css). #}
+  <div class="product-card__badges">
+    {# Product-name tag badge — opt-in (Layout → Product card → "Show product
+       name as a badge"). Truncates to one line so the aligned strip is kept. #}
+    {% if card_name_badge %}
+      <span class="product-card__badge product-card__badge--tag product-card__badge--name">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        <span>{{ product.name }}</span>
+      </span>
+    {% endif %}
+    {# Sale badge intentionally omitted here — the "Save X%" chip in the price
+       row already communicates the discount; doubling up competes for attention. #}
+    {# Free-shipping badge — rendered HIDDEN on every card (when the toggle is
+       on) and revealed client-side by assets/js/features/free-shipping-badge.js
+       when THIS product's price meets the free-shipping minimum. The threshold
+       is read at runtime from the current (region-aware) cart, falling back to
+       the manual `data-fs-threshold`; we can't gate it server-side because a
+       card has no numeric price or shipping rule. #}
+    {% if _show_free_shipping %}
+      <span
+        class="product-card__badge product-card__badge--tag product-card__badge--ship hidden"
+        data-free-shipping-badge
+        data-fs-threshold="{{ card_free_shipping_threshold }}"
+        data-fs-price="{{ product.formatted_sale_price if has_sale else product.formatted_price }}"
+        aria-label="{{ _('Free shipping') }}"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1 4.5h9v6.5H1zM10 7h3l2 2.5V11h-5zM4.5 13a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM12 13a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+        </svg>
+        <span>{{ _("Free shipping") }}</span>
+      </span>
+    {% endif %}
+    {% if product.badge %}
+      {% with product=product %}
+        {% include 'components/products/merchant-badge.jinja' %}
+      {% endwith %}
+    {% endif %}
+    {% if is_out_of_stock %}
+      <span class="product-card__badge product-card__badge--tag product-card__badge--oos">{{ _("OUT OF STOCK") }}</span>
+    {% endif %}
+    {% if product.is_taxable == false %}
+      <span class="product-card__badge product-card__badge--tag">{{ _("Tax free") }}</span>
+    {% endif %}
+    <span class="bundle-offer-badge hidden" data-bundle-offer-product-id="{{ product.id }}"></span>
+  </div>
+
+  {# ─── Thumbnail (just the image — no rounding; card frame owns corners) ─── #}
+  <a
+    href="{{ product_url }}"
+    class="product-card__thumb {{ aspect_class }}"
+  >
+    {# Pick the source image once. Prefer `main_image.image.medium` when
+       available (pre-rendered thumb URL), fall back to images[0]. The
+       Vitrin `image_url()` filter correctly wraps these thumb URLs with
+       a cdn-cgi/image transform — bypassing image_url (the previous
+       behaviour on line 57) was the cause of 770×770 images being served
+       to a 326×326 display, costing ~200 KiB per page. #}
+    {% set _card_src %}
+      {%- if product.main_image and product.main_image.image -%}
+        {{ product.main_image.image.medium }}
+      {%- elif product.images and product.images|length > 0 -%}
+        {{ product.images[0].image.full_size }}
+      {%- else -%}
+        {{ 'images/product-img.svg' | asset_url }}
+      {%- endif -%}
+    {% endset %}
+    {% set _card_src = _card_src | trim %}
+    {% set img_index = index if index is defined else (loop.index0 if loop is defined else 0) %}
+    {# Don't lazy-load the first 4 cards (the above-the-fold rows on most
+       grids) — lazy-loaded LCP images cost ~500 ms in Lighthouse. #}
+    {% set _is_above_fold = img_index <= 3 %}
+    {# fetchpriority=high goes on:
+         • Any first card of a priority section (`is_priority` flag —
+           set when section.order <= 2). Strongest LCP signal for grids
+           inside an early-page section.
+         • As a fallback, the very first card on the page (img_index 0)
+           even when no priority flag was passed — covers the case
+           where merchants don't put products in the first section but
+           the products section IS still likely the LCP target. #}
+    {% set _is_lcp_candidate = (img_index == 0 and is_priority | default(false)) or img_index == 0 %}
+    <img
+      {# srcset gives the browser four width-distinct candidates so it
+         picks the smallest one big enough for the device pixel ratio.
+         Card displays at ~326px logical. Candidates cover:
+           300w → mobile 1× DPR (180 logical = 50vw of 360 viewport)
+           400w → mobile 2× DPR (360 actual ≈ 326 displayed × ~1.1)
+           600w → desktop 1× / mobile 3× DPR
+           900w → desktop 2× DPR (high-density Mac/iPhone Pro)
+         Lighthouse on Moto G Power emulation (2× DPR mobile) was
+         picking 600w — too big for the 326×2=652 actual need. The
+         400w entry now covers that exact case. #}
+      src="{{ image_url(_card_src, w=400, q=75, f='auto') }}"
+      srcset="{{ image_url(_card_src, w=300, q=75, f='auto') }} 300w,
+              {{ image_url(_card_src, w=400, q=75, f='auto') }} 400w,
+              {{ image_url(_card_src, w=600, q=75, f='auto') }} 600w,
+              {{ image_url(_card_src, w=900, q=75, f='auto') }} 900w"
+      sizes="(max-width: 768px) 50vw, 25vw"
+      alt="{{ product.name }}"
+      class="product-card__img"
+      width="400"
+      height="400"
+      {% if not _is_above_fold %}loading="lazy"{% endif %}
+      {% if _is_lcp_candidate %}fetchpriority="high"{% endif %}
+      decoding="async"
+    />
+    {% if secondary_image %}
+      {% set _alt_src = secondary_image.image.full_size %}
+      <img
+        src="{{ image_url(_alt_src, w=400, q=75, f='auto') }}"
+        srcset="{{ image_url(_alt_src, w=300, q=75, f='auto') }} 300w,
+                {{ image_url(_alt_src, w=400, q=75, f='auto') }} 400w,
+                {{ image_url(_alt_src, w=600, q=75, f='auto') }} 600w,
+                {{ image_url(_alt_src, w=900, q=75, f='auto') }} 900w"
+        sizes="(max-width: 768px) 50vw, 25vw"
+        alt=""
+        class="product-card__img product-card__img--alt"
+        width="400"
+        height="400"
+        loading="lazy"
+        decoding="async"
+        aria-hidden="true"
+      />
+    {% endif %}
+  </a>
+
+  {# Wishlist heart — floats alone at the image's top corner (quick-view
+     lives in the bottom action row now). Always visible. #}
+  {% if _show_wishlist %}
+    <div class="product-card__actions right-3">
+      {% with product_id=product.id, class='product-card__wishlist' %}
+        {% include 'components/products/wishlist-button.jinja' %}
+      {% endwith %}
+    </div>
+  {% endif %}
+
+  {# ─── Info wrapper — title/price + bottom action row. #}
+  <div class="product-card__info">
+  <div class="product-card__body flex flex-1 flex-col">
+    <h3 class="product-card__title">
+      <a href="{{ product_url }}">{{ product.name }}</a>
+    </h3>
+
+    {# Price — sale variant shows new (strong), old (strikethrough), discount chip inline #}
+    <div class="product-card__price-row">
+      {% if has_sale %}
+        <span class="product-card__price product-card__price--sale">
+          {{ product.formatted_sale_price }}
+        </span>
+        {% if product.discount_percentage and product.discount_percentage > 0 %}
+          {# Compact "-45%" chip (reference design) — sits BETWEEN the new
+             (sale) and old (struck) prices. Language-neutral. #}
+          <span class="product-card__save-chip">-{{ product.discount_percentage }}%</span>
+        {% endif %}
+        <span class="product-card__price-old">{{ product.formatted_price }}</span>
+      {% else %}
+        <span class="product-card__price">
+          {{ product.formatted_price }}
+        </span>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ─── Bottom action row: main action button + quick-view (eye) button,
+     flush against each other (no gap). The CTA comes first in DOM so the
+     eye lands on the visual LEFT in RTL (matching the reference design).
+     The main button is the filled primary CTA — direct add-to-cart for
+     simple products (bag icon), quick-view opener for products with
+     options (bag + plus icon), notify-me when out of stock. #}
+  <div class="product-card__bottom">
+    {% if is_out_of_stock %}
+      <button
+        class="product-card__btn product-card__btn--outlined"
+        data-notify-me-trigger="{{ product.id }}"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+        <span>{{ _("Notify me when available") }}</span>
+      </button>
+    {% elif has_options %}
+      <a
+        href="{{ product_url }}"
+        class="product-card__btn product-card__btn--primary"
+        data-open-quick-view="true"
+        data-product-id="{{ product.id }}"
+      >
+        {# Shopping bag + plus — mask id is namespaced per product so two
+           cards on the same page don't fight over the same SVG def. #}
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <mask id="bag-cut-{{ product.id }}">
+              <rect width="100%" height="100%" fill="white"/>
+              <circle cx="14.5" cy="14.5" r="4.6" fill="black"/>
+            </mask>
+          </defs>
+          <g mask="url(#bag-cut-{{ product.id }})">
+            <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <path d="M14.5 12V17M12 14.5H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="product-card__btn-label">{{ _("Available in options") }}</span>
+      </a>
+    {% else %}
+      <button
+        type="button"
+        class="product-card__btn product-card__btn--primary"
+        data-add-to-cart="{{ product.id }}"
+      >
+        {# Shopping bag #}
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12.1228 7.75V4C12.1228 2.27411 10.7237 0.875 8.9978 0.875C7.27191 0.875 5.8728 2.27411 5.8728 4V7.75M15.3362 6.08936L16.3888 16.0894C16.4471 16.6429 16.013 17.125 15.4564 17.125H2.53916C1.98257 17.125 1.54855 16.6429 1.60681 16.0894L2.65945 6.08936C2.70967 5.61222 3.11202 5.25 3.59179 5.25H14.4038C14.8836 5.25 15.2859 5.61222 15.3362 6.08936ZM6.1853 7.75C6.1853 7.92259 6.04539 8.0625 5.8728 8.0625C5.70021 8.0625 5.5603 7.92259 5.5603 7.75C5.5603 7.57741 5.70021 7.4375 5.8728 7.4375C6.04539 7.4375 6.1853 7.57741 6.1853 7.75ZM12.4353 7.75C12.4353 7.92259 12.2954 8.0625 12.1228 8.0625C11.9502 8.0625 11.8103 7.92259 11.8103 7.75C11.8103 7.57741 11.9502 7.4375 12.1228 7.4375C12.2954 7.4375 12.4353 7.57741 12.4353 7.75Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="product-card__btn-label">{{ _("Add to cart") }}</span>
+      </button>
+    {% endif %}
+
+    {% if _show_quick_view and not is_out_of_stock %}
+      <button
+        type="button"
+        class="product-card__quick-view"
+        data-open-quick-view="true"
+        data-product-id="{{ product.id }}"
+        aria-label="{{ _('Quick view') }}"
+        title="{{ _('Quick view') }}"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    {% endif %}
+  </div>
+  </div>{# /info wrapper #}
+</div>

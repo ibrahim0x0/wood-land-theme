@@ -1,0 +1,142 @@
+{# Shared Jinja macros used across navigation/header components. #}
+
+{# Whitelist merchant-supplied URLs.
+   Only allow http(s)://, relative paths (/…), mailto:, or tel:. Anything else
+   (javascript:, data:, vbscript:, file:) collapses to '#'. Use this on any
+   href that comes from Zid menu items, theme settings, or customer input. #}
+{% macro safe_url(u) -%}
+  {%- if u and (
+      u.startswith('http://') or
+      u.startswith('https://') or
+      u.startswith('/') or
+      u.startswith('mailto:') or
+      u.startswith('tel:')
+    ) -%}{{ u }}{%- else -%}#{%- endif -%}
+{%- endmacro %}
+
+{# Apply localized_url only when the resolved URL isn't the '#' no-op sentinel
+   produced by safe_url. Keeps nav links working across locales without
+   turning '#' into '/ar-sa/#' etc. #}
+{% macro menu_href(url, resource_type) -%}
+  {%- set safe = safe_url(url) -%}
+  {%- if safe == '#' -%}
+    #
+  {%- elif resource_type and resource_type != 'url' -%}
+    {{ safe | localized_url }}
+  {%- else -%}
+    {{ safe }}
+  {%- endif -%}
+{%- endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   LINK RESOLUTION MACROS
+   Used by sections with URL fields to offer a three-tier picker:
+     1. Quick shortcut (Recent / Bestsellers / On sale / All / Home)
+     2. Smart products picker (type: "products")
+     3. Custom URL (type: "url")
+
+   Query params match Zid's storefront filter JS + docs.zid.sa API schema.
+   ═══════════════════════════════════════════════════════════════════ #}
+
+{# Map a shortcut key to its URL. Returns empty string for unknown keys. #}
+{% macro shortcut_url(key) -%}
+  {%- if key == 'recent' -%}
+    {{ url_for('list_products') }}?sort_by=created_at&order=desc
+  {%- elif key == 'bestseller' -%}
+    {{ url_for('list_products') }}?sort_by=popularity_order&order=asc
+  {%- elif key == 'on_sale' -%}
+    {{ url_for('list_products') }}?on_sale=true
+  {%- elif key == 'all' -%}
+    {{ url_for('list_products') }}
+  {%- elif key == 'home' -%}
+    {{ url_for('index') }}
+  {%- endif -%}
+{%- endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   COUNTRY-VISIBILITY MACRO
+   ═══════════════════════════════════════════════════════════════════
+
+   Sections opt into per-country targeting via two settings:
+     • `visibility_countries` — comma-separated ISO 3166-1 alpha-2
+       codes (e.g. "SA, KW, AE"). Empty = no restriction.
+     • `visibility_mode`      — 'show_in' (whitelist) or 'hide_in'
+       (blacklist). Defaults to show_in.
+
+   The macro resolves the visitor's country from the same fallback
+   chain used by the footer (locale.country.code → locale.code split
+   → country_code → session.country), normalizes everything to upper-
+   case+trimmed, and returns the literal string `yes` or `no`.
+
+   Returning a string instead of a boolean works around Jinja's
+   limitation where macros only return text. Callers compare:
+     {% set _vis = country_visible(settings.visibility_countries,
+                                   settings.visibility_mode) | trim %}
+     {% if _vis == 'yes' %}
+        ...section content...
+     {% endif %}
+   #}
+{# CRITICAL — pass `detected` from the CALLING template.
+   Vitrin's Jinja sandbox does NOT make `session`, `request`, or
+   `store` globals available inside macro bodies. So this macro
+   accepts the visitor's already-resolved country code as a param
+   instead of trying to detect it internally.
+   Compute `detected` once at the top of your template (or include
+   `components/_detect-country.jinja` to set `_detected_country`),
+   then pass it to every call. #}
+{% macro country_visible(countries_csv, mode, detected, fail_open=true) -%}
+  {%- set _csv = (countries_csv | trim) if countries_csv else '' -%}
+  {%- if not _csv -%}
+    yes
+  {%- else -%}
+    {%- set _det = (detected | string | upper | trim) if detected else '' -%}
+    {#- Detection-failure handling: when no country could be resolved,
+        `fail_open=true` (default) renders the section anyway — safer
+        for merchants who can't predict every visitor's geo coverage.
+        `fail_open=false` keeps the original strict behavior. -#}
+    {%- if not _det -%}
+      {%- if fail_open -%}yes{%- else -%}no{%- endif -%}
+    {%- else -%}
+      {%- set _ns = namespace(in_list=false) -%}
+      {%- for _c in _csv.split(',') -%}
+        {%- set _norm = _c | string | upper | trim -%}
+        {%- if _norm and _norm == _det -%}
+          {%- set _ns.in_list = true -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set _mode = (mode | trim | lower) if mode else 'show_in' -%}
+      {%- if _mode == 'hide_in' -%}
+        {%- if _ns.in_list -%}no{%- else -%}yes{%- endif -%}
+      {%- else -%}
+        {%- if _ns.in_list -%}yes{%- else -%}no{%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{# Resolve a link from three tiers. First non-empty wins. Returns an
+   empty string if nothing is set so callers can use `or` short-circuit.
+
+   Security: the merchant-supplied `custom` URL passes through `safe_url`
+   — anything that isn't http(s)/relative/mailto/tel collapses to '#'
+   (XSS defense against `javascript:` or `data:` schemes). The smart
+   picker's URL is theme-generated but we wrap it too for defense in
+   depth.
+
+   Picker guard: we require BOTH `picker` to exist AND `picker.url` to
+   be non-empty before using it — avoids the "soft-deleted product"
+   case where a picker is configured but produces an empty URL and the
+   macro silently falls through to `custom`.
+
+   Args:
+     shortcut_key — select value ('none' | 'recent' | 'bestseller' | …)
+     picker       — `type: "products"` setting value (may be none/empty)
+     custom       — raw URL string from a `type: "url"` field #}
+{% macro resolve_link(shortcut_key, picker, custom) -%}
+  {%- set s = shortcut_url(shortcut_key) | trim -%}
+  {%- set p = (picker.url if (picker and picker.url) else '') | trim -%}
+  {%- if s -%}{{ s }}
+  {%- elif p -%}{{ safe_url(p) }}
+  {%- elif custom -%}{{ safe_url(custom | trim) }}
+  {%- endif -%}
+{%- endmacro %}

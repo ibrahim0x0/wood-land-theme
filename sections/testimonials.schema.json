@@ -1,0 +1,216 @@
+{
+  "template": "sections/testimonials.jinja",
+  "name": {
+    "ar": "آراء العملاء",
+    "en": "Testimonials"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "info": {
+        "ar": "سطر قصير فوق العنوان يظهر بحروف كبيرة بلون العلامة التجارية.",
+        "en": "Short kicker line above the title, uppercase in the brand color."
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان",
+        "en": "Title"
+      },
+      "default": ""
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+
+    {
+      "id": "testimonials",
+      "type": "list",
+      "label": {
+        "ar": "آراء العملاء",
+        "en": "Testimonials"
+      },
+      "info": {
+        "ar": "أضف من 3 عناصر فأكثر للحصول على شكل دواري متوازن. الصورة الشخصية والمسمى والتاريخ كلها اختيارية ولكنها ترفع المصداقية.",
+        "en": "Add 3+ entries for a balanced carousel. Avatar, role/location and date are all optional but each one raises credibility."
+      },
+      "max_items": 12,
+      "settings": [
+        {
+          "id": "rating",
+          "type": "range",
+          "label": {
+            "ar": "التقييم",
+            "en": "Rating"
+          },
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 5
+        },
+        {
+          "id": "text",
+          "type": "textarea",
+          "label": {
+            "ar": "نص الرأي",
+            "en": "Testimonial text"
+          },
+          "info": {
+            "ar": "الأمثل بين 60 و 240 حرفًا. النصوص الطويلة جدًا تُكسر تدفق البطاقة.",
+            "en": "Sweet spot is 60–240 characters. Very long testimonials break the card layout."
+          }
+        },
+        {
+          "id": "product_url",
+          "type": "text",
+          "label": {
+            "ar": "رابط المنتج (اختياري)",
+            "en": "Product link (optional)"
+          },
+          "info": {
+            "ar": "انسخ رابط صفحة المنتج من متجرك والصقه هنا. يظهر مصغّر المنتج في نهاية البطاقة، وعند الضغط عليه يُفتح العرض السريع لهذا المنتج بالضبط. اتركه فارغًا لإخفاء المنتج.",
+            "en": "Paste the product page link from your store. The thumbnail at the end of the card opens quick-view for exactly that product on click. Leave empty to hide the product."
+          }
+        },
+        {
+          "id": "product_image",
+          "type": "image",
+          "label": {
+            "ar": "صورة المنتج (اختيارية)",
+            "en": "Product image (optional)"
+          },
+          "info": {
+            "ar": "صورة مربعة صغيرة للمنتج تظهر كمصغّر في نهاية البطاقة. تُرفع يدويًا لأن المنصة لا تتيح اختيار منتج واحد محدد لكل مراجعة. إن تركتها فارغة مع وضع الرابط، يظهر زر \"عرض المنتج\" بدل الصورة.",
+            "en": "Small square product image shown as the thumbnail at the end of the card. Uploaded manually because the platform can't pin one specific product per review. If left empty but a link is set, a \"View product\" button shows instead of the image."
+          }
+        },
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "الصورة الشخصية (اختيارية)",
+            "en": "Avatar (optional)"
+          },
+          "info": {
+            "ar": "صورة مربعة ~96×96 بكسل. عند تركها فارغة، نعرض الحرف الأول من الاسم على دائرة ملونة.",
+            "en": "Square image ~96×96px. If empty, we render the customer's initial on a colored circle as a fallback."
+          }
+        },
+        {
+          "id": "name",
+          "type": "text",
+          "label": {
+            "ar": "الاسم",
+            "en": "Name"
+          }
+        },
+        {
+          "id": "subtitle",
+          "type": "text",
+          "label": {
+            "ar": "المسمى أو الموقع (اختياري)",
+            "en": "Role or location (optional)"
+          },
+          "info": {
+            "ar": "مثال: \"الرياض\"، \"عميلة موثقة\"، \"أم لطفلين\". يظهر تحت الاسم بخط أصغر.",
+            "en": "e.g. \"Riyadh\", \"Verified buyer\", \"Mom of 2\". Renders under the name in smaller text."
+          }
+        },
+        {
+          "id": "date",
+          "type": "text",
+          "label": {
+            "ar": "التاريخ (اختياري)",
+            "en": "Date (optional)"
+          },
+          "info": {
+            "ar": "نص حر مثل \"مارس 2024\" أو \"منذ 3 أشهر\". يظهر بجانب الاسم.",
+            "en": "Free text like \"March 2024\" or \"3 months ago\". Renders next to the name."
+          }
+        },
+        {
+          "id": "verified",
+          "type": "checkbox",
+          "label": {
+            "ar": "إظهار شارة \"موثّق\"",
+            "en": "Show 'Verified' badge"
+          },
+          "info": {
+            "ar": "تظهر شارة صغيرة في زاوية البطاقة. ترفع المصداقية بشكل ملحوظ في فئات المنتجات الجديدة.",
+            "en": "Small badge in the card corner. Measurably lifts credibility in skeptical product categories."
+          },
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "autoplay",
+      "type": "checkbox",
+      "label": {
+        "ar": "── تشغيل تلقائي للدوار",
+        "en": "── Autoplay carousel"
+      },
+      "info": {
+        "ar": "الدوار يتقدم تلقائيًا كل بضع ثوانٍ. يتوقف عند تفاعل المستخدم.",
+        "en": "Carousel advances automatically every few seconds. Pauses on user interaction."
+      },
+      "default": false
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

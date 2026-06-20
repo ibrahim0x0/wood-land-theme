@@ -1,0 +1,105 @@
+{% if shipping_methods %}
+  <div class="flex flex-col gap-3">
+    {% for method in shipping_methods %}
+      <div class="border-border-light flex flex-col gap-3 rounded border px-4 py-3">
+        <div class="border-border-light flex items-center gap-3 border-b pb-3">
+          {% if method.image %}
+            <img
+              src="{{ image_url(method.image, w=84, q=85, f='auto') }}"
+              alt="{{ method.name }}"
+              class="size-[42px] shrink-0 rounded object-contain"
+              loading="lazy"
+            />
+          {% else %}
+            <div class="bg-secondary flex size-[42px] shrink-0 items-center justify-center rounded">
+              <svg
+                class="text-muted size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M13 16V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h1m8-1a1 1 0 0 1-1 1H9m4-1V8a1 1 0 0 1 1-1h2.586a1 1 0 0 1 .707.293l3.414 3.414a1 1 0 0 1 .293.707V16a1 1 0 0 1-1 1h-1m-6-1a1 1 0 0 0 1 1h1M5 17a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0m6 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0"
+                />
+              </svg>
+            </div>
+          {% endif %}
+          <span class="text-foreground text-sm">{{ method.name }}</span>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-4">
+            <span class="text-muted text-sm w-[108px] shrink-0">{{ _("Covered areas") }}</span>
+            <span class="text-foreground text-sm flex-1 text-end">
+              {% if method.delivery_option_cities and method.delivery_option_cities | length > 0 %}
+                {% set cities = method.delivery_option_cities %}
+                {% set preview_count = 3 %}
+                {% set preview_cities = cities[:preview_count] %}
+                {% set remaining = cities | length - preview_count %}
+                {% for city in preview_cities %}{{ city.name or city.city_name }}{% if not loop.last %},{% endif %}{% endfor %}{% if remaining > 0 %}
+                  , +
+                  <button
+                    type="button"
+                    class="underline"
+                    data-cities-trigger-mobile
+                    data-method-id="{{ method.id }}"
+                    data-method-name="{{ method.name }}"
+                  >
+                    {{ remaining }} {{ _("more") }}
+                  </button>
+                {% endif %}
+              {% else %}
+                {{ _("All areas") }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-muted text-sm w-[108px] shrink-0">{{ _("Shipping charges") }}</span>
+            <span class="text-foreground text-xs uppercase tracking-wide flex-1 text-end">
+              {% if method.cost %}
+                {% for cost in method.cost %}
+                  {{ cost.cost_string }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="text-success">{{ _("Free") }}</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-muted text-sm w-[108px] shrink-0">{{ _("Cash on delivery") }}</span>
+            <span class="flex-1 text-end">
+              {% if method.cod_enabled %}
+                <span class="text-foreground text-sm">
+                  {% if method.cod_fee %}
+                    {% for cod_fee in method.cod_fee %}
+                      {{ cod_fee.cod_fee_string }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                  {% else %}
+                    {{ _("Available") }}
+                  {% endif %}
+                </span>
+              {% else %}
+                <span class="text-muted-foreground text-sm">{{ _("Not supported") }}</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="p-8 text-center">
+    <svg
+      class="text-muted mx-auto mb-4 size-12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path
+        d="M13 16V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h1m8-1a1 1 0 0 1-1 1H9m4-1V8a1 1 0 0 1 1-1h2.586a1 1 0 0 1 .707.293l3.414 3.414a1 1 0 0 1 .293.707V16a1 1 0 0 1-1 1h-1m-6-1a1 1 0 0 0 1 1h1M5 17a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0m6 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0"
+      />
+    </svg>
+    <p class="text-muted text-sm">{{ _("No shipping options available") }}</p>
+  </div>
+{% endif %}

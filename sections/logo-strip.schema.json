@@ -1,0 +1,398 @@
+{
+  "template": "sections/logo-strip.jinja",
+  "name": {
+    "ar": "شريط الشعارات",
+    "en": "Logo Strip"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "info": {
+        "ar": "سطر قصير فوق العنوان. يختلف حسب الاستخدام: \"دفع آمن\" لشعارات الدفع، \"علاماتنا التجارية\" للعلامات، \"كما رأيت في\" للظهور الإعلامي.",
+        "en": "Short kicker line above the title. Tailor to use case: \"Secure Payment\" for payment logos, \"Our Brands\" for product brands, \"As seen in\" for press features."
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان (اختياري)",
+        "en": "Title (optional)"
+      },
+      "info": {
+        "ar": "اتركه فارغًا إذا كانت الشعارات تتحدث عن نفسها. التسمية تساعد العميل على فهم سياق الشعارات.",
+        "en": "Leave empty if the logos speak for themselves. A label helps customers contextualize what they're looking at."
+      },
+      "default": ""
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+
+    {
+      "id": "top_row",
+      "type": "list",
+      "label": {
+        "ar": "الصف العلوي",
+        "en": "Top row"
+      },
+      "info": {
+        "ar": "الصف الأول الذي يتحرك في اتجاه. أمثلة على التقسيم بين الصفين:\n• وسائل الدفع — أعلى: عالمية (VISA، Mastercard، Apple Pay) / أسفل: محلية (مدى، تمارا، تابي، STC Pay).\n• العلامات التجارية — أعلى: الفئة الفاخرة / أسفل: الفئة العامة.\n• الظهور الإعلامي والشهادات — أعلى: \"كما رأيت في\" / أسفل: شهادات الجودة والأمان.\n• شارات الثقة — أعلى: ضمانات الدفع / أسفل: شهادات أمان الموقع.",
+        "en": "First row, scrolling in one direction. Common ways to split content between rows:\n• Payment methods — top: global (VISA, Mastercard, Apple Pay) / bottom: local (Mada, Tamara, Tabby, STC Pay).\n• Featured brands — top: premium tier / bottom: standard tier.\n• Press & awards — top: \"As seen in...\" / bottom: certifications.\n• Trust badges — top: payment trust / bottom: site security certifications."
+      },
+      "max_items": 12,
+      "settings": [
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "الشعار",
+            "en": "Logo"
+          },
+          "info": {
+            "ar": "PNG شفاف ~200×80 بكسل. استخدم الشعارات الرسمية من المواقع الأصلية.",
+            "en": "Transparent PNG ~200×80px. Use official logos from each provider's site."
+          }
+        },
+        {
+          "id": "label",
+          "type": "text",
+          "label": {
+            "ar": "اسم الشعار (لقارئات الشاشة)",
+            "en": "Logo name (for screen readers)"
+          },
+          "info": {
+            "ar": "مثال: \"فيزا\"، \"آبل\"، \"كما رأيت في BBC\". يُستخدم كـ alt text لقارئات الشاشة وعند فشل تحميل الصورة.",
+            "en": "e.g. \"Visa\", \"Apple\", \"As seen in BBC\". Used as alt text for screen readers and image-load failures."
+          }
+        },
+        {
+          "id": "url",
+          "type": "url",
+          "label": {
+            "ar": "الرابط (اختياري)",
+            "en": "Link (optional)"
+          },
+          "info": {
+            "ar": "اربط بصفحة شرح الوسيلة أو صفحة العلامة. مهم بشكل خاص لـ Tabby و Tamara — العملاء يحتاجون فهم آلية التقسيط.",
+            "en": "Link to an explainer or brand page. Especially important for Tabby & Tamara — customers need to understand how installments work."
+          }
+        }
+      ]
+    },
+    {
+      "id": "bottom_row",
+      "type": "list",
+      "label": {
+        "ar": "الصف السفلي",
+        "en": "Bottom row"
+      },
+      "info": {
+        "ar": "الصف الثاني يتحرك في الاتجاه المعاكس للأول، مما يخلق التأثير البصري المميز للشريط ذي الصفين. ضع شعارات مختلفة عن الصف العلوي للحصول على غنى بصري حقيقي (لا تكرر نفس المحتوى).",
+        "en": "Second row, scrolling in the opposite direction of the first — that's the visual signature of the two-row pattern. Put DIFFERENT logos here from the top row, otherwise the visual richness is fake."
+      },
+      "max_items": 12,
+      "settings": [
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "الشعار",
+            "en": "Logo"
+          }
+        },
+        {
+          "id": "label",
+          "type": "text",
+          "label": {
+            "ar": "اسم الشعار (لقارئات الشاشة)",
+            "en": "Logo name (for screen readers)"
+          }
+        },
+        {
+          "id": "url",
+          "type": "url",
+          "label": {
+            "ar": "الرابط (اختياري)",
+            "en": "Link (optional)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "speed",
+      "type": "range",
+      "label": {
+        "ar": "── السرعة",
+        "en": "── Speed"
+      },
+      "info": {
+        "ar": "سرعة الحركة (بكسل/إطار). 0.5 = هادئ، 1 = متوسط، 2+ = سريع. أشرطة الشعارات تقرأ بشكل أفضل عند السرعات الهادئة.",
+        "en": "Pixels per frame. 0.5 = gentle, 1 = moderate, 2+ = fast. Logo strips read better at gentler speeds."
+      },
+      "min": 0.25,
+      "max": 3,
+      "step": 0.25,
+      "unit": "×",
+      "default": 0.6
+    },
+    {
+      "id": "pause_on_hover",
+      "type": "checkbox",
+      "label": {
+        "ar": "── إيقاف عند المرور بالمؤشر",
+        "en": "── Pause on hover"
+      },
+      "info": {
+        "ar": "العميل يمرر بالمؤشر ليقرأ الشعارات بوضوح أو ينقر على الروابط.",
+        "en": "Lets customers read logos clearly or click through to linked pages."
+      },
+      "default": true
+    },
+    {
+      "id": "edge_fade",
+      "type": "checkbox",
+      "label": {
+        "ar": "── تلاشي ناعم على الحواف",
+        "en": "── Soft fade at edges"
+      },
+      "default": true
+    },
+    {
+      "id": "card_style",
+      "type": "select",
+      "label": {
+        "ar": "── أسلوب البطاقات",
+        "en": "── Card style"
+      },
+      "info": {
+        "ar": "بطاقة = خلفية بيضاء وظل ناعم (يلائم الخلفيات الملونة). محدّد = حد رفيع فقط (يندمج مع خلفية الصفحة). بدون = الشعار وحده.",
+        "en": "Card = white plate with soft shadow (suits colored backgrounds). Bordered = hairline border only (blends with page background). None = logo alone."
+      },
+      "options": [
+        {
+          "value": "card",
+          "label": {
+            "ar": "بطاقة (خلفية بيضاء وظل ناعم)",
+            "en": "Card (white plate, soft shadow)"
+          }
+        },
+        {
+          "value": "bordered",
+          "label": {
+            "ar": "محدّد (حد رفيع فقط)",
+            "en": "Bordered (hairline only)"
+          }
+        },
+        {
+          "value": "none",
+          "label": {
+            "ar": "بدون (الشعار وحده)",
+            "en": "None (logo alone)"
+          }
+        }
+      ],
+      "default": "card"
+    },
+    {
+      "id": "card_radius",
+      "type": "range",
+      "label": {
+        "ar": "── انحناء حواف البطاقة",
+        "en": "── Card corner radius"
+      },
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "id": "image_height",
+      "type": "range",
+      "label": {
+        "ar": "── ارتفاع الشعار",
+        "en": "── Logo height"
+      },
+      "min": 16,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "id": "card_width",
+      "type": "range",
+      "label": {
+        "ar": "── عرض البطاقة",
+        "en": "── Card width"
+      },
+      "info": {
+        "ar": "عرض ثابت لكل بطاقة. الشعارات بأشكال مختلفة (مربع/مستطيل) تُلائَم تلقائيًا داخل البطاقة بنفس الحجم البصري.",
+        "en": "Fixed card width. Logos with different shapes (square/wide) fit visually-uniform inside cards of the same size."
+      },
+      "min": 60,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 120
+    },
+    {
+      "id": "gap",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة بين البطاقات",
+        "en": "── Gap between cards"
+      },
+      "min": 4,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "── الخلفية",
+        "en": "── Background"
+      },
+      "options": [
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي",
+            "en": "Secondary"
+          }
+        },
+        {
+          "value": "warm",
+          "label": {
+            "ar": "كريمي دافئ",
+            "en": "Warm cream"
+          }
+        },
+        {
+          "value": "primary",
+          "label": {
+            "ar": "اللون الأساسي للعلامة",
+            "en": "Primary brand color"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "background"
+    },
+    {
+      "id": "padding_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الداخلية",
+        "en": "── Vertical padding"
+      },
+      "min": 0,
+      "max": 96,
+      "step": 4,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "id": "margin_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الخارجية",
+        "en": "── Vertical margin"
+      },
+      "min": 0,
+      "max": 64,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "border_top",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد علوي",
+        "en": "── Top border"
+      },
+      "default": false
+    },
+    {
+      "id": "border_bottom",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد سفلي",
+        "en": "── Bottom border"
+      },
+      "default": false
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

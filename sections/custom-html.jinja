@@ -1,0 +1,74 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{# ───────────────────────────────────────────────────────────────────
+   Custom HTML — merchant pastes raw markup, we render it as-is.
+
+   Adapted from Shopify Dawn's `sections/custom-liquid.liquid`:
+     - Independent top/bottom padding ranges
+     - Mobile padding = 0.75× desktop, automatic
+     - No inner theme-container — merchant controls width
+     - CSS custom properties so the stylesheet is cacheable across
+       instances; only the inline style block carries per-section values
+
+   ⚠ The textarea is rendered with `| safe`, so anything the merchant
+   pastes runs as HTML (including <script>, <iframe>, tracking pixels).
+   This is intentional — call it out in the schema's `info` field.
+
+   Vitrin's Jinja does NOT expose template_from_string, so merchant
+   syntax like `{{ store.name }}` renders literally. Section is named
+   "Custom HTML" (not "Custom Liquid") to set the right expectation.
+
+   Auto-id: `section-custom-html` → id="custom-html-N" via section-ids.js.
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set html        = settings.html_content %}
+{% set padding_top = settings.padding_top    if settings.padding_top    is not none else 40 %}
+{% set padding_bot = settings.padding_bottom if settings.padding_bottom is not none else 52 %}
+{% set bg_token    = settings.background | default('background', true) %}
+
+{% set bg_class_map = {
+  'background': 'bg-background',
+  'secondary':  'bg-secondary',
+  'transparent':''
+} %}
+{% set bg_class = bg_class_map[bg_token] | default('bg-background') %}
+
+{% if html and html | trim %}
+  <section
+    section-id="{{ sectionId }}"
+    class="section-custom-html {{ bg_class }}"
+    style="--ch-pt: {{ padding_top }}px; --ch-pb: {{ padding_bot }}px;"
+  >
+    {{ html | safe }}
+  </section>
+
+  <style>
+    .section-custom-html {
+      padding-top: calc(var(--ch-pt) * 0.75);
+      padding-bottom: calc(var(--ch-pb) * 0.75);
+    }
+    @media (min-width: 768px) {
+      .section-custom-html {
+        padding-top: var(--ch-pt);
+        padding-bottom: var(--ch-pb);
+      }
+    }
+  </style>
+{% endif %}
+{% endif %}{# /country-visibility guard #}

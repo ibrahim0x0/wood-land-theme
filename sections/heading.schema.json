@@ -1,0 +1,230 @@
+{
+  "template": "sections/heading.jinja",
+  "name": {
+    "ar": "عنوان قسم",
+    "en": "Section Heading"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "info": {
+        "ar": "سطر قصير فوق العنوان — يظهر بحروف كبيرة بلون العلامة التجارية.",
+        "en": "Short kicker above the title — renders uppercase in your brand color."
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان",
+        "en": "Title"
+      },
+      "default": "قسم جديد"
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "alignment",
+      "type": "select",
+      "label": {
+        "ar": "محاذاة العنوان",
+        "en": "Alignment"
+      },
+      "options": [
+        {
+          "value": "start",
+          "label": {
+            "ar": "البداية",
+            "en": "Start"
+          }
+        },
+        {
+          "value": "center",
+          "label": {
+            "ar": "وسط",
+            "en": "Center"
+          }
+        },
+        {
+          "value": "end",
+          "label": {
+            "ar": "النهاية",
+            "en": "End"
+          }
+        }
+      ],
+      "default": "start"
+    },
+    {
+      "id": "size",
+      "type": "select",
+      "label": {
+        "ar": "حجم العنوان",
+        "en": "Size"
+      },
+      "options": [
+        {
+          "value": "sm",
+          "label": {
+            "ar": "صغير",
+            "en": "Small"
+          }
+        },
+        {
+          "value": "md",
+          "label": {
+            "ar": "متوسط",
+            "en": "Medium"
+          }
+        },
+        {
+          "value": "lg",
+          "label": {
+            "ar": "كبير",
+            "en": "Large"
+          }
+        }
+      ],
+      "default": "md"
+    },
+    {
+      "id": "link_shortcut",
+      "type": "select",
+      "label": {
+        "ar": "وجهة الإجراء (اختصار سريع)",
+        "en": "Link destination (quick shortcut)"
+      },
+      "info": {
+        "ar": "اختصار لوجهات شائعة. يتجاوز القائمة الذكية والرابط المخصص أدناه.",
+        "en": "Shortcut for common destinations. Overrides the smart picker and custom URL below."
+      },
+      "options": [
+        {
+          "value": "none",
+          "label": {
+            "ar": "— لا شيء —",
+            "en": "— None —"
+          }
+        },
+        {
+          "value": "recent",
+          "label": {
+            "ar": "الأحدث",
+            "en": "Recent products"
+          }
+        },
+        {
+          "value": "bestseller",
+          "label": {
+            "ar": "الأكثر شيوعًا",
+            "en": "Bestsellers / Most sales"
+          }
+        },
+        {
+          "value": "on_sale",
+          "label": {
+            "ar": "العروض",
+            "en": "On sale"
+          }
+        },
+        {
+          "value": "all",
+          "label": {
+            "ar": "كل المنتجات",
+            "en": "All products"
+          }
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "id": "link_products",
+      "type": "products",
+      "label": {
+        "ar": "أو قائمة ذكية (منتجات/فئة)",
+        "en": "Or smart picker (products / category)"
+      }
+    },
+    {
+      "id": "link_url",
+      "type": "text",
+      "label": {
+        "ar": "أو رابط مخصص",
+        "en": "Or custom URL"
+      },
+      "info": {
+        "ar": "يُستخدم فقط إذا لم يُستخدم الاختصار أو القائمة الذكية أعلاه.",
+        "en": "Used only when neither the shortcut nor the smart picker above is set."
+      },
+      "default": ""
+    },
+    {
+      "id": "link_text",
+      "type": "text",
+      "label": {
+        "ar": "نص الإجراء (اختياري)",
+        "en": "Link text (optional)"
+      },
+      "info": {
+        "ar": "يظهر الزر فقط إذا كان هناك نص ورابط محددان.",
+        "en": "The link only renders when both text and a URL are set."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

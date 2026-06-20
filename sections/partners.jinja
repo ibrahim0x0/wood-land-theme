@@ -1,0 +1,140 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{% set is_lazy = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-partners px-4 py-6 md:px-16 md:py-16"
+>
+  <div class="theme-container space-y-6">
+    {% if settings.title or settings.subtitle or settings.eyebrow %}
+      {# Shared heading partial — style + alignment + icon inherit from
+         Layout Settings → Section Headings unless this section overrides. #}
+      {% set _raw_hs = settings.heading_style | default('inherit', true) %}
+      {% set _hs = heading_style_default if _raw_hs == 'inherit' else _raw_hs %}
+      {% with
+        eyebrow=settings.eyebrow,
+        title=settings.title,
+        subtitle=settings.subtitle,
+        heading_style=_hs,
+        heading_alignment=heading_alignment_default,
+        heading_icon=heading_icon_default
+      %}
+        {% include 'components/products/section-heading.jinja' %}
+      {% endwith %}
+    {% endif %}
+    {% if settings.store_partners %}
+      <div
+        class="embla relative overflow-hidden"
+        data-carousel
+        data-carousel-loop="true"
+        data-carousel-dragfree="true"
+        data-carousel-autoscroll="0.5"
+      >
+        <div class="fade-left pointer-events-none absolute top-0 z-10 h-full w-20 ltr:left-0 rtl:right-0"></div>
+        <div class="fade-right pointer-events-none absolute top-0 z-10 h-full w-20 ltr:right-0 rtl:left-0"></div>
+        <div class="embla__viewport overflow-hidden" data-carousel-viewport>
+          <div class="embla__container">
+            {% for partner in settings.store_partners %}
+              <div class="embla__slide">
+                <div class="flex h-[72px] w-[138px] shrink-0 items-center justify-center">
+                  {% if partner.url %}
+                    <a
+                      href="{{ partner.url }}"
+                      class="flex h-full w-full items-center justify-center"
+                    >
+                      <picture>
+                        {% if partner.image_mobile %}
+                          <source
+                            media="(max-width: 767px)"
+                            srcset="{{ image_url(partner.image_mobile, w=160, q=75, f='auto') }}"
+                          />
+                        {% endif %}
+                        <img
+                          src="{{ image_url(partner.image, w=160, q=75, f='auto') }}"
+                          alt="{{ partner.name }}"
+                          width="160"
+                          height="40"
+                          class="h-10 w-auto object-contain"
+                          {% if is_lazy or not loop.first %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+                          decoding="async"
+                        />
+                      </picture>
+                    </a>
+                  {% else %}
+                    <picture>
+                      {% if partner.image_mobile %}
+                        <source
+                          media="(max-width: 767px)"
+                          srcset="{{ image_url(partner.image_mobile, w=160, q=75, f='auto') }}"
+                        />
+                      {% endif %}
+                      <img
+                        src="{{ image_url(partner.image, w=160, q=75, f='auto') }}"
+                        alt="{{ partner.name }}"
+                        width="160"
+                        height="40"
+                        class="h-10 w-auto object-contain"
+                        {% if is_lazy or not loop.first %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+                        decoding="async"
+                      />
+                    </picture>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  <style>
+    .fade-left {
+      background: linear-gradient(to right, var(--color-background) 0%, transparent 100%);
+    }
+
+    .fade-right {
+      background: linear-gradient(to left, var(--color-background) 0%, transparent 100%);
+    }
+
+    [dir="rtl"] .fade-left {
+      background: linear-gradient(to left, var(--color-background) 0%, transparent 100%);
+    }
+
+    [dir="rtl"] .fade-right {
+      background: linear-gradient(to right, var(--color-background) 0%, transparent 100%);
+    }
+    [section-id="{{ sectionId }}"] .embla {
+      --slide-spacing: 2rem; /* gap-8 = 32px from Figma */
+    }
+
+    [section-id="{{ sectionId }}"] .embla__container {
+      display: flex;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    [section-id="{{ sectionId }}"] .embla__slide {
+      transform: translate3d(0, 0, 0);
+      flex: 0 0 auto;
+      min-width: 0;
+      padding-left: var(--slide-spacing);
+    }
+  </style>
+</section>
+{% endif %}{# /country-visibility guard #}

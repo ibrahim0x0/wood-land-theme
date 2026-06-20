@@ -1,0 +1,896 @@
+/* ============================================================================
+   Product card — single clean design (reference: bordered white tile).
+   ----------------------------------------------------------------------------
+   Pattern: one rounded hairline-bordered surface. The image bleeds to the
+   card edges; title and price are centered below; the bottom row pairs a
+   small outlined quick-view (eye) button with a full-width filled primary
+   CTA (add-to-cart / options / notify-me).
+   ============================================================================ */
+
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Container query context so child layout can adapt to the card's actual
+     rendered width — the card can be 200–360px wide depending on density
+     and viewport, and viewport-based media queries can't see that. */
+  container-type: inline-size;
+  container-name: card;
+  background: var(--background);
+  /* No border — the card reads as a flat tile; a small shadow appears
+     on hover only. */
+  border: 0;
+  /* Card corners track the global "Card & Input Roundness" setting — but the
+     bottom corners are squared (radius 0) per request; only the top stays
+     rounded. */
+  border-radius: calc(var(--radius) * 3);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  /* `visible` (not `hidden`) so the merchant badge can overhang the top edge.
+     The image's rounded top corners are owned by `.product-card__thumb` (which
+     keeps its own `overflow: hidden`), so the photo still clips correctly. */
+  overflow: visible;
+  padding: 0;
+  font-size: 0.875em;
+  /* `min-width: 0` lets the card actually shrink to its grid cell width.
+     Previously this was `min-width: 200px`, which forced every card to be
+     at least 200px wide — at 2-col mobile (~360px viewport, ~166px cells)
+     that pushed cards beyond their cells and they visually overlapped,
+     swallowing the grid gap. Carousels enforce their own minimum slide
+     width via `--slide-cap` so they're unaffected by this change. */
+  min-width: 0;
+  /* Default density: see [data-card-density] overrides below. Compact = 240,
+     default = 300, large = 360 (pixels, matches the carousel `--slide-cap`). */
+  max-width: 300px;
+  width: 100%;
+  transition: box-shadow 250ms ease;
+}
+.product-card:hover {
+  /* Small (shadow-sm scale) lift on hover only. */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* ─── Thumbnail area — bleeds edge-to-edge; the card frame owns the corners.
+   `overflow: hidden` keeps the hover-scaled image within the card frame so
+   it doesn't leak outside and clip over adjacent cards.
+   Natural height comes from the `aspect-square` utility on the template
+   element — we let the thumb fill whatever width the card has so the photo
+   stays the hero at every card size. */
+.product-card__thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  /* Own the top rounded corners now that the card root is `overflow: visible`
+     (so the badge can overhang) — keeps the photo clipped to the card shape. */
+  border-top-left-radius: calc(var(--radius) * 3);
+  border-top-right-radius: calc(var(--radius) * 3);
+}
+
+.product-card__img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  /* `cover` makes every thumbnail fill the square edge-to-edge so cards
+     with portrait product shots don't look smaller than cards with
+     landscape stock photos. Trade-off: very tall products get cropped at
+     top/bottom — usually acceptable for catalog density. */
+  object-fit: cover;
+  object-position: center;
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms ease;
+}
+.product-card:hover .product-card__img { transform: scale(1.04); }
+
+/* Secondary image: stacked on top of the primary, invisible at rest, fades
+   in on card hover. Only rendered when a second gallery image exists. */
+.product-card__img--alt {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+}
+.product-card:hover .product-card__img--alt { opacity: 1; }
+/* Hide on touch: no hover = user never sees the swap, and the extra image
+   download is wasted bandwidth. */
+@media (hover: none) {
+  .product-card__img--alt { display: none; }
+}
+
+/* ─── Badges (overhang the top-start corner, tag/ribbon-shaped) ─── */
+/* Badges sit in a strip ABOVE the image (never over the photo) with a FIXED
+   height, so every card's image — and the title/price below — starts at the
+   same Y regardless of how many badges a card has. That fixed height is what
+   keeps the cards aligned; the cost is a small consistent gap above cards with
+   one/no badge. A single nowrap row keeps that reserved strip short (a stacked
+   column would need a much taller strip). Pushed to the physical-left and
+   overhanging the card edge by 9px (card root is overflow:visible). */
+.product-card__badges {
+  /* Reserved min-height for the badge strip. Lowered from 4.25rem → 2.5rem to
+     cut the tall empty gap above every card (cards read shorter on desktop and
+     mobile). Fits a single badge row cleanly; the rare 2-badge card just grows
+     a little taller, which is acceptable. */
+  min-height: 2.5rem;
+  align-self: flex-end; /* physical left (RTL); shrink to content width */
+  transform: translateX(-9px); /* 9px overhang past the left edge */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* badges' left edges line up */
+  justify-content: flex-start; /* stacked from the top of the strip */
+  gap: 0.375rem;
+}
+
+.product-card__sale-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--primary-foreground, #fff);
+  background: var(--primary);
+  border-radius: 999px;
+  line-height: 1.3;
+  box-shadow: 0 4px 10px -3px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+/* ─── All product-card badges share one "tag/ribbon" look: a solid chip with
+   a small folded tail at the bottom-left corner (matches the reference
+   design). Colour is driven by `--badge-bg` so each badge keeps its semantic
+   hue (primary for offers, green for free shipping, grey for out-of-stock). */
+.product-card__badge--tag {
+  --badge-bg: var(--primary);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 5px 11px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--primary-foreground, #fff);
+  background: var(--badge-bg);
+  border-radius: 8px;
+  border-bottom-left-radius: 0;
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--badge-bg) 55%, transparent);
+}
+.product-card__badge--tag svg { flex-shrink: 0; }
+/* Folded tail — a darker triangle dropping from the bottom-left corner,
+   drawn with the classic border trick so it stays crisp at any zoom. */
+.product-card__badge--tag::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-top: 5px solid color-mix(in srgb, var(--badge-bg) 78%, #000);
+}
+/* All badge variants use the brand primary colour (per request) — free
+   shipping, out-of-stock, tax-free and merchant offers all share one hue. */
+.product-card__badge--ship { --badge-bg: var(--primary); }
+.product-card__badge--oos  { --badge-bg: var(--primary); }
+/* A `.hidden` badge must actually hide. This file is unlayered, so the
+   `display: inline-flex` on .product-card__badge--tag was overriding Tailwind's
+   layered `.hidden` utility — leaving the free-shipping badge visible even when
+   the JS added `hidden`. This higher-specificity unlayered rule wins. */
+.product-card__badge.hidden { display: none; }
+
+/* Product-name badge — cap the width and truncate the name to a single line so
+   the badge stays one consistent row and doesn't blow out the aligned strip.
+   The cap is relative to the CARD (which is a `container-type: inline-size`
+   container) so it never overflows narrow mobile cards or overlaps the next
+   card; `9rem` is the fallback where container queries aren't supported. */
+.product-card__badge--name {
+  max-width: 9rem;
+  max-width: min(11rem, 88cqi);
+}
+.product-card__badge--name > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Smaller tail on narrow viewports. */
+@media (max-width: 639px) {
+  .product-card__badge--tag::after { border-left-width: 6px; }
+}
+
+
+/* ─── Wishlist heart — floats alone at the image's top corner. Bare icon
+   (no circle chip, no shadow) per the reference design; always visible. */
+.product-card__actions {
+  position: absolute;
+  top: 0.75rem;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.product-card__wishlist {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 150ms ease, transform 150ms ease;
+}
+.product-card__wishlist:hover { color: var(--primary); }
+.product-card__wishlist:active { transform: scale(0.94); }
+
+/* The wishlist template hard-codes `size-6` (24px) — too dominant on the
+   card corner; pin it down to a calmer 20px. */
+.product-card__wishlist svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ─── Info wrapper — plain inner surface; the card frame owns the border.
+
+   `display: flex; flex: 1` makes the info block fill the card's remaining
+   height (the card itself is `flex flex-col h-full`). Without this, the
+   body's `flex-1` is inert — info was a plain block so nothing pushed the
+   bottom row down, and cards with short titles ended up shorter than cards
+   with wrapped titles even inside the same carousel row. */
+.product-card__info {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  border: 0;
+}
+
+/* ─── Info block — title + price, both centered (reference design) ─── */
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem 0.875rem 0.5rem;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 0;
+}
+.product-card__title {
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  color: var(--foreground);
+  text-align: center;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1em * 1.35 * 2);
+  /* Long one-word titles (URLs, hashtags, Arabic compound words with no
+     separators) should wrap mid-word instead of pushing the card wider. */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.product-card__title a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.product-card__title a:hover { color: var(--primary); }
+
+/* ─── Price row — centered under the title ─── */
+.product-card__price-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.375rem 0.5rem;
+}
+/* Regular price reads in the brand color (reference design); on sale the
+   new price goes back to strong foreground and the red chip + strikethrough
+   carry the discount story. */
+.product-card__price {
+  font-size: 1.0625em;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.005em;
+}
+.product-card__price--sale { color: var(--foreground); }
+.product-card__price-old {
+  font-size: 1em;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+  text-decoration: line-through;
+}
+.product-card__save-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--destructive-foreground, #fff);
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  border-radius: 3px;
+  line-height: 1.5;
+}
+
+/* ─── Bottom action row: full-width primary CTA + quick-view (eye),
+   flush together (no gap). The CTA is first in DOM so the eye sits on
+   the visual LEFT in RTL. The eye is a fixed-size outlined square; the
+   CTA stretches to fill the remaining width. */
+.product-card__bottom {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* Quick-view (eye) — outlined icon button matching the CTA's height. */
+.product-card__quick-view {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease,
+    background-color 150ms ease, transform 150ms ease;
+}
+.product-card__quick-view:hover {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+.product-card__quick-view:active { transform: scale(0.94); }
+.product-card__quick-view svg { flex-shrink: 0; }
+
+/* ─── Action button ─── */
+.product-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  /* Stretch to fill the bottom row next to the fixed-size eye button. */
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 0 0.875rem;
+  font-family: inherit;
+  font-size: var(--font-body2--size, 0.8125rem);
+  line-height: var(--font-body2--line-height, 1.25);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  /* Tracks the merchant's "Button Roundness" setting globally. */
+  border-radius: var(--button-radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  white-space: nowrap;
+}
+.product-card__btn:active { transform: scale(0.97); }
+
+/* Filled Add button — honours the theme's Buttons & Links color. Pairs
+   `--primary` with `--primary-foreground` so merchants get a true brand
+   button. If a merchant misconfigures the foreground token to match the
+   background, legibility is their choice to make from theme settings. */
+.product-card__btn--primary {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+}
+.product-card__btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+.product-card__btn--primary:active { transform: translateY(0) scale(0.97); }
+
+.product-card__btn--outlined {
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+.product-card__btn--outlined:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  color: var(--primary);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SECTION HEADING — title + optional subtitle
+   Used by both the carousel and grid/list product sections. Alignment
+   ("start" / "center" / "end") and size ("sm" / "md" / "lg") are applied
+   via `data-heading-align` + `data-heading-size` so merchants can configure
+   per-section from the theme editor.
+   ═════════════════════════════════════════════════════════════════════ */
+.products-heading {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  justify-content: space-between;
+}
+.products-heading__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+/* Eyebrow — short uppercase kicker above the title ("NEW ARRIVALS").
+   Uses --primary by default so it reads as a brand accent; letterspacing
+   widened for legibility at small sizes. The merchant can override the
+   color theme-wide via Layout Settings → Section Headings → Eyebrow
+   color, which sets `--section-heading-eyebrow-color` on :root. When
+   that variable is unset, the var() fallback uses --primary so behavior
+   is unchanged from the original. */
+.products-heading__eyebrow {
+  display: inline-block;
+  color: var(--section-heading-eyebrow-color, var(--primary));
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 0.375rem;
+}
+
+.products-heading__text { position: relative; }
+/* Each heading style (souq / elite) supplies its own decoration;
+   the base text wrapper has none. */
+
+.products-heading__title {
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+}
+.products-heading__subtitle {
+  /* Theme-wide override via `--section-heading-subtitle-color`
+     (Layout Settings → Section Headings → Subtitle color). Falls
+     back to a 60% foreground mix when no override is set. */
+  color: var(
+    --section-heading-subtitle-color,
+    color-mix(in srgb, var(--foreground) 60%, transparent)
+  );
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* "See more" link — arrow slides on hover instead of widening the gap.
+   Keeps the container width stable so the heading row doesn't shift. */
+.products-heading__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.products-heading__more svg {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.products-heading__more:hover { color: var(--primary); }
+.products-heading__more:hover svg { transform: translateX(3px); }
+/* RTL layouts: the arrow already has `rtl:rotate-180`, so it points left
+   — translate the opposite direction so it slides *away* from the text. */
+[dir="rtl"] .products-heading__more:hover svg { transform: translateX(-3px); }
+
+/* ─── Alignment: center/end re-layouts the text column AND collapses
+   the "more" link below so it doesn't fight the centered title. Without
+   this, centering a 3-word title next to a long "more" link looks off. */
+.products-heading[data-heading-align="center"] {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.products-heading[data-heading-align="end"] {
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: end;
+}
+.products-heading[data-heading-align="center"] .products-heading__text,
+.products-heading[data-heading-align="end"]    .products-heading__text { width: 100%; }
+
+/* Push the per-alignment rule down to the text column's flex items so
+   inline-flex wrappers (title-row) and inline-block elements (title in
+   elite/display) actually track the heading's alignment. Without this
+   they align to the flex container's default cross-axis (flex-start =
+   RIGHT in RTL), which is why a "centered" souq/elite heading was
+   rendering its title against the right edge while eyebrow/subtitle
+   looked centered via text-align. */
+.products-heading[data-heading-align="start"]  .products-heading__text { align-items: flex-start; }
+.products-heading[data-heading-align="center"] .products-heading__text { align-items: center; }
+.products-heading[data-heading-align="end"]    .products-heading__text { align-items: flex-end; }
+
+
+/* ─── Size scale: drives title + subtitle together. Uses rem so the section
+   heading respects the document's base size, unlike the card which uses em. */
+.products-heading[data-heading-size="sm"] .products-heading__title    { font-size: 1.125rem; }
+.products-heading[data-heading-size="sm"] .products-heading__subtitle { font-size: 0.8125rem; }
+
+.products-heading[data-heading-size="md"] .products-heading__title    { font-size: 1.375rem; }
+.products-heading[data-heading-size="md"] .products-heading__subtitle { font-size: 0.9375rem; }
+@media (min-width: 768px) {
+  .products-heading[data-heading-size="md"] .products-heading__title { font-size: 1.625rem; }
+}
+
+.products-heading[data-heading-size="lg"] .products-heading__title    { font-size: 1.75rem; }
+.products-heading[data-heading-size="lg"] .products-heading__subtitle { font-size: 1rem; }
+@media (min-width: 768px) {
+  .products-heading[data-heading-size="lg"] .products-heading__title { font-size: 2.25rem; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   HEADING STYLE VARIANTS — two brand archetypes
+   ---------------------------------------------------------------------
+   souq   — bold heading, icon is the leading anchor (if uploaded)
+   elite  — thin kashida hairline under the title; icon ignored
+
+   Styles use theme tokens only (no hardcoded colors) so the merchant's
+   brand — primary, foreground, secondary, font — drives the final look.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* Title row — inline container for title + optional inline icon.
+   Souq uses it to seat the icon next to the title. Elite uses it as a
+   transparent passthrough. */
+.products-heading__title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  max-width: 100%;
+}
+.products-heading__inline-icon {
+  height: 1.5em;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* ── Souq — bold, commercial ─────────────────────────────────────────
+   Heavy title with a tight tracking. If the merchant uploads an icon,
+   it renders INLINE on the leading side of the title — the icon itself
+   becomes the anchor (replacing the earlier vertical bar). Without an
+   icon, the title alone carries the style via weight alone. */
+.products-heading[data-heading-style="souq"] .products-heading__title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+/* Icon inside the title row gets a slightly bolder size for this
+   variant — it's the style's identity, so it needs to read strongly. */
+.products-heading[data-heading-style="souq"] .products-heading__inline-icon {
+  height: 1.4em;
+}
+
+/* ── Souq icon — decoupled from title alignment ────────────────────
+   We always position the icon absolutely so the title-row's box equals
+   the title's own box. This means eyebrow, title, and subtitle all
+   align to the SAME edges (their own text edges) rather than the
+   combined edges of (icon + title).
+
+   The icon's side flips with alignment so it always sits on the
+   "outside" of the content column:
+     - start  → icon hangs off the leading (start) side of the title
+     - center → icon hangs off the leading side (arbitrary but
+                consistent with start)
+     - end    → icon hangs off the trailing (end) side of the title
+
+   Note: on very narrow viewports with a wide title that fills the
+   content column, the absolutely-positioned icon may hang into the
+   section's padding. The padding is generous enough (px-4 mobile,
+   px-16 desktop) to absorb a ~1.4em icon in most cases. If a merchant
+   reports clipping, we can add a mobile-specific fallback later. */
+.products-heading[data-heading-style="souq"] .products-heading__title-row {
+  position: relative;
+}
+.products-heading[data-heading-style="souq"] .products-heading__inline-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Default: hang off the leading (start) side of the title. */
+  inset-inline-end: 100%;
+  margin-inline-end: 0.625rem;
+}
+/* End alignment: flip the icon to the trailing side so it lands at the
+   outer edge of the content column (mirror of the start-alignment
+   behavior). */
+.products-heading[data-heading-align="end"][data-heading-style="souq"] .products-heading__inline-icon {
+  inset-inline-end: auto;
+  margin-inline-end: 0;
+  inset-inline-start: 100%;
+  margin-inline-start: 0.625rem;
+}
+
+/* ── Elite — editorial hairline under title ─────────────────────────
+   A thin 3rem decorative line sits under the title on the leading side
+   — echoes the Arabic "kashida" tradition (decorative horizontal flow
+   below a word). Subtitle stays italic + muted. Works start/center/end
+   via logical-property positioning so RTL flips automatically. */
+.products-heading[data-heading-style="elite"] {
+  gap: 0.5rem;
+}
+.products-heading[data-heading-style="elite"] .products-heading__title {
+  position: relative;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  font-weight: 500;
+  padding-bottom: 0.625rem;
+  display: inline-block;
+}
+.products-heading[data-heading-style="elite"] .products-heading__title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  inset-inline-start: 0;
+  width: 3rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--primary) 60%, transparent);
+}
+/* Center alignment: center the hairline under the title. */
+.products-heading[data-heading-align="center"][data-heading-style="elite"] .products-heading__title::after {
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+[dir="rtl"] .products-heading[data-heading-align="center"][data-heading-style="elite"] .products-heading__title::after {
+  transform: translateX(50%);
+}
+/* End alignment: flip the line to the trailing side. */
+.products-heading[data-heading-align="end"][data-heading-style="elite"] .products-heading__title::after {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+.products-heading[data-heading-style="elite"] .products-heading__eyebrow {
+  letter-spacing: 0.22em;
+  /* Elite eyebrow defaults to muted foreground; same global override
+     applies via `--section-heading-eyebrow-color` so the theme-wide
+     setting is consistent across heading styles. */
+  color: var(
+    --section-heading-eyebrow-color,
+    color-mix(in srgb, var(--foreground) 60%, transparent)
+  );
+}
+.products-heading[data-heading-style="elite"] .products-heading__subtitle {
+  font-style: italic;
+  font-weight: 400;
+  color: var(
+    --section-heading-subtitle-color,
+    color-mix(in srgb, var(--foreground) 55%, transparent)
+  );
+}
+
+/* NOTE: the merchant-uploaded icon is only rendered INLINE next to the
+   title for the `souq` variant (where it acts as the leading anchor).
+   The `elite` variant intentionally ignores the icon — its identity is
+   the kashida hairline, and stacking an icon below would weaken the
+   editorial "gallery caption" feel. There is no below-title icon CSS
+   anymore; the partial no longer emits that element. */
+
+/* ───────────────────────────────────────────────────────────────────
+   STYLE: ornate — centered title with an ornamental divider beneath it:
+   two accent hairlines (faded toward the outer ends) flanking a small
+   ring. The symmetric divider reads best centered, so this style always
+   centers the text regardless of the alignment setting. The line gap is
+   baked into the gradient (transparent band at the center) so the ring
+   sits in a real hole — no background masking, works on any surface. */
+/* Force-center the whole heading regardless of the alignment setting —
+   the symmetric divider only reads right when centered. `!important`
+   beats the `[data-heading-align="…"]` rules above. */
+.products-heading[data-heading-style="ornate"] {
+  align-items: center !important;
+  text-align: center;
+}
+.products-heading[data-heading-style="ornate"] .products-heading__text {
+  align-items: center !important;
+  text-align: center;
+  width: 100%;
+}
+.products-heading[data-heading-style="ornate"] .products-heading__title-row {
+  justify-content: center !important;
+  width: 100%;
+}
+.products-heading[data-heading-style="ornate"] .products-heading__title {
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+.products-heading[data-heading-style="ornate"] .products-heading__eyebrow {
+  letter-spacing: 0.22em;
+  color: var(--section-heading-eyebrow-color, var(--primary, #FFBD4E));
+}
+.products-heading[data-heading-style="ornate"] .products-heading__subtitle {
+  color: var(
+    --section-heading-subtitle-color,
+    color-mix(in srgb, var(--foreground) 55%, transparent)
+  );
+}
+
+/* Divider: two faded hairlines flanking a small ring, centered. Explicit
+   flex markup (not pseudo-elements) so position is deterministic. */
+.products-heading__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(14rem, 80%);
+  margin: 0.75rem auto 0;
+}
+.products-heading__divider-line {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary, #FFBD4E);
+}
+.products-heading__divider-ring {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--primary, #FFBD4E);
+  border-radius: 50%;
+}
+
+/* ─── Card density (drives max-width; pairs with the carousel --slide-cap) ─── */
+.product-card[data-card-density="compact"] { max-width: 240px; }
+.product-card[data-card-density="large"]   { max-width: 360px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-card__wishlist,
+  .product-card__quick-view,
+  .product-card__btn {
+    transition: none;
+  }
+  .product-card:hover,
+  .product-card__wishlist:hover,
+  .product-card__quick-view:hover,
+  .product-card__btn:hover {
+    transform: none;
+  }
+}
+
+/* ─── Grid layout with dynamic column counts driven by inline CSS vars ───
+   Baseline `gap` is set in CSS (not just via Tailwind utilities on the
+   wrapper) so cards never touch each other if the inline `gap-x-4 gap-y-10`
+   classes get stripped by purge or overridden by a higher-specificity rule.
+   Mobile uses tighter horizontal gap to keep two columns from feeling
+   cramped on ~360px screens. */
+.products-grid {
+  display: grid;
+  column-gap: 12px;
+  row-gap: 32px;
+  grid-template-columns: repeat(var(--cols-mobile, 2), minmax(0, 1fr));
+}
+@media (min-width: 768px) {
+  .products-grid {
+    column-gap: 16px;
+    row-gap: 40px;
+    grid-template-columns: repeat(
+      min(var(--cols-desktop, 4), 4),
+      minmax(0, 1fr)
+    );
+  }
+}
+@media (min-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(var(--cols-desktop, 4), minmax(0, 1fr));
+  }
+}
+
+/* ─── Narrow card (container query) — under ~260px wide (compact density,
+   2-col mobile) the eye + CTA pair gets cramped. Drop the whole card's text
+   scale to 0.75rem (the children all use `em` multipliers so one knob
+   resizes everything) and tighten the action row so the CTA label
+   ("إضافة للسلة" / "Add to cart") still fits next to the eye button. */
+@container card (max-width: 260px) {
+  .product-card__info {
+    font-size: 0.75rem;
+  }
+
+  .product-card__quick-view {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .product-card__btn {
+    height: 2.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+/* ─── Mobile: make the whole card more compact ───────────────────────
+   Per request the card felt too tall on phones. The biggest space wins
+   are the reserved badge strip and the body paddings/heights, so shrink
+   those (plus a small overall text-scale nudge — children use `em`, so
+   one knob trickles down to title/price/CTA label). Image stays square.
+   All cards shrink equally, so the cross-card top alignment is kept. */
+@media (max-width: 639px) {
+  .product-card {
+    font-size: 0.8em;
+  }
+  /* Keep the whole price row on ONE line on mobile (sale price + "-X%" chip +
+     old struck price). Shrinks gaps/fonts a touch and allows the old price to
+     ellipsize rather than wrapping to a second line. */
+  .product-card__price-row {
+    flex-wrap: nowrap;
+    gap: 0.25rem 0.35rem;
+    min-width: 0;
+  }
+  .product-card__price,
+  .product-card__price--sale {
+    font-size: 1em;
+    white-space: nowrap;
+  }
+  .product-card__price-old {
+    font-size: 0.8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .product-card__save-chip {
+    flex-shrink: 0;
+  }
+  /* Reserved badge strip: 4.25rem → 2.25rem reclaims ~32px above every
+     image. Still fits a single badge row (the common case). */
+  .product-card__badges {
+    min-height: 2.25rem;
+  }
+  .product-card__body {
+    padding: 0.5rem 0.625rem 0.375rem;
+    gap: 0.25rem;
+  }
+  /* Buttons / eye: 2.75rem → 2.4rem. */
+  .product-card__btn {
+    height: 2.4rem;
+  }
+  .product-card__quick-view {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+  /* Calmer wishlist heart on small screens. */
+  .product-card__actions {
+    top: 0.5rem;
+  }
+  .product-card__wishlist {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  .product-card__wishlist svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ─── Very small viewports: tighter internal spacing. The container
+   query above handles narrow CARDS (≤260px) by shrinking the action
+   row; this block is just padding polish for ~2-col 360px screens. */
+@media (max-width: 360px) {
+  .product-card__body { padding: 0.625rem 0.75rem 0.375rem; }
+  /* Hide the strikethrough original price on narrow screens so the price
+     row doesn't wrap to a second line — the "Save X%" chip already
+     communicates the discount intent. */
+  .product-card__price-old { display: none; }
+}

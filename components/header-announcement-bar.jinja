@@ -1,0 +1,38 @@
+{# Header announcement bar — resolves the global header settings into
+   an `ab` namespace, then delegates to the shared render partial.
+
+   The same partial powers sections/announcement-bar.jinja so the two
+   bars stay visually and behaviourally in sync. The dismiss key is
+   hard-coded to 'header' so dismissing this bar doesn't cross-talk
+   with any standalone section bar a merchant may add. #}
+
+{% set ab = {
+  'display':            settings.announcement_bar_display,
+  'page_display':       settings.announcement_bar_page_display,
+  'messages':           settings.announcement_bar_messages,
+  'background_color':   settings.announcement_bar_background_color,
+  'background_color_2': settings.announcement_bar_background_color_2,
+  'text_color':         settings.announcement_bar_text_color,
+  'use_gradient':       settings.announcement_bar_use_gradient,
+  'alignment':          settings.announcement_bar_alignment,
+  'font_size':          settings.announcement_bar_font_size,
+  'icon_size':          settings.announcement_bar_icon_size,
+  'padding_y':          settings.announcement_bar_padding_y,
+  'uppercase':          settings.announcement_bar_uppercase,
+  'letter_spacing':     settings.announcement_bar_letter_spacing,
+  'mode':               settings.announcement_bar_mode,
+  'rotate_delay':       settings.announcement_bar_rotate_delay,
+  'rotate_effect':      settings.announcement_bar_rotate_effect,
+  'marquee_speed':      settings.announcement_bar_marquee_speed,
+  'dismissible':        settings.announcement_bar_dismissible,
+  'show_on_mobile':     settings.announcement_bar_show_on_mobile,
+  'show_on_desktop':    settings.announcement_bar_show_on_desktop
+} %}
+
+{% if ab.display %}
+  {% set show_here = (not ab.page_display) or (ab.page_display == 'all') or (session.template == 'home' and ab.page_display == 'home') %}
+  {% if show_here %}
+    {% set dismiss_key = 'header' %}
+    {% include 'components/announcement-bar-render.jinja' %}
+  {% endif %}
+{% endif %}

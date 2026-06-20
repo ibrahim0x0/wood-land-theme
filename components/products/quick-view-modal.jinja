@@ -1,0 +1,87 @@
+{# Quick View — compact floating card (option #6).
+
+   Instead of a centered modal with a gallery, the quick view opens as a
+   small popover anchored near the clicked button. It shows only what's
+   needed to add to cart: title, price, options, qty, add-to-cart. No
+   description, no reviews. Fastest path from "I want it" to "added".
+
+   Related files:
+   - Styles: assets/css/quick-view.css
+   - Behaviour (positioning, DOM moves, focus, ESC, outside-click dismiss):
+     assets/js/product/quick-view.js
+
+   The <dialog> is still used for a11y + ESC-close built-ins, but it's
+   opened with `.show()` (non-modal) so the page behind stays interactive
+   and no scroll-lock is applied. #}
+
+<el-dialog id="quick-view-dialog">
+  <dialog
+    id="product-quick-view-modal"
+    aria-labelledby="quick-view-title"
+    class="qv3-dialog"
+    data-error-message="{{ _('Failed to load product. Please try again.') }}"
+    data-go-to-product="{{ _('Go to product page') }}"
+  >
+    {# Transparent full-screen backdrop for outside-click dismiss. JS also
+       attaches a document-level capture-phase handler, but the backdrop
+       gives the dialog a reliable hit-target. #}
+    <el-dialog-backdrop class="qv3-backdrop fixed inset-0 transition-opacity data-closed:opacity-0 data-enter:duration-200 data-leave:duration-150"></el-dialog-backdrop>
+
+    <el-dialog-panel
+      class="qv3-panel transform transition-all data-closed:opacity-0 data-closed:translate-y-1 data-enter:duration-180 data-enter:ease-out data-leave:duration-120 data-leave:ease-in"
+    >
+      {# Arrow — points at the anchor. JS sets data-flipped="true" when
+         the popover flips above the anchor so the arrow swaps sides. #}
+      <span class="qv3-arrow" aria-hidden="true"></span>
+
+      {# Floating close button #}
+      <button
+        command="close"
+        commandfor="product-quick-view-modal"
+        type="button"
+        class="qv3-close"
+        aria-label="{{ _('Close') }}"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 id="quick-view-title" class="sr-only">{{ _("Quick add") }}</h2>
+
+      {# Skeleton — shown until the product section is injected. #}
+      <div id="quick-view-skeleton" class="qv3-skeleton" aria-label="{{ _('Loading product details') }}" aria-busy="true">
+        <div class="qv3-skel qv3-skel-image"></div>
+        <div class="qv3-skel qv3-skel-title"></div>
+        <div class="qv3-skel qv3-skel-price"></div>
+        <div class="qv3-skel qv3-skel-row"></div>
+      </div>
+
+      {# Header row — populated by JS with the product thumbnail (left)
+         and the title/rating block (right). Sits above the scrollable
+         content so the shopper always sees "what am I buying". #}
+      <div id="quick-view-header-row" class="qv3-header-row hidden"></div>
+
+      {# Injected product section lives here. CSS reshapes it into a
+         tight vertical card and hides everything non-essential. #}
+      <div id="quick-view-content" class="qv3-content hidden"></div>
+
+      {# Sticky CTA row — qty stepper + add-to-cart button. JS moves the
+         ORIGINAL `[data-quantity-wrapper]` + `[data-product-actions]`
+         DOM nodes into this row (not clones, so Zid's SDK keeps its
+         bindings). This guarantees the primary action is always visible
+         at the bottom, regardless of how long the options list is. #}
+      <div id="quick-view-cta-row" class="qv3-cta-row hidden"></div>
+
+      {# Footer — "View full details" link below the sticky CTA row. #}
+      <div id="quick-view-footer" class="qv3-footer hidden">
+        <a id="quick-view-product-link" href="" class="qv3-full-link">
+          {{ _("View full details") }}
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="rtl:rotate-180" aria-hidden="true">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </el-dialog-panel>
+  </dialog>
+</el-dialog>

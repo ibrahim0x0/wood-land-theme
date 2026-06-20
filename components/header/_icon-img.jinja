@@ -1,0 +1,24 @@
+{# Renders an uploaded icon as either an <img> (preserves color) or a CSS-masked <span> (tinted to header color) #}
+{# Required vars: icon_url, icon_size #}
+{% set _src = image_url(icon_url, w=64, q=90, f='auto') %}
+{% if settings.logo_icons_tint_uploaded %}
+  <span
+    aria-hidden="true"
+    style="
+      display: inline-block;
+      width: {{ icon_size }}px;
+      height: {{ icon_size }}px;
+      background-color: currentColor;
+      mask-image: url('{{ _src }}');
+      -webkit-mask-image: url('{{ _src }}');
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-position: center;
+      mask-size: contain;
+      -webkit-mask-size: contain;
+    "
+  ></span>
+{% else %}
+  <img src="{{ _src }}" alt="" style="width: {{ icon_size }}px; height: {{ icon_size }}px;" class="object-contain" />
+{% endif %}

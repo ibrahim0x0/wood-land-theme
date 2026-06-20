@@ -1,0 +1,47 @@
+{# Price slider JS: assets/js/price-slider.js #}
+<div class="space-y-4">
+  <div
+    id="{{ slider_id|default('price-slider') }}"
+    class="price-range-slider"
+    data-price-slider
+    data-min-input="{{ min_input_id|default('price_min') }}"
+    data-max-input="{{ max_input_id|default('price_max') }}"
+    data-min-price="{{ min_price|default(0) }}"
+    data-max-price="{{ max_price|default(20000) }}"
+  ></div>
+  <div class="flex items-center gap-3">
+    <div class="grid flex-1 items-center gap-2">
+      <label
+        for="{{ min_input_id|default('price_min') }}"
+        class="form-label"
+      >
+        {{ _("From") }}, {{ session.currency }}
+      </label>
+      <input
+        type="text"
+        id="{{ min_input_id|default('price_min') }}"
+        name="from_price"
+        inputmode="numeric"
+        placeholder="0"
+        class="form-input"
+      />
+    </div>
+    <span class="text-muted-foreground text-sm mt-7">—</span>
+    <div class="grid flex-1 items-center gap-2">
+      <label
+        for="{{ max_input_id|default('price_max') }}"
+        class="form-label"
+      >
+        {{ _("To") }}, {{ session.currency }}
+      </label>
+      <input
+        type="text"
+        id="{{ max_input_id|default('price_max') }}"
+        name="to_price"
+        inputmode="numeric"
+        placeholder="{{ _('No limit') }}"
+        class="form-input"
+      />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,200 @@
+{
+  "icon": "fa fa-square",
+  "name": {
+    "ar": "أعلى الصفحة",
+    "en": "Header"
+  },
+  "groups": [
+    {
+      "id": "header",
+      "icon": "fa fa-cog",
+      "name": {
+        "ar": "إعدادات الرأس",
+        "en": "Header Settings"
+      },
+      "settings": [
+        { "id": "hide_language",     "type": "checkbox", "label": { "ar": "إخفاء اللغة", "en": "Hide language" }, "default": false },
+        { "id": "hide_country",      "type": "checkbox", "label": { "ar": "إخفاء اسم الدولة", "en": "Hide country" }, "default": false },
+        { "id": "hide_region_labels","type": "checkbox", "label": { "ar": "إخفاء النص وعرض الأيقونة فقط", "en": "Hide text labels (icon only)" }, "default": true },
+
+        { "id": "preset",           "type": "select", "label": { "ar": "── نمط التخطيط", "en": "── Layout preset" }, "info": { "ar": "اختر كيف يتم ترتيب الشعار والقائمة والأيقونات", "en": "How logo, nav, and icons are arranged" }, "options": [
+          { "value": "logo_left_nav_inline",         "label": { "ar": "الشعار يساراً + قائمة بنفس الصف", "en": "Logo left, nav inline" } },
+          { "value": "logo_center_nav_inline",       "label": { "ar": "الشعار وسطاً + قائمة جانبية", "en": "Logo center, nav inline" } },
+          { "value": "logo_center_nav_below",        "label": { "ar": "الشعار وسطاً + قائمة أسفل", "en": "Logo center, nav below" } },
+          { "value": "logo_left_nav_below",          "label": { "ar": "الشعار يساراً + قائمة أسفل", "en": "Logo left, nav below" } },
+          { "value": "logo_center_drawer",           "label": { "ar": "الشعار وسطاً + قائمة جانبية فقط", "en": "Logo center, drawer only" } },
+          { "value": "logo_center_drawer_nav_below", "label": { "ar": "الشعار وسطاً + قائمة جانبية + قائمة أسفل", "en": "Logo center, drawer + nav below" } }
+        ], "default": "logo_left_nav_inline" },
+        { "id": "header_height",     "type": "range",    "label": { "ar": "── ارتفاع الرأس", "en": "── Header height" }, "info": { "ar": "الارتفاع الأدنى لشريط الرأس", "en": "Minimum height of the header row" }, "min": 60, "max": 140, "step": 4, "unit": "px", "default": 80 },
+        { "id": "container_width",   "type": "select",   "label": { "ar": "── عرض المحتوى", "en": "── Container width" }, "info": { "ar": "كامل = حافة لحافة، محتوى = إطار افتراضي، ضيّق = 1024 بكسل", "en": "Full = edge-to-edge · Contained = standard · Narrow = 1024px" }, "options": [{ "value": "full", "label": { "ar": "كامل", "en": "Full" }}, { "value": "contained", "label": { "ar": "محتوى", "en": "Contained" }}, { "value": "narrow", "label": { "ar": "ضيّق", "en": "Narrow" }}], "default": "contained" },
+        { "id": "sticky",            "type": "checkbox", "label": { "ar": "── تثبيت الرأس عند التمرير", "en": "── Sticky header" }, "default": true },
+        { "id": "shrink_on_scroll",  "type": "checkbox", "label": { "ar": "── تقليص الارتفاع عند التمرير", "en": "── Shrink on scroll" }, "info": { "ar": "يتطلب تفعيل التثبيت", "en": "Requires sticky to be on" }, "default": false, "visible_if": { "sticky": true } },
+        { "id": "transparent_on_home","type": "checkbox", "label": { "ar": "── خلفية شفافة في الرئيسية", "en": "── Transparent on home" }, "info": { "ar": "يعمل مع قسم بطل بصورة كبيرة", "en": "Best with a full-bleed hero section" }, "default": false },
+        { "id": "scroll_reveal",     "type": "checkbox", "label": { "ar": "── إظهار عند التمرير لأعلى فقط", "en": "── Reveal on scroll-up" }, "default": true, "visible_if": { "sticky": true } },
+        { "id": "scroll_blur",       "type": "checkbox", "label": { "ar": "── تأثير زجاجي عند التمرير", "en": "── Frosted-glass blur" }, "default": true, "visible_if": { "sticky": true } },
+
+        { "id": "background_source", "type": "select", "label": { "ar": "── مصدر لون الخلفية", "en": "── Background source" }, "info": { "ar": "اختر أي لون من ألوان الثيم يستخدمه الرأس كخلفية. الافتراضي هو خلفية الموقع العامة.", "en": "Which theme color the header uses as its background. Defaults to the site background." }, "options": [{ "value": "background", "label": { "ar": "خلفية الموقع", "en": "Website Background" }}, { "value": "secondary", "label": { "ar": "خلفية ثانوية (بطاقات/هادئة)", "en": "Secondary Surface" }}, { "value": "primary", "label": { "ar": "لون العلامة التجارية", "en": "Brand Color" }}, { "value": "accent", "label": { "ar": "لون العروض والشارات", "en": "Accent" }}, { "value": "custom", "label": { "ar": "مخصص", "en": "Custom" }}], "default": "background" },
+        { "id": "background_color",  "type": "color", "label": { "ar": "── لون مخصص للخلفية", "en": "── Custom background" }, "default": "#F6F5F4", "visible_if": { "background_source": "custom" } },
+        { "id": "text_color_source", "type": "select", "label": { "ar": "── مصدر لون النص", "en": "── Text color source" }, "options": [{ "value": "foreground", "label": { "ar": "نص", "en": "Foreground" }}, { "value": "primary", "label": { "ar": "رئيسي", "en": "Primary" }}, { "value": "accent", "label": { "ar": "مؤكد", "en": "Accent" }}, { "value": "muted", "label": { "ar": "باهت", "en": "Muted" }}, { "value": "custom", "label": { "ar": "مخصص", "en": "Custom" }}], "default": "foreground" },
+        { "id": "text_color",        "type": "color", "label": { "ar": "── لون مخصص للنص", "en": "── Custom text color" }, "default": "#0B0A09", "visible_if": { "text_color_source": "custom" } },
+        { "id": "show_border",       "type": "checkbox", "label": { "ar": "── إظهار الحد السفلي", "en": "── Show bottom border" }, "default": true },
+
+        { "id": "nav_link_source",   "type": "select", "label": { "ar": "── مصدر لون القائمة", "en": "── Nav link source" }, "options": [{ "value": "foreground", "label": { "ar": "نص", "en": "Foreground" }}, { "value": "primary", "label": { "ar": "رئيسي", "en": "Primary" }}, { "value": "accent", "label": { "ar": "مؤكد", "en": "Accent" }}, { "value": "muted", "label": { "ar": "باهت", "en": "Muted" }}, { "value": "custom", "label": { "ar": "مخصص", "en": "Custom" }}], "default": "foreground" },
+        { "id": "nav_link_color",    "type": "color", "label": { "ar": "── لون مخصص للقائمة", "en": "── Custom nav color" }, "default": "#0B0A09", "visible_if": { "nav_link_source": "custom" } },
+        { "id": "nav_link_hover_source", "type": "select", "label": { "ar": "── مصدر لون التمرير", "en": "── Hover source" }, "options": [{ "value": "accent", "label": { "ar": "مؤكد", "en": "Accent" }}, { "value": "primary", "label": { "ar": "رئيسي", "en": "Primary" }}, { "value": "foreground", "label": { "ar": "نص", "en": "Foreground" }}, { "value": "muted", "label": { "ar": "باهت", "en": "Muted" }}, { "value": "custom", "label": { "ar": "مخصص", "en": "Custom" }}], "default": "accent" },
+        { "id": "nav_link_hover_color", "type": "color", "label": { "ar": "── لون مخصص للتمرير", "en": "── Custom hover color" }, "default": "#A89C90", "visible_if": { "nav_link_hover_source": "custom" } },
+        { "id": "nav_hover_effect",  "type": "select", "label": { "ar": "── تأثير التمرير", "en": "── Hover effect" }, "options": [{ "value": "color", "label": { "ar": "لون فقط", "en": "Color only" }}, { "value": "underline_grow", "label": { "ar": "خط ينمو من الوسط", "en": "Underline grows" }}, { "value": "underline_slide", "label": { "ar": "خط ينزلق", "en": "Underline slides" }}, { "value": "underline_static", "label": { "ar": "خط ثابت", "en": "Static underline" }}, { "value": "top_bar", "label": { "ar": "خط علوي", "en": "Top bar" }}, { "value": "bottom_bar", "label": { "ar": "خط سفلي", "en": "Bottom bar" }}, { "value": "pill", "label": { "ar": "كبسولة", "en": "Pill" }}, { "value": "fade_bg", "label": { "ar": "خلفية باهتة", "en": "Soft fade" }}], "default": "underline_grow" },
+        { "id": "nav_hover_accent_source", "type": "select", "label": { "ar": "── مصدر لون التأثير", "en": "── Accent source" }, "options": [{ "value": "accent", "label": { "ar": "مؤكد", "en": "Accent" }}, { "value": "primary", "label": { "ar": "رئيسي", "en": "Primary" }}, { "value": "foreground", "label": { "ar": "نص", "en": "Foreground" }}, { "value": "muted", "label": { "ar": "باهت", "en": "Muted" }}, { "value": "custom", "label": { "ar": "مخصص", "en": "Custom" }}], "default": "accent" },
+        { "id": "nav_hover_accent_color", "type": "color", "label": { "ar": "── لون مخصص للتأثير", "en": "── Custom accent" }, "default": "#A89C90", "visible_if": { "nav_hover_accent_source": "custom" } },
+        { "id": "nav_hover_speed",   "type": "range", "label": { "ar": "── سرعة التأثير", "en": "── Hover speed" }, "min": 100, "max": 600, "step": 50, "unit": "ms", "default": 250 },
+        { "id": "dropdown_bg",       "type": "color", "label": { "ar": "── خلفية القائمة المنسدلة", "en": "── Dropdown background" }, "default": "#FFFFFF" },
+        { "id": "dropdown_link_color","type": "color", "label": { "ar": "── لون روابط المنسدلة", "en": "── Dropdown link color" }, "default": "#0B0A09" },
+        { "id": "dropdown_link_hover_color", "type": "color", "label": { "ar": "── لون تمرير المنسدلة", "en": "── Dropdown hover color" }, "default": "#A89C90" },
+        { "id": "drawer_bg",         "type": "color", "label": { "ar": "── خلفية القائمة الجانبية", "en": "── Drawer background" }, "default": "#FFFFFF" },
+        { "id": "drawer_link_color", "type": "color", "label": { "ar": "── لون روابط الجانبية", "en": "── Drawer link color" }, "default": "#0B0A09" },
+        { "id": "drawer_link_hover_color", "type": "color", "label": { "ar": "── لون تمرير الجانبية", "en": "── Drawer hover color" }, "default": "#A89C90" },
+        { "id": "nav_spacing",       "type": "range", "label": { "ar": "── المسافة بين عناصر القائمة", "en": "── Nav item spacing" }, "min": 12, "max": 48, "step": 2, "unit": "px", "default": 24 },
+        { "id": "icons_gap",         "type": "range", "label": { "ar": "── المسافة بين الأيقونات", "en": "── Icons gap" }, "min": 0, "max": 24, "step": 2, "unit": "px", "default": 8 },
+
+        { "id": "search_style",      "type": "select", "label": { "ar": "── نمط البحث", "en": "── Search style" }, "options": [{ "value": "icon", "label": { "ar": "أيقونة", "en": "Icon" }}, { "value": "input", "label": { "ar": "حقل نصي", "en": "Input pill" }}], "default": "icon" },
+        { "id": "search_shape",      "type": "select", "label": { "ar": "── شكل البحث", "en": "── Search shape" }, "options": [{ "value": "pill", "label": { "ar": "دائري", "en": "Pill" }}, { "value": "rounded", "label": { "ar": "ناعم", "en": "Rounded" }}, { "value": "square", "label": { "ar": "حاد", "en": "Square" }}], "default": "pill", "visible_if": { "search_style": "input" } },
+        { "id": "search_bg",         "type": "color", "label": { "ar": "── خلفية البحث", "en": "── Search background" }, "default": "#EFEEEC", "visible_if": { "search_style": "input" } },
+        { "id": "search_text_color", "type": "color", "label": { "ar": "── لون نص البحث", "en": "── Search text color" }, "default": "#0B0A09", "visible_if": { "search_style": "input" } },
+        { "id": "search_min_width",  "type": "range", "label": { "ar": "── أدنى عرض البحث", "en": "── Search min width" }, "min": 140, "max": 360, "step": 10, "unit": "px", "default": 200, "visible_if": { "search_style": "input" } },
+
+        { "id": "account_label",     "type": "select", "label": { "ar": "── عرض الحساب", "en": "── Account display" }, "options": [{ "value": "icon", "label": { "ar": "أيقونة فقط", "en": "Icon only" }}, { "value": "icon_text", "label": { "ar": "أيقونة + نص", "en": "Icon + text" }}], "default": "icon" },
+        { "id": "show_wishlist",     "type": "checkbox", "label": { "ar": "── إظهار المفضلة", "en": "── Show wishlist" }, "default": false },
+        { "id": "active_link_indicator", "type": "checkbox", "label": { "ar": "── تمييز الصفحة الحالية", "en": "── Highlight current page" }, "default": true }
+      ]
+    },
+    {
+      "id": "logo",
+      "icon": "fa fa-image",
+      "name": {
+        "ar": "الشعار والأيقونات",
+        "en": "Logo & Icons"
+      },
+      "settings": [
+        { "id": "type",            "type": "select", "label": { "ar": "نوع الشعار", "en": "Logo type" }, "options": [{ "value": "image", "label": { "ar": "صورة", "en": "Image" }}, { "value": "text", "label": { "ar": "نص", "en": "Text" }}], "default": "image" },
+        { "id": "desktop",         "type": "image",  "label": { "ar": "شعار سطح المكتب", "en": "Desktop logo" }, "info": { "ar": "200 × 80 بكسل", "en": "200 × 80 px" }, "visible_if": { "type": "image" } },
+        { "id": "mobile",          "type": "image",  "label": { "ar": "شعار الجوال", "en": "Mobile logo" }, "info": { "ar": "150 × 60 بكسل", "en": "150 × 60 px" }, "visible_if": { "type": "image" } },
+        { "id": "max_height_desktop","type": "range", "label": { "ar": "أقصى ارتفاع (سطح المكتب)", "en": "Max height (desktop)" }, "min": 24, "max": 120, "step": 2, "unit": "px", "default": 66, "visible_if": { "type": "image" } },
+        { "id": "max_height_mobile","type": "range",  "label": { "ar": "أقصى ارتفاع (الجوال)", "en": "Max height (mobile)" }, "min": 20, "max": 80, "step": 2, "unit": "px", "default": 44, "visible_if": { "type": "image" } },
+        { "id": "text",            "type": "text",   "label": { "ar": "النص (فارغ = اسم المتجر)", "en": "Text (empty = store name)" }, "visible_if": { "type": "text" } },
+        { "id": "text_color",      "type": "color",  "label": { "ar": "لون النص", "en": "Text color" }, "default": "#0B0A09", "visible_if": { "type": "text" } },
+        { "id": "text_size",       "type": "range",  "label": { "ar": "حجم الخط", "en": "Font size" }, "min": 14, "max": 36, "step": 1, "unit": "px", "default": 20, "visible_if": { "type": "text" } },
+        { "id": "text_weight",     "type": "select", "label": { "ar": "سُمك الخط", "en": "Weight" }, "options": [{ "value": "normal", "label": { "ar": "عادي", "en": "Normal" }}, { "value": "medium", "label": { "ar": "متوسط", "en": "Medium" }}, { "value": "semibold", "label": { "ar": "نصف عريض", "en": "Semibold" }}, { "value": "bold", "label": { "ar": "عريض", "en": "Bold" }}], "default": "medium", "visible_if": { "type": "text" } },
+        { "id": "text_uppercase",  "type": "checkbox", "label": { "ar": "أحرف كبيرة", "en": "Uppercase" }, "default": false, "visible_if": { "type": "text" } },
+
+        { "id": "icons_search",    "type": "image",  "label": { "ar": "── أيقونة البحث", "en": "── Search icon" }, "info": { "ar": "24×24 SVG/PNG شفاف", "en": "24×24 SVG/transparent PNG" } },
+        { "id": "icons_login",     "type": "image",  "label": { "ar": "── أيقونة الدخول", "en": "── Login icon" }, "info": { "ar": "lucide.dev → log-in", "en": "lucide.dev → log-in" } },
+        { "id": "icons_profile",   "type": "image",  "label": { "ar": "── أيقونة الحساب", "en": "── Profile icon" } },
+        { "id": "icons_cart",      "type": "image",  "label": { "ar": "── أيقونة السلة", "en": "── Cart icon" } },
+        { "id": "icons_globe",     "type": "image",  "label": { "ar": "── أيقونة اللغة", "en": "── Globe icon" } },
+        { "id": "icons_menu",      "type": "image",  "label": { "ar": "── أيقونة القائمة", "en": "── Menu icon" } },
+        { "id": "icons_size",      "type": "range",  "label": { "ar": "── حجم الأيقونات", "en": "── Icon size" }, "min": 16, "max": 32, "step": 1, "unit": "px", "default": 22 },
+        { "id": "icons_tint_uploaded", "type": "checkbox", "label": { "ar": "── تلوين الأيقونات المرفوعة", "en": "── Tint uploaded icons" }, "info": { "ar": "تتبع لون النص. الملونة ستفقد ألوانها", "en": "Follow header text color. Multi-color icons lose their colors" }, "default": false }
+      ]
+    },
+    {
+      "id": "announcement_bar",
+      "icon": "fa fa-bullhorn",
+      "name": {
+        "ar": "شريط الإعلانات",
+        "en": "Announcement Bar"
+      },
+      "settings": [
+        { "id": "display",         "type": "checkbox", "label": { "ar": "إظهار شريط الإعلانات", "en": "Display Announcement Bar" }, "default": true },
+        { "id": "page_display",    "type": "select", "label": { "ar": "عرض في", "en": "Display in" }, "options": [{ "value": "all", "label": { "ar": "جميع الصفحات", "en": "All pages" }}, { "value": "home", "label": { "ar": "الرئيسية فقط", "en": "Home only" }}], "default": "all" },
+        { "id": "messages",        "type": "list", "label": { "ar": "الرسائل", "en": "Messages" }, "item_label": { "ar": "رسالة", "en": "Message" }, "max_items": 6, "settings": [
+          { "id": "text",       "type": "text", "label": { "ar": "النص", "en": "Text" } },
+          { "id": "link",       "type": "url",  "label": { "ar": "الرابط", "en": "Link" } },
+          { "id": "icon",       "type": "select", "label": { "ar": "أيقونة", "en": "Icon" }, "options": [{ "value": "none", "label": { "ar": "بدون", "en": "None" }}, { "value": "custom", "label": { "ar": "مخصصة (صورة)", "en": "Custom (image)" }}, { "value": "shipping", "label": { "ar": "شحن", "en": "Shipping" }}, { "value": "discount", "label": { "ar": "خصم", "en": "Discount" }}, { "value": "gift", "label": { "ar": "هدية", "en": "Gift" }}, { "value": "star", "label": { "ar": "نجمة", "en": "Star" }}, { "value": "info", "label": { "ar": "معلومة", "en": "Info" }}, { "value": "fire", "label": { "ar": "نار", "en": "Fire" }}, { "value": "heart", "label": { "ar": "قلب", "en": "Heart" }}, { "value": "bell", "label": { "ar": "جرس", "en": "Bell" }}], "default": "none" },
+          { "id": "icon_image", "type": "image", "label": { "ar": "صورة الأيقونة المخصصة", "en": "Custom icon image" }, "info": { "ar": "ارفع SVG أو PNG شفاف. يظهر فقط عند اختيار «مخصصة (صورة)» أعلاه.", "en": "Upload SVG or transparent PNG. Visible only when «Custom (image)» is selected above." }, "visible_if": { "icon": "custom" } }
+        ]},
+        { "id": "background_color",  "type": "color", "label": { "ar": "── لون الخلفية", "en": "── Background" }, "default": "#111827" },
+        { "id": "text_color",        "type": "color", "label": { "ar": "── لون النص", "en": "── Text color" }, "default": "#ffffff" },
+        { "id": "use_gradient",      "type": "checkbox", "label": { "ar": "── تدرج لوني", "en": "── Gradient" }, "default": false },
+        { "id": "background_color_2","type": "color", "label": { "ar": "── لون التدرج الثاني", "en": "── Gradient 2nd color" }, "default": "#1f2937", "visible_if": { "use_gradient": true } },
+        { "id": "alignment",         "type": "select", "label": { "ar": "── محاذاة", "en": "── Alignment" }, "options": [{ "value": "start", "label": { "ar": "البداية", "en": "Start" }}, { "value": "center", "label": { "ar": "الوسط", "en": "Center" }}, { "value": "end", "label": { "ar": "النهاية", "en": "End" }}], "default": "center" },
+        { "id": "font_size",         "type": "range", "label": { "ar": "── حجم الخط", "en": "── Font size" }, "min": 11, "max": 18, "step": 1, "unit": "px", "default": 13 },
+        { "id": "icon_size",         "type": "range", "label": { "ar": "── حجم الأيقونة", "en": "── Icon size" }, "min": 16, "max": 56, "step": 2, "unit": "px", "default": 40 },
+        { "id": "padding_y",         "type": "range", "label": { "ar": "── المسافة العمودية", "en": "── Vertical padding" }, "min": 4, "max": 24, "step": 2, "unit": "px", "default": 10 },
+        { "id": "uppercase",         "type": "checkbox", "label": { "ar": "── أحرف كبيرة", "en": "── Uppercase" }, "default": false },
+        { "id": "letter_spacing",    "type": "range", "label": { "ar": "── تباعد الحروف", "en": "── Letter spacing" }, "min": 0, "max": 4, "step": 1, "unit": "px", "default": 0 },
+        { "id": "mode",              "type": "select", "label": { "ar": "── نمط العرض", "en": "── Display mode" }, "options": [{ "value": "rotate", "label": { "ar": "تدوير", "en": "Rotate" }}, { "value": "marquee", "label": { "ar": "تمرير متواصل", "en": "Marquee" }}], "default": "rotate" },
+        { "id": "rotate_delay",      "type": "range", "label": { "ar": "── سرعة التدوير", "en": "── Rotation delay" }, "min": 2000, "max": 10000, "step": 500, "unit": "ms", "default": 4000, "visible_if": { "mode": "rotate" } },
+        { "id": "rotate_effect",     "type": "select", "label": { "ar": "── تأثير الانتقال", "en": "── Transition" }, "options": [{ "value": "fade", "label": { "ar": "تلاشي", "en": "Fade" }}, { "value": "slide", "label": { "ar": "انزلاق", "en": "Slide" }}], "default": "fade", "visible_if": { "mode": "rotate" } },
+        { "id": "marquee_speed",     "type": "range", "label": { "ar": "── سرعة التمرير", "en": "── Marquee speed" }, "min": 10, "max": 80, "step": 5, "unit": "s", "default": 30, "visible_if": { "mode": "marquee" } },
+        { "id": "dismissible",       "type": "checkbox", "label": { "ar": "── السماح بالإغلاق", "en": "── Allow dismiss" }, "default": false },
+        { "id": "show_on_mobile",    "type": "checkbox", "label": { "ar": "── إظهار على الجوال", "en": "── Show on mobile" }, "default": true },
+        { "id": "show_on_desktop",   "type": "checkbox", "label": { "ar": "── إظهار على سطح المكتب", "en": "── Show on desktop" }, "default": true }
+      ]
+    },
+    {
+      "id": "header_highlights",
+      "icon": "fa fa-star",
+      "name": {
+        "ar": "شريط المزايا",
+        "en": "Highlights Strip"
+      },
+      "settings": [
+        { "id": "display", "type": "checkbox", "label": { "ar": "إظهار شريط المزايا", "en": "Display highlights strip" }, "info": { "ar": "شريط مزايا عام (شحن، إرجاع، دفع آمن، إلخ) يظهر داخل شريط الرأس على كل الصفحات بدون الحاجة لإضافة قسم لكل صفحة. يستخدم نفس تنسيق قسم «المزايا السريعة» مع ظل خفيف بدلاً من الحدود وعرض محتوى أقصى 1500 بكسل.", "en": "A site-wide trust strip (shipping, returns, secure payment, etc.) rendered inside the <header> on every page — no need to add a Highlights section to each template. Same styling as the standalone Highlights section but with a soft shadow instead of borders and a 1500px max content width." }, "default": false },
+        { "id": "page_display", "type": "select", "label": { "ar": "── عرض في", "en": "── Display in" }, "options": [
+          { "value": "all",  "label": { "ar": "جميع الصفحات", "en": "All pages" } },
+          { "value": "home", "label": { "ar": "الرئيسية فقط", "en": "Home only" } }
+        ], "default": "all", "visible_if": { "display": true } },
+        { "id": "points", "type": "list", "label": { "ar": "── العناصر", "en": "── Items" }, "info": { "ar": "حتى 3 عناصر تظهر في صف واحد على سطح المكتب وعلى الموبايل (على الموبايل تتقلص الخطوط لملاءمة الصف).", "en": "Up to 3 items, rendered in a single row on both desktop and mobile (fonts shrink on mobile to fit)." }, "max_items": 3, "visible_if": { "display": true }, "settings": [
+          { "id": "image", "type": "image", "label": { "ar": "الأيقونة", "en": "Icon" }, "info": { "ar": "ارفع SVG أو PNG شفاف بحجم ~64×64 بكسل.", "en": "Upload an SVG or transparent PNG, ~64×64 pixels." } },
+          { "id": "title", "type": "text", "label": { "ar": "العنوان", "en": "Title" } },
+          { "id": "description", "type": "text", "label": { "ar": "الوصف", "en": "Description" } }
+        ]},
+        { "id": "container_style", "type": "select", "label": { "ar": "── أسلوب العرض", "en": "── Display style" }, "options": [
+          { "value": "unified", "label": { "ar": "شريط موحد بفواصل عمودية", "en": "Unified bar with vertical dividers" } },
+          { "value": "cards",   "label": { "ar": "بطاقات منفصلة لكل عنصر",     "en": "Separate card per item" } },
+          { "value": "bare",    "label": { "ar": "بدون حدود",                  "en": "No borders" } }
+        ], "default": "unified", "visible_if": { "display": true } },
+        { "id": "item_radius", "type": "range", "label": { "ar": "── نصف قطر الحدود", "en": "── Border radius" }, "info": { "ar": "يطبق على الحاوية في النمط الموحد، وعلى كل بطاقة في نمط البطاقات.", "en": "Applies to the outer container in Unified style, and to each card in Cards style." }, "min": 0, "max": 32, "step": 1, "unit": "px", "default": 0, "visible_if": { "display": true } },
+        { "id": "background", "type": "select", "label": { "ar": "── الخلفية", "en": "── Background" }, "options": [
+          { "value": "secondary",   "label": { "ar": "ثانوي",         "en": "Secondary" } },
+          { "value": "background",  "label": { "ar": "خلفية الصفحة",  "en": "Page background" } },
+          { "value": "transparent", "label": { "ar": "شفاف",          "en": "Transparent" } }
+        ], "default": "secondary", "visible_if": { "display": true } },
+        { "id": "show_on_mobile",  "type": "checkbox", "label": { "ar": "── إظهار على الجوال",     "en": "── Show on mobile" },  "default": true, "visible_if": { "display": true } },
+        { "id": "show_on_desktop", "type": "checkbox", "label": { "ar": "── إظهار على سطح المكتب", "en": "── Show on desktop" }, "default": true, "visible_if": { "display": true } }
+      ]
+    },
+    {
+      "id": "mobile_drawer",
+      "icon": "fa fa-bars",
+      "name": { "ar": "قائمة الجوال", "en": "Mobile Drawer" },
+      "settings": [
+        { "id": "search",            "type": "checkbox", "label": { "ar": "إظهار شريط البحث", "en": "Show search bar" }, "default": false },
+        { "id": "animate",           "type": "checkbox", "label": { "ar": "تحريك العناصر عند الفتح", "en": "Staggered entry animation" }, "default": true },
+
+        { "id": "featured",          "type": "checkbox", "label": { "ar": "── إظهار البطاقات المميزة", "en": "── Show featured cards" }, "default": false },
+        { "id": "featured_label",    "type": "text",     "label": { "ar": "── عنوان القسم", "en": "── Section label" }, "default": "", "visible_if": { "featured": true } },
+        { "id": "featured_1_title",  "type": "text",     "label": { "ar": "── البطاقة 1 — العنوان", "en": "── Card 1 — Title" }, "visible_if": { "featured": true } },
+        { "id": "featured_1_badge",  "type": "text",     "label": { "ar": "── البطاقة 1 — الشارة", "en": "── Card 1 — Badge" }, "visible_if": { "featured": true } },
+        { "id": "featured_1_image",  "type": "image",    "label": { "ar": "── البطاقة 1 — الصورة", "en": "── Card 1 — Image" }, "visible_if": { "featured": true } },
+        { "id": "featured_1_link",   "type": "url",      "label": { "ar": "── البطاقة 1 — الرابط", "en": "── Card 1 — Link" }, "visible_if": { "featured": true } },
+        { "id": "featured_2_title",  "type": "text",     "label": { "ar": "── البطاقة 2 — العنوان", "en": "── Card 2 — Title" }, "visible_if": { "featured": true } },
+        { "id": "featured_2_badge",  "type": "text",     "label": { "ar": "── البطاقة 2 — الشارة", "en": "── Card 2 — Badge" }, "visible_if": { "featured": true } },
+        { "id": "featured_2_image",  "type": "image",    "label": { "ar": "── البطاقة 2 — الصورة", "en": "── Card 2 — Image" }, "visible_if": { "featured": true } },
+        { "id": "featured_2_link",   "type": "url",      "label": { "ar": "── البطاقة 2 — الرابط", "en": "── Card 2 — Link" }, "visible_if": { "featured": true } },
+
+        { "id": "offer",             "type": "checkbox", "label": { "ar": "── إظهار شريط العرض", "en": "── Show offer ribbon" }, "default": false },
+        { "id": "offer_tag",         "type": "text",     "label": { "ar": "── شارة العرض", "en": "── Tag" }, "default": "", "visible_if": { "offer": true } },
+        { "id": "offer_text",        "type": "text",     "label": { "ar": "── نص العرض", "en": "── Text" }, "visible_if": { "offer": true } },
+        { "id": "offer_link",        "type": "url",      "label": { "ar": "── رابط العرض", "en": "── Link" }, "visible_if": { "offer": true } },
+
+        { "id": "browse_label",      "type": "text",     "label": { "ar": "── عنوان قسم التصفح", "en": "── Browse-section label" }, "default": "" },
+
+        { "id": "social_instagram",  "type": "url",      "label": { "ar": "── رابط Instagram", "en": "── Instagram URL" } },
+        { "id": "social_whatsapp",   "type": "url",      "label": { "ar": "── رابط WhatsApp", "en": "── WhatsApp URL" } },
+        { "id": "social_twitter",    "type": "url",      "label": { "ar": "── رابط X / Twitter", "en": "── X / Twitter URL" } },
+        { "id": "social_tiktok",     "type": "url",      "label": { "ar": "── رابط TikTok", "en": "── TikTok URL" } }
+      ]
+    }
+  ]
+}

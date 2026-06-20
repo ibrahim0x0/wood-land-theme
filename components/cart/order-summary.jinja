@@ -1,0 +1,129 @@
+<div
+  class="flex flex-col gap-2"
+  data-order-summary-section
+>
+  <h3 class="text-foreground text-xs uppercase tracking-wide">{{ _("Order summary") }}</h3>
+  <div
+    class="bg-secondary flex flex-col gap-4 rounded-none p-4"
+    data-order-summary
+  >
+    <div
+      class="flex flex-col gap-4"
+      data-cart-totals
+    >
+      {% for cartTotal in cart.totals %}
+        {% if cartTotal.code == 'sub_totals' %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm">
+              {{ cartTotal.title }}
+              <span
+                class="text-muted"
+                data-cart-items-count
+                >• {{ _('%(count)s items') | format(count=cart.products_count) }}</span
+              >
+            </span>
+            <span class="text-foreground text-sm shrink-0 text-end">{{ cartTotal.value_string }}</span>
+          </div>
+        {% elif cartTotal.code == 'shipping' %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm">{{ cartTotal.title }}</span>
+            <span class="text-foreground text-sm shrink-0 text-end">{{ cartTotal.value_string }}</span>
+          </div>
+        {% elif cartTotal.code == 'discount' or cartTotal.code == 'coupon_discount' or cartTotal.code == 'products_discount' %}
+          {# Just the discount row; coupon/gift/loyalty details are rendered
+             independently below so they still appear when no `discount` total
+             is returned by the platform. #}
+          {% set discount_value = cartTotal.value_string|string %}
+          {% set discount_display = discount_value if discount_value.startswith('-') else '-' ~ discount_value %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm">{{ cartTotal.title or _("Discount") }}</span>
+            <span class="text-success text-sm shrink-0 text-end">{{ discount_display }}</span>
+          </div>
+        {% elif cartTotal.code == 'tax' or cartTotal.code == 'vat' %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm">{{ cartTotal.title }}</span>
+            <span class="text-foreground text-sm shrink-0 text-end">{{ cartTotal.value_string }}</span>
+          </div>
+        {% elif cartTotal.code == 'total' %}
+          {# Total Row - Handled separately below #}
+        {% else %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm">{{ cartTotal.title }}</span>
+            <span class="text-foreground text-sm shrink-0 text-end">{{ cartTotal.value_string }}</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      {# Coupon, gift card and loyalty details — rendered independently of the
+         `discount` total row so they still appear when the platform omits it. #}
+      {% if cart.coupon and cart.coupon.code %}
+        <div class="flex items-center gap-1">
+          <svg
+            class="text-muted size-4 shrink-0"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+          >
+            <path
+              d="M13.333 7.333V4.667A.667.667 0 0012.667 4h-10A.667.667 0 002 4.667v2.666a1.333 1.333 0 010 2.667v2.667c0 .368.299.666.667.666h10a.667.667 0 00.666-.666V9.333a1.333 1.333 0 010-2.667z"
+            />
+          </svg>
+          <span class="text-muted text-sm flex-1">{{ cart.coupon.code }}</span>
+          {% if cart.coupon.discount_amount_string %}
+            {% set coupon_value = cart.coupon.discount_amount_string|string %}
+            {% set coupon_display = coupon_value if coupon_value.startswith('-') else '-' ~ coupon_value %}
+            <span class="text-success text-sm shrink-0 text-end">{{ coupon_display }}</span>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if cart.gift_card_details and cart.gift_card_details.code %}
+        {% set gift_value = (cart.gift_card_details.amount_string | default(''))|string %}
+        {% set gift_display = gift_value if gift_value.startswith('-') else '-' ~ gift_value %}
+        <div class="flex items-center gap-1">
+          <svg
+            class="text-muted size-4 shrink-0"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+          >
+            <path
+              d="M14 5.333h-1.82a2 2 0 00.153-.767 2 2 0 00-2-2c-.78 0-1.467.433-1.82 1.1L8 4.487l-.513-.82A2.005 2.005 0 005.667 2.566a2 2 0 00-2 2c0 .273.06.533.153.767H2a1.333 1.333 0 00-1.333 1.333V8c0 .367.3.667.666.667h.334v4c0 .733.6 1.333 1.333 1.333h10c.733 0 1.333-.6 1.333-1.333v-4h.334c.366 0 .666-.3.666-.667V6.667A1.333 1.333 0 0014 5.333zm-3.667-1.767a.667.667 0 01.667.667.667.667 0 01-.667.667H8.867l.666-1.067a.664.664 0 01.8-.267zm-4.666 0a.664.664 0 01.8.267l.666 1.067H5.667A.667.667 0 015 4.233a.667.667 0 01.667-.667z"
+            />
+          </svg>
+          <span class="text-muted text-sm flex-1">{{ cart.gift_card_details.code }}</span>
+          <span class="text-success text-sm shrink-0 text-end">{{ gift_display }}</span>
+        </div>
+      {% endif %}
+      {% if cart.loyalty_applied_redemption_method %}
+        {% set loyalty_value = (cart.loyalty_applied_redemption_method.reward.discount_amount)|string %}
+        {% set loyalty_display = loyalty_value if loyalty_value.startswith('-') else '-' ~ loyalty_value %}
+        {% set loyalty_currency_code = cart.currency.cart_currency.code if cart.currency and cart.currency.cart_currency else '' %}
+        <div class="flex items-center gap-1">
+          <svg
+            class="text-muted size-4 shrink-0"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+          >
+            <path
+              d="M8 1.333l1.987 4.027 4.446.647-3.217 3.133.76 4.427L8 11.387l-3.976 2.18.76-4.427-3.217-3.133 4.446-.647L8 1.333z"
+            />
+          </svg>
+          <span class="text-muted text-sm flex-1">
+            {{ _("Loyalty") }} {{ cart.loyalty_applied_redemption_method.points_to_redeem }}
+          </span>
+          <span class="text-success text-sm shrink-0 text-end">
+            {{ loyalty_display }} {{ loyalty_currency_code }}
+          </span>
+        </div>
+      {% endif %}
+
+      {# Total Row (always last) #}
+      {% for cartTotal in cart.totals %}
+        {% if cartTotal.code == 'total' %}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-foreground text-sm font-semibold">{{ cartTotal.title }}</span>
+            <span class="text-foreground text-sm font-semibold shrink-0 text-end">{{ cartTotal.value_string }}</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>

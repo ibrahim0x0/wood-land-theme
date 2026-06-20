@@ -1,0 +1,249 @@
+{#
+  Products Carousel Component
+
+  Props (all optional unless marked required):
+  - products                    (required) array of product objects
+  - title / subtitle / eyebrow  heading text
+  - heading_alignment           'start' | 'center' | 'end'
+  - heading_size                'sm' | 'md' | 'lg'
+  - heading_style               'catalog' | 'souq' | 'elite'
+  - more_url / more_text        "see more" link
+  - carousel_id                 (required) unique ID for the carousel
+  - columns_desktop             '2' | '3' | '4' | '5' | '6'
+  - columns_mobile              '1' | '2'
+  - image_aspect_ratio          'adapt' | 'square' | 'portrait'
+  - card_density                'compact' | 'default' | 'large'
+  - enable_image_swap           bool (show_quick_view / show_wishlist are
+                                theme-wide only, read from layout globals)
+  - autoplay                    bool — enable Embla autoplay
+  - autoplay_interval           ms between slides (default 4000)
+  - show_arrows                 bool — prev/next controls
+  - show_progress               bool — progress bar
+#}
+
+{# Callers (sections/products.jinja) always pass these explicitly. The
+   `| default('x')` here just guards against manual callers that forget. #}
+{% set columns_desktop    = columns_desktop    | default('6') %}
+{% set columns_mobile     = columns_mobile     | default('2') %}
+{% set image_aspect_ratio = image_aspect_ratio | default('adapt') %}
+{% set card_density = card_density | default('default') %}
+{% set enable_image_swap  = enable_image_swap  if enable_image_swap  is not none else true %}
+{% set show_arrows   = show_arrows   if show_arrows   is not none else true %}
+{% set show_progress = show_progress if show_progress is not none else true %}
+
+{# Slide cap tracks the card's max-width per density so slides never outgrow
+   the card (avoids the "big gap between slides" issue on wide viewports). #}
+{% set density_cap = '240px' if card_density == 'compact' else ('360px' if card_density == 'large' else '300px') %}
+
+{% set carousel_id = carousel_id or 'products-carousel-' ~ range(1000, 9999) | random %}
+
+{% if products and products|length > 0 %}
+  <div
+    class="flex flex-col gap-6"
+    data-products-carousel="{{ carousel_id }}"
+    data-carousel
+    data-carousel-native="true"
+    data-carousel-align="start"
+    {% if autoplay %}data-carousel-autoplay="{{ autoplay_interval | default(4000, true) }}"{% endif %}
+    data-card-density="{{ card_density }}"
+  >
+    {# Shared heading partial — eyebrow + title + subtitle + optional
+       desktop "more" link. Mobile "more" link still renders below the
+       progress bar (see Controls block). #}
+    {% with
+      more_class='hidden md:inline-flex'
+    %}
+      {% include 'components/products/section-heading.jinja' %}
+    {% endwith %}
+
+    {# Carousel with the swipe hint overlaid at the LEADING edge (over the first product) #}
+    <div class="relative">
+      <div class="products-embla -mx-1">
+      <div
+        class="products-embla__viewport overflow-hidden px-1 pb-1"
+        data-carousel-viewport
+      >
+        <div class="products-embla__container">
+          {# Swipe hint — a leading, decorative pseudo-slide placed INSIDE the
+             track so it scrolls away with the row as you swipe. It is
+             intentionally NOT a `.products-embla__slide`, so carousel.js leaves
+             it out of the slide / arrow-step / dot math. carousel.js still
+             hides it when the row doesn't overflow. pointer-events:none so it
+             never blocks card taps. #}
+          <div class="products-embla__swipe-hint" aria-hidden="true">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M30.509,7l-3.254,3.254l-0.51-0.509l2.386-2.386h-9.796c-0.096,1.677-0.844,3.254-2.102,4.37l-0.478-0.539c1.194-1.058,1.878-2.585,1.878-4.19c0-3.11-2.53-5.64-5.64-5.64S7.354,3.89,7.354,7c0,1.605,0.685,3.133,1.879,4.19l-0.478,0.539C7.407,10.535,6.634,8.811,6.634,7c0-3.507,2.853-6.36,6.36-6.36c3.385,0,6.154,2.661,6.342,6h9.795l-2.386-2.386l0.51-0.509L30.509,7z M26.36,18.776v4.01c0,4.453-1.041,8.574-8.591,8.574c-5.067,0-7.409-2.218-10.404-5.602c-0.844-0.953-3.435-3.76-3.435-3.76l-0.5-0.554c-1.217-1.339-1.79-2.018-1.79-2.459c0-0.541,0.374-1.022,1.052-1.357c1.188-0.586,3.129-0.646,4.319,0.269c0.895,0.688,2.677,2.611,3.629,3.663V7c0-1.388,0.968-2.357,2.354-2.36c0,0,0,0,0.001,0c0,0,0.001,0,0.003,0c0.001,0,0.002,0,0.003,0C14.391,4.643,15.36,5.612,15.36,7v7.64h6.552C24.448,14.64,26.36,16.418,26.36,18.776z M25.64,18.776c0-1.948-1.603-3.417-3.728-3.417H15c-0.199,0-0.36-0.161-0.36-0.36V7c0-0.98-0.66-1.639-1.642-1.64C12.019,5.361,11.36,6.02,11.36,7v15.5c0,0.149-0.092,0.283-0.232,0.337c-0.139,0.054-0.298,0.015-0.397-0.099c-0.03-0.033-2.983-3.368-4.158-4.271c-0.925-0.709-2.588-0.673-3.562-0.192c-0.413,0.203-0.65,0.463-0.65,0.711c0.057,0.274,1.063,1.38,1.603,1.975l0.502,0.556c0.002,0.002,2.595,2.811,3.44,3.767c2.865,3.236,5.099,5.357,9.865,5.357c6.532,0,7.87-3.14,7.87-7.854L25.64,18.776L25.64,18.776z" fill="currentColor"/>
+            </svg>
+          </div>
+          {% for item in products %}
+            <div class="products-embla__slide">
+              {% with
+                product=item,
+                index=loop.index0,
+                card_image_aspect_ratio=image_aspect_ratio,
+                card_density=card_density,
+                enable_image_swap=enable_image_swap,
+                is_priority=(loop.first and is_priority_section | default(false))
+              %}
+                {% include 'components/products/product-card.jinja' %}
+              {% endwith %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Dot indicators — populated by createNativeCarousel (one dot per page).
+       Replaces the prev/next arrows + progress bar. #}
+    <div class="products-embla__dots" data-carousel-dots role="tablist" aria-label="{{ 'نقاط التنقل' if (session.lang or '').startswith('ar') else 'Slide navigation' }}"></div>
+  </div>
+
+  <style>
+    /* Slide width follows both the column count AND the density cap. When
+       `100% / N` exceeds the per-density ceiling, slides stop growing and
+       any extra container width collects at the trailing end rather than
+       inflating each card. */
+    [data-products-carousel="{{ carousel_id }}"] .products-embla {
+      --slide-spacing: 1rem;
+      --slide-cap: calc({{ density_cap }} + var(--slide-spacing));
+      {% if columns_mobile == '2' %}
+        --slide-size: min(50%, var(--slide-cap));
+      {% else %}
+        --slide-size: min(100%, var(--slide-cap));
+      {% endif %}
+    }
+
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__viewport {
+      /* Native scroll-snap = compositor-thread swiping, which stays smooth on
+         mobile even when the main thread is busy (the reason Embla's JS drag
+         stuttered here). Arrows + progress are wired to the native scroll
+         position in assets/js/lib/carousel.js (createNativeCarousel). */
+      overflow-x: auto;
+      overflow-y: hidden;
+      /* Free momentum — no forced snap (the Embla dragFree feel from the demo).
+         Arrows + autoplay still land on exact card boundaries (they scroll by
+         one slide width); only a free drag/flick rests wherever it lands.
+         Swap to `x proximity` for a gentle tidy-up, or `x mandatory` to
+         hard-snap every card to the start. */
+      scroll-snap-type: none;
+      scroll-behavior: smooth; /* arrow clicks glide */
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none; /* Firefox: hide the scrollbar */
+      /* Draggable affordance + stop the card's text/image being selected or
+         ghost-dragged while you drag the row (carousel.js also preventDefaults
+         `dragstart`). `cursor` is inherited, so the grab shows over the image
+         and text too; the interactive buttons keep their own pointer cursor. */
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__viewport::-webkit-scrollbar {
+      display: none; /* WebKit/Blink: hide the scrollbar */
+    }
+    /* While dragging, force the grabbing cursor across the WHOLE card — image,
+       text, buttons, everything. `.is-dragging` is toggled by carousel.js. */
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__viewport.is-dragging,
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__viewport.is-dragging * {
+      cursor: grabbing !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-products-carousel="{{ carousel_id }}"] .products-embla__viewport { scroll-behavior: auto; }
+    }
+
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__container {
+      display: flex;
+      /* Centre the products when they don't fill the row; the `safe` keyword
+         falls back to start-alignment once they overflow, so the first card is
+         never cut off and native scrolling still works. */
+      justify-content: safe center;
+      /* Default `touch-action: auto` (i.e. no override) is REQUIRED: it lets
+         the browser route a horizontal swipe to the carousel's native scroll
+         and a vertical swipe to the page. The old `pan-y` would have BLOCKED
+         horizontal native scrolling entirely. */
+      margin-inline-start: calc(var(--slide-spacing) * -1);
+    }
+
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__slide {
+      flex: 0 0 var(--slide-size);
+      min-width: 0;
+      padding-inline-start: var(--slide-spacing);
+      scroll-snap-align: start;
+    }
+
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    /* ── Swipe hint ──────────────────────────────────────────────────
+       Standalone animated swipe icon OUTSIDE the carousel — no badge, just
+       the brand primary colour. Sits at the leading edge just under the row.
+       carousel.js only hides it when the row doesn't overflow. */
+    /* The hint is now a flex child of the scrolling track (a narrow leading
+       pseudo-slide), so it physically scrolls away with the row instead of
+       floating as a fixed overlay. `flex: 0 0 auto` keeps it to its content
+       width; `align-self: center` centres the icon vertically against the
+       cards. Its leading padding matches a real slide so it lines up. */
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__swipe-hint {
+      flex: 0 0 auto;
+      align-self: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline-start: var(--slide-spacing);
+      color: var(--primary); /* the icon inherits the brand primary colour */
+      /* subtle shadow so the bare icon stays legible over busy product photos */
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 350ms ease;
+    }
+    /* Collapse it out of the flex flow entirely when there's nothing to swipe
+       to, so it leaves no leading gap. */
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__swipe-hint.is-hidden {
+      display: none;
+    }
+    [data-products-carousel="{{ carousel_id }}"] .products-embla__swipe-hint svg {
+      width: 1.75rem;
+      height: 1.75rem;
+      fill: currentColor; /* = var(--primary) from the parent */
+      /* Animation disabled per request — the hand stays still. */
+      animation: none;
+    }
+    @keyframes products-swipe-nudge {
+      0%, 100% { transform: translateX(-6px); }
+      50%      { transform: translateX(6px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-products-carousel="{{ carousel_id }}"] .products-embla__swipe-hint svg { animation: none; }
+    }
+
+    @media (min-width: 768px) {
+      [data-products-carousel="{{ carousel_id }}"] .products-embla {
+        --slide-size: min(calc(100% / 4), var(--slide-cap));
+      }
+    }
+
+    @media (min-width: 1024px) {
+      [data-products-carousel="{{ carousel_id }}"] .products-embla {
+        {% if columns_desktop == '2' %}
+          --slide-size: min(calc(100% / 2), var(--slide-cap));
+        {% elif columns_desktop == '3' %}
+          --slide-size: min(calc(100% / 3), var(--slide-cap));
+        {% elif columns_desktop == '5' %}
+          --slide-size: min(calc(100% / 5), var(--slide-cap));
+        {% elif columns_desktop == '6' %}
+          --slide-size: min(calc(100% / 6), var(--slide-cap));
+        {% else %}
+          --slide-size: min(calc(100% / 4), var(--slide-cap));
+        {% endif %}
+      }
+    }
+  </style>
+
+  {# Carousel is initialised by main.js using data-carousel attributes #}
+{% endif %}

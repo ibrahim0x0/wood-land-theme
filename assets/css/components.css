@@ -1,0 +1,1450 @@
+@layer components {
+  /* ========== BUTTON COMPONENT ========== */
+  /* Base styles. Border-radius is set explicitly (not via Tailwind's
+     `rounded`) so it tracks the merchant's "Button Roundness" setting
+     (Layout Settings → Colors / Radius → Button Roundness, exposed
+     globally as `--button-radius`). */
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 border border-transparent font-normal whitespace-nowrap transition-all outline-none;
+    border-radius: var(--button-radius);
+  }
+
+  /* TEMP — hide all wishlist UI ("for now"). Remove this block to restore.
+     Covers the product-card + product-page heart ([data-wishlist-btn]) and
+     the header wishlist link. `display:none` also drops them from the tab
+     order + a11y tree, but the markup still renders server-side; the proper
+     long-term off-switch is the wishlist setting toggles (card_show_wishlist
+     / header_show_wishlist) or disabling the wishlist feature in Zid, which
+     skip rendering entirely. */
+  [data-wishlist-btn],
+  .header-icon-link[href*="wishlist"] {
+    display: none !important;
+  }
+
+  /* Carousel dot indicators (native product/recommended rows). Built by
+     createNativeCarousel; dark/primary so they read on light backgrounds. */
+  .carousel-dot {
+    height: 6px;
+    width: 12px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--foreground) 25%, transparent);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: width 200ms ease, background 200ms ease;
+  }
+  .carousel-dot[data-active="true"] {
+    width: 22px;
+    background: var(--primary);
+  }
+
+  /* ========== LOAD MORE ========== */
+  /* Filled primary button (+ shown-count) that replaces numbered pagination
+     on listing pages. JS appends the next page in place. */
+  .load-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .load-more__count {
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .load-more-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 220px;
+    padding: 0.875rem 2rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+  .load-more-btn:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+  .load-more-btn:active {
+    transform: translateY(0);
+  }
+  .load-more-btn:disabled {
+    cursor: default;
+  }
+  .load-more-btn__spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid color-mix(in srgb, var(--primary-foreground) 35%, transparent);
+    border-top-color: var(--primary-foreground);
+    border-radius: 50%;
+    animation: load-more-spin 0.7s linear infinite;
+  }
+  /* While loading, hide the label (keeping the button width) and show the
+     spinner centered over it. */
+  .load-more-btn.is-loading .load-more-btn__label {
+    visibility: hidden;
+  }
+  .load-more-btn.is-loading .load-more-btn__spinner {
+    display: inline-block;
+    position: absolute;
+  }
+  @keyframes load-more-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-more-btn__spinner {
+      animation: none;
+    }
+  }
+
+  /* Product-page description — boxed cream card (kept out of an inline style). */
+  [data-product-description] {
+    margin: 18px 0;
+    padding: 16px;
+    background: #fffdf8;
+    border: 1px solid #f0e4d4;
+  }
+
+  .btn:focus-visible {
+    @apply border-ring ring-ring/50 ring-[3px];
+  }
+
+  .btn:disabled {
+    @apply pointer-events-none cursor-not-allowed;
+  }
+
+  .btn svg {
+    @apply pointer-events-none shrink-0;
+  }
+
+  /* ---------- Button Variants ---------- */
+  .btn-filled {
+    @apply bg-primary text-primary-foreground border-primary;
+  }
+
+  .btn-filled:hover {
+    @apply opacity-90;
+  }
+
+  .btn-filled:active {
+    @apply bg-muted text-primary-foreground border-primary;
+  }
+
+  .btn-filled:disabled {
+    @apply bg-secondary text-muted-foreground border-transparent opacity-60;
+  }
+
+  .btn-outlined {
+    @apply text-foreground border-foreground bg-transparent;
+  }
+
+  .btn-outlined:hover {
+    @apply ring-foreground ring-1;
+  }
+
+  .btn-outlined:active {
+    @apply bg-secondary ring-foreground ring-1;
+  }
+
+  .btn-outlined:disabled {
+    @apply text-muted-foreground border-border/50 opacity-60;
+  }
+
+  /* Buy Now button loading state — `disabled` + `aria-busy="true"`
+     are set by buy-now.js while window.zid.cart.buyNow() resolves.
+     Native :disabled handles pointer-events; we just dim. */
+  .product-buy-now-btn[aria-busy="true"] {
+    @apply opacity-70;
+    cursor: progress;
+  }
+
+  /* Buy Now ("quick buy") — solid black fill instead of the outlined style. */
+  .btn.product-buy-now-btn {
+    background-color: #000;
+    border-color: #000;
+    color: #fff;
+  }
+  .btn.product-buy-now-btn:hover {
+    background-color: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+    box-shadow: none;
+  }
+
+  /* Inline spinner shown while Buy Now is loading. The .d-none class
+     is toggled by buy-now.js per the documented pattern. */
+  .buy-now-progress {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-inline-end: 0.5em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -0.15em;
+    animation: buy-now-spin 0.7s linear infinite;
+  }
+  .buy-now-progress.d-none,
+  .buy-now-icon.d-none {
+    display: none;
+  }
+  @keyframes buy-now-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .btn-text {
+    @apply text-foreground border-transparent bg-transparent;
+  }
+
+  .btn-text:hover {
+    @apply border-foreground;
+  }
+
+  .btn-text:active {
+    @apply bg-secondary border-foreground;
+  }
+
+  .btn-text:disabled {
+    @apply text-muted-foreground opacity-60;
+  }
+
+  /* Destructive */
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground border-destructive;
+  }
+
+  .btn-destructive:hover {
+    @apply opacity-90;
+  }
+
+  .btn-destructive:active {
+    @apply opacity-80;
+  }
+
+  .btn-destructive:disabled {
+    @apply opacity-50;
+  }
+
+  /* ---------- Button Sizes ---------- */
+  /* old: @apply px-4 py-3; */
+  .btn-lg {
+    @apply h-12 px-4;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .btn-md {
+    @apply px-4 py-2;
+    font-size: var(--font-body2--size);
+    line-height: var(--font-body2--line-height);
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5;
+    font-size: var(--font-caption--size);
+    line-height: var(--font-caption--line-height);
+  }
+
+  /* ---------- Icon Buttons ---------- */
+  .btn-icon {
+    @apply text-foreground border-none bg-transparent p-0;
+  }
+
+  .btn-icon:hover {
+    @apply text-muted;
+  }
+
+  .btn-icon:disabled {
+    @apply text-muted-foreground opacity-60;
+  }
+
+  .btn-icon-lg {
+    @apply size-10;
+  }
+
+  .btn-icon-lg svg {
+    @apply size-6;
+  }
+
+  .btn-icon-md {
+    @apply size-8;
+  }
+
+  .btn-icon-md svg {
+    @apply size-4;
+  }
+
+  .btn-icon-sm {
+    @apply size-6;
+  }
+
+  .btn-icon-sm svg {
+    @apply size-3;
+  }
+
+  /* ========== BADGE/TAG COMPONENT ========== */
+  /* Base badge styles */
+  .badge {
+    @apply inline-flex w-fit items-center gap-1 rounded px-2 py-1;
+    font-size: var(--font-tagline--size);
+    line-height: var(--font-tagline--line-height);
+    font-weight: var(--font-tagline--weight);
+    font-variant: all-small-caps;
+  }
+
+  .badge svg {
+    @apply pointer-events-none size-4 shrink-0;
+  }
+
+  /* ---------- Badge Variants ---------- */
+  /* Filled */
+  .badge-filled {
+    @apply bg-secondary text-foreground;
+  }
+
+  /* Outlined */
+  .badge-outlined {
+    @apply border-border text-foreground border bg-transparent;
+  }
+
+  /* ========== FORM COMPONENTS ========== */
+  /* ---------- Form Label ---------- */
+  .form-label {
+    @apply text-muted-foreground inline-flex items-center gap-1;
+    font-size: var(--font-tagline--size);
+    line-height: var(--font-tagline--line-height);
+    font-weight: var(--font-tagline--weight);
+    font-variant: all-small-caps;
+  }
+
+  .form-label[data-disabled="true"] {
+    @apply opacity-50;
+  }
+
+  .form-label-required {
+    @apply text-destructive;
+  }
+
+  /* ---------- Form Input ---------- */
+  .form-input {
+    @apply text-foreground border-input h-12 w-full rounded border bg-transparent px-3 transition-[border-color,border-width] outline-none;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .form-input::placeholder {
+    @apply text-muted-foreground;
+  }
+
+  .form-input:hover:not(:disabled):not([aria-invalid="true"]) {
+    @apply ring-input ring-1;
+  }
+
+  .form-input:focus:not([aria-invalid="true"]) {
+    @apply border-foreground border-2;
+  }
+
+  .form-input:disabled {
+    @apply bg-secondary border-border/50 text-muted-foreground/60 cursor-not-allowed;
+  }
+
+  .form-input[aria-invalid="true"] {
+    @apply border-destructive border-2;
+  }
+
+  /* Input with wrapper (for icons) */
+  .form-input-wrapper {
+    @apply border-input relative flex h-12 items-center gap-3 rounded border px-3 transition-[border-color,border-width];
+  }
+
+  .form-input-wrapper:hover:not([data-disabled="true"]):not([data-error="true"]) {
+    @apply ring-input ring-1;
+  }
+
+  .form-input-wrapper:focus-within:not([data-error="true"]) {
+    @apply border-foreground border-2;
+  }
+
+  .form-input-wrapper[data-disabled="true"] {
+    @apply bg-secondary border-border/50;
+  }
+
+  .form-input-wrapper[data-error="true"] {
+    @apply border-destructive border-2;
+  }
+
+  .form-input-wrapper input {
+    @apply text-foreground h-full w-full flex-1 bg-transparent outline-none;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .form-input-wrapper input::placeholder {
+    @apply text-muted-foreground;
+  }
+
+  .form-input-wrapper input:disabled {
+    @apply text-muted-foreground/60 cursor-not-allowed;
+  }
+
+  .form-input-wrapper [data-slot="icon"] {
+    @apply text-foreground shrink-0;
+  }
+
+  .form-input-wrapper [data-slot="icon"] svg {
+    @apply size-6;
+  }
+
+  .form-input-wrapper[data-disabled="true"] [data-slot="icon"] {
+    @apply text-muted-foreground/60;
+  }
+
+  /* ---------- Form Textarea ---------- */
+  .form-textarea {
+    @apply text-foreground border-input w-full resize-none rounded border bg-transparent px-3 py-3 transition-[border-color,border-width] outline-none;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .form-textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+
+  .form-textarea:hover:not(:disabled):not([aria-invalid="true"]) {
+    @apply ring-input ring-1;
+  }
+
+  .form-textarea:focus:not([aria-invalid="true"]) {
+    @apply border-foreground border-2;
+  }
+
+  .form-textarea:disabled {
+    @apply bg-secondary border-border/50 text-muted-foreground/60 cursor-not-allowed;
+  }
+
+  .form-textarea[aria-invalid="true"] {
+    @apply border-destructive border-2;
+  }
+
+  /* ---------- Form Select ---------- */
+  .form-select-wrapper {
+    @apply border-input relative flex h-12 items-center gap-3 rounded border px-3 transition-[border-color,border-width];
+  }
+
+  .form-select-wrapper:hover:not([data-disabled="true"]):not([data-error="true"]) {
+    @apply ring-input ring-1;
+  }
+
+  .form-select-wrapper:focus-within:not([data-error="true"]) {
+    @apply border-foreground border-2;
+  }
+
+  .form-select-wrapper[data-disabled="true"] {
+    @apply bg-secondary border-border/50;
+  }
+
+  .form-select-wrapper[data-error="true"] {
+    @apply border-destructive border-2;
+  }
+
+  .form-select-wrapper select {
+    @apply text-foreground h-full w-full flex-1 appearance-none bg-transparent outline-none;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .form-select-wrapper select:disabled {
+    @apply text-muted-foreground/60 cursor-not-allowed;
+  }
+
+  .form-select-wrapper [data-slot="icon"] {
+    @apply text-foreground pointer-events-none shrink-0;
+  }
+
+  .form-select-wrapper[data-disabled="true"] [data-slot="icon"] {
+    @apply text-muted-foreground/60;
+  }
+
+  /* ---------- Form Caption/Helper ---------- */
+  .form-caption {
+    @apply text-muted-foreground mt-2;
+    font-size: var(--font-caption--size);
+    line-height: var(--font-caption--line-height);
+  }
+
+  .form-caption[data-error="true"] {
+    @apply text-destructive;
+  }
+
+  /* ---------- Form Checkbox ---------- */
+  .form-checkbox {
+    @apply border-primary bg-background relative cursor-pointer appearance-none border transition-all;
+    width: 18px;
+    height: 18px;
+  }
+
+  .form-checkbox:checked {
+    @apply bg-primary border-primary;
+  }
+
+  /* Checkmark using pseudo-element */
+  .form-checkbox::before {
+    content: "";
+    @apply absolute inset-[2.5px] block rotate-45 bg-current opacity-0 transition-all duration-300;
+    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 80%, 70% 80%, 70% 100%);
+  }
+
+  .form-checkbox:checked::before {
+    @apply text-primary-foreground opacity-100;
+    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 0%, 70% 0%, 70% 100%);
+  }
+
+  .form-checkbox:disabled {
+    @apply border-border/50 bg-secondary cursor-not-allowed opacity-50;
+  }
+
+  .form-checkbox:focus-visible {
+    @apply ring-ring/50 ring-[3px];
+  }
+
+  /* ---------- Form Radio ---------- */
+  .form-radio {
+    @apply border-primary bg-background relative cursor-pointer appearance-none rounded-full border transition-all;
+    width: 18px;
+    height: 18px;
+  }
+
+  .form-radio:checked {
+    @apply bg-primary border-primary;
+  }
+
+  /* Inner dot using pseudo-element */
+  .form-radio::before {
+    content: "";
+    @apply bg-primary-foreground absolute inset-0 m-auto block rounded-full opacity-0 transition-all duration-300;
+    width: 8px;
+    height: 8px;
+  }
+
+  .form-radio:checked::before {
+    @apply opacity-100;
+  }
+
+  .form-radio:disabled {
+    @apply border-border/50 bg-secondary cursor-not-allowed opacity-50;
+  }
+
+  .form-radio:focus-visible {
+    @apply ring-ring/50 ring-[3px];
+  }
+
+  /* ---------- Form Toggle/Switch ---------- */
+  /* Hidden input that powers the toggle */
+  .form-toggle {
+    @apply sr-only;
+  }
+
+  /* The visible toggle track */
+  .form-toggle-track {
+    @apply bg-border relative shrink-0 cursor-pointer rounded-full p-1 transition-all;
+    width: 40px;
+    height: 24px;
+  }
+
+  .form-toggle:checked + .form-toggle-track {
+    @apply bg-primary;
+  }
+
+  .form-toggle:disabled + .form-toggle-track {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .form-toggle:focus-visible + .form-toggle-track {
+    @apply ring-ring/50 ring-[3px];
+  }
+
+  /* The toggle thumb/knob */
+  .form-toggle-thumb {
+    @apply bg-background block rounded-full transition-transform duration-300;
+    width: 16px;
+    height: 16px;
+  }
+
+  .form-toggle:checked + .form-toggle-track .form-toggle-thumb {
+    @apply translate-x-4 rtl:-translate-x-4;
+  }
+
+  /* ---------- Form Control Wrapper (checkbox/radio/toggle with label) ---------- */
+  .form-control {
+    @apply text-foreground flex cursor-pointer items-center gap-2;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .form-control:has(input:disabled) {
+    @apply cursor-not-allowed;
+  }
+
+  /* ========== BUTTON GROUP COMPONENT ========== */
+  /* Button Group Container */
+  .btn-group {
+    @apply flex w-fit items-center;
+  }
+
+  /* Button Group Item (label wrapping hidden input) */
+  .btn-group-item {
+    @apply text-foreground border-input inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border bg-transparent font-normal whitespace-nowrap transition-all;
+    padding: 8px 16px;
+    font-size: var(--font-body1--size);
+    line-height: var(--font-body1--line-height);
+  }
+
+  .btn-group-item svg {
+    @apply pointer-events-none size-6 shrink-0;
+  }
+
+  /* Connected style (default) - first/last get rounded corners */
+  .btn-group .btn-group-item:first-child {
+    @apply rounded-s;
+  }
+
+  .btn-group .btn-group-item:last-child {
+    @apply rounded-e;
+  }
+
+  .btn-group .btn-group-item:not(:first-child) {
+    @apply -ms-px;
+  }
+
+  /* Separated modifier */
+  .btn-group-separated {
+    @apply gap-2;
+  }
+
+  .btn-group-separated .btn-group-item {
+    @apply rounded;
+  }
+
+  .btn-group-separated .btn-group-item:not(:first-child) {
+    @apply ms-0;
+  }
+
+  /* ---------- Button Group States ---------- */
+  /* Hover */
+  .btn-group-item:hover:not(:has(:checked)):not(:has(:disabled)) {
+    @apply border-2;
+  }
+
+  /* Selected/Checked */
+  .btn-group-item:has(:checked) {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .btn-group-item:has(:checked) svg {
+    @apply text-primary-foreground;
+  }
+
+  /* Disabled */
+  .btn-group-item:has(:disabled) {
+    @apply border-border/50 text-muted-foreground/60 cursor-not-allowed line-through;
+  }
+
+  .btn-group-item:has(:disabled) svg {
+    @apply text-muted-foreground/60;
+  }
+
+  /* Selected & Disabled */
+  .btn-group-item:has(:checked:disabled) {
+    @apply border-primary bg-primary text-muted-foreground/60;
+  }
+
+  .btn-group-item:has(:checked:disabled) svg {
+    @apply text-muted-foreground/60;
+  }
+
+  /* Focus visible */
+  .btn-group-item:focus-within {
+    @apply border-ring ring-ring/50 relative z-10 ring-[3px];
+  }
+
+  /* ---------- Icon-only Button Group Item ---------- */
+  .btn-group-item-icon {
+    @apply size-10 p-0;
+  }
+
+  /* ========== QUANTITY INPUT COMPONENT ========== */
+  /* Container */
+  .qty-input {
+    @apply inline-flex h-12 w-fit items-center gap-2 rounded border px-3 transition-all;
+    border-color: #eee;
+  }
+
+  /* Primary border on focus + while pressing (active). */
+  .qty-input:focus-within,
+  .qty-input:active {
+    border-color: var(--primary);
+  }
+
+  /* Width modifier — kept fit so the control always hugs its content. */
+  .qty-input-full {
+    @apply w-fit;
+  }
+
+  /* Icon button */
+  .qty-input-btn {
+    @apply text-foreground flex size-8 shrink-0 cursor-pointer items-center justify-center rounded bg-white/10 backdrop-blur-sm transition-all;
+  }
+
+  .qty-input-btn:hover {
+    @apply bg-secondary;
+  }
+
+  .qty-input-btn:disabled {
+    @apply text-muted-foreground/60 cursor-not-allowed;
+  }
+
+  .qty-input-btn svg {
+    @apply size-4;
+  }
+
+  /* Display (span for cards) */
+  .qty-input-display {
+    @apply text-foreground inline-flex min-w-12 shrink-0 items-center justify-center font-medium;
+    font-size: var(--font-body2--size);
+    line-height: var(--font-body2--line-height);
+  }
+
+  /* Input field (for product page) */
+  .qty-input-field {
+    @apply text-foreground h-full w-12 shrink-0 bg-transparent text-center font-medium outline-none;
+    font-size: var(--font-body2--size);
+    line-height: var(--font-body2--line-height);
+    -moz-appearance: textfield;
+  }
+
+  /* Display span (product cards) can grow; the input field stays a fixed
+     compact width so the control hugs its content (fit width). */
+  .qty-input-full .qty-input-display {
+    @apply flex-1;
+  }
+
+  .qty-input-field::-webkit-outer-spin-button,
+  .qty-input-field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Product-page quantity stepper: adopt the global "Button Roundness".
+     NOTE: the 100px width cap lives ONLY in the quick-view popover
+     (.qv3-cta-row .qty-input), not here — on the full PDP the stepper
+     keeps its natural width so the number isn't squeezed. */
+  .qty-input[data-qty-input="product-quantity"] {
+    border-radius: var(--button-radius);
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+  }
+  /* Keep the number field tight so the whole stepper fits next to the
+     Add-to-cart button instead of stretching the row. */
+  .qty-input[data-qty-input="product-quantity"] .qty-input-field {
+    min-width: 2rem;
+    width: 2rem;
+  }
+
+  /* PDP layout: keep the gallery + details columns top-aligned (the theme's
+     `lg:grid-cols-2`). `align-items: start` stops the short details column
+     from stretching to the image. The gallery image is `aspect-square`, which
+     is self-limiting, so no max-height cap is needed (a cap would force the
+     square into a landscape crop on wider columns). */
+  @media (min-width: 1024px) {
+    #product-main-section {
+      align-items: start;
+    }
+  }
+  /* Single-column PDP (below the 2-col breakpoint): a full-width square
+     gallery balloons on tablets, so cap it and center. Mobile (<32rem wide)
+     is unaffected since the cap is larger than the viewport there. */
+  @media (max-width: 1023px) {
+    #product-main-section .product-gallery-column {
+      width: 100%;
+      max-width: 32rem;
+      margin-inline: auto;
+    }
+  }
+
+  /* ========== WHATSAPP FLOATING BUTTON ========== */
+  /* Markup lives in `components/whatsapp-fab.jinja`; only the dynamic
+     `--wa-x` / `--wa-y` offset variables are inlined per-render so the
+     static rules below can be cached as part of the global stylesheet.
+     Logical properties (`inset-inline-end/start`, `inset-block-end/start`)
+     mean RTL flips automatically — no `[dir="rtl"]` overrides needed. */
+  .whatsapp-fab {
+    /* `--wa-size` is referenced in the middle-* position rules below
+       so changing it in one place keeps centering correct. */
+    --wa-size: 56px;
+    position: fixed;
+    /* Sits above page content but below modals/dialogs/header dropdowns
+       by design — the FAB is auxiliary, not a primary action surface.
+       Native <dialog>.showModal() goes to the top layer and will
+       correctly cover the FAB regardless of z-index. */
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--wa-size);
+    height: var(--wa-size);
+    border-radius: 0;
+    background: #25d366;
+    color: #fff;
+    box-shadow:
+      0 8px 22px -6px rgba(37, 211, 102, 0.45),
+      0 4px 10px -4px rgba(0, 0, 0, 0.18);
+    text-decoration: none;
+    transition:
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms ease,
+      inset-block-end 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      inset-block-start 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .whatsapp-fab:hover {
+    transform: scale(1.06);
+    box-shadow:
+      0 12px 28px -8px rgba(37, 211, 102, 0.55),
+      0 6px 14px -6px rgba(0, 0, 0, 0.22);
+  }
+
+  .whatsapp-fab:active {
+    transform: scale(0.96);
+  }
+
+  .whatsapp-fab svg {
+    display: block;
+  }
+
+  /* Position presets — the `max(..., env(...))` keeps the button clear
+     of the iOS home-indicator gesture bar. Requires `viewport-fit=cover`
+     on the layout's <meta viewport> for env() to resolve to actual px. */
+  .whatsapp-fab--bottom-end {
+    inset-inline-end: var(--wa-x);
+    inset-block-end: max(var(--wa-y), env(safe-area-inset-bottom) + 8px);
+  }
+
+  .whatsapp-fab--bottom-start {
+    inset-inline-start: var(--wa-x);
+    inset-block-end: max(var(--wa-y), env(safe-area-inset-bottom) + 8px);
+  }
+
+  .whatsapp-fab--top-end {
+    inset-inline-end: var(--wa-x);
+    inset-block-start: max(var(--wa-y), env(safe-area-inset-top) + 8px);
+  }
+
+  .whatsapp-fab--top-start {
+    inset-inline-start: var(--wa-x);
+    inset-block-start: max(var(--wa-y), env(safe-area-inset-top) + 8px);
+  }
+
+  /* Edge-middle positions — vertically centered on either the start or
+     end side of the viewport. `top: 50%` + `margin-top: -50% of size`
+     is direction-agnostic; the inline-end/start side keeps RTL flipping
+     automatically. We deliberately avoid `transform: translateY(-50%)`
+     because the FAB's hover/active scale is also a transform — using
+     margin-top keeps `transform` reserved for animation. */
+  .whatsapp-fab--middle-end {
+    inset-inline-end: 0; /* flush to the edge — no gap */
+    top: 50%;
+    margin-top: calc(var(--wa-size) / -2);
+  }
+
+  .whatsapp-fab--middle-start {
+    inset-inline-start: 0; /* flush to the edge — no gap */
+    top: 50%;
+    margin-top: calc(var(--wa-size) / -2);
+  }
+
+  /* Sticky-CTA collision avoidance — the product page exposes a bottom
+     sticky CTA (Add-to-cart bar) that becomes visible when the user
+     scrolls past the main Add-to-cart button. We detect the visible
+     state via `aria-hidden="false"` (the JS toggles that attr immediately,
+     before the slide-out animation, so the FAB transition lands cleanly).
+     96px ≈ height of the sticky CTA plus a small breathing gap. */
+  body:has(#sticky-cta[aria-hidden="false"]) .whatsapp-fab--bottom-end,
+  body:has(#sticky-cta[aria-hidden="false"]) .whatsapp-fab--bottom-start {
+    inset-block-end: calc(
+      max(var(--wa-y), env(safe-area-inset-bottom) + 8px) + 96px
+    );
+  }
+
+  /* Idle pulse — one cycle every 30s so the button doesn't feel pushy.
+     Soft outward ring scale + fade so the button itself doesn't jiggle
+     (no nausea on motion-sensitive users) — only the ::before grows.
+     `prefers-reduced-motion` opt-out below. */
+  .whatsapp-fab--pulse::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: #25d366;
+    opacity: 0.55;
+    z-index: -1;
+    animation: whatsapp-fab-pulse 30s ease-out infinite;
+  }
+
+  @keyframes whatsapp-fab-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    5% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .whatsapp-fab,
+    .whatsapp-fab:hover,
+    .whatsapp-fab:active {
+      transition: none;
+      transform: none;
+    }
+    .whatsapp-fab--pulse::before {
+      animation: none;
+    }
+  }
+
+  /* ========== MARQUEE SECTION ==========
+     Markup lives in `sections/marquee.jinja`. Animation is driven
+     by Embla Carousel + the AutoScroll plugin (wired in
+     `assets/js/lib/carousel.js`); this CSS only handles visual
+     styling (background, borders, item appearance, edge fade,
+     empty state). The previous CSS-only implementation with
+     `translateX(-50%)` and duplicated DOM has been retired — it
+     was fragile against lazy-loaded images, font swap, variable
+     widths, and resize. AutoScroll handles all of those natively.
+
+     Per-instance variables (--marquee-gap, --marquee-img-h,
+     --marquee-img-max-w, --marquee-padding-y, --marquee-margin-y,
+     --marquee-radius) are inlined on the <section> via the `style`
+     attribute so the static rules below stay cacheable. */
+
+  .section-marquee {
+    padding-block: var(--marquee-padding-y, 14px);
+    margin-block: var(--marquee-margin-y, 0);
+    overflow: hidden;
+  }
+
+  /* Background tokens — each one also resolves a sensible default
+     text color so the marquee remains readable without the merchant
+     having to pick a text color manually. The text-color override
+     below can still force a specific color. */
+  .section-marquee[data-bg="background"]  { background: var(--background); color: var(--foreground); }
+  .section-marquee[data-bg="secondary"]   { background: var(--secondary);  color: var(--foreground); }
+  .section-marquee[data-bg="primary"]     { background: var(--primary);    color: var(--primary-foreground); }
+  .section-marquee[data-bg="foreground"]  { background: var(--foreground); color: var(--background); }
+  .section-marquee[data-bg="transparent"] { background: transparent; }
+
+  /* Text color overrides — `auto` (default) inherits from the
+     background-token's paired color. Explicit overrides only need
+     rules for the four named values. */
+  .section-marquee[data-text-color="foreground"]         .marquee__text { color: var(--foreground); }
+  .section-marquee[data-text-color="primary"]            .marquee__text { color: var(--primary); }
+  .section-marquee[data-text-color="primary_foreground"] .marquee__text { color: var(--primary-foreground); }
+  .section-marquee[data-text-color="muted"]              .marquee__text { color: var(--muted); }
+
+  /* Borders — applied to the .theme-container INSIDE the section,
+     not the section element itself. The section's background is
+     edge-to-edge; the .theme-container is capped at 1440px. By
+     putting the borders on the container, they hug the contained
+     marquee strip instead of bleeding to the viewport edges,
+     visually framing the actual content. Color-mixed against
+     foreground so they adapt to dark/light palettes. */
+  .section-marquee[data-border-top="true"] > .theme-container {
+    border-block-start: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-start: var(--marquee-padding-y, 14px);
+  }
+  .section-marquee[data-border-bottom="true"] > .theme-container {
+    border-block-end: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    padding-block-end: var(--marquee-padding-y, 14px);
+  }
+  /* When borders are active, lift the section's vertical padding
+     into the container so the border has breathing room above/below
+     instead of kissing the marquee edge. We zero out the section's
+     own padding for the side that has a border, so the visual gap
+     comes from the container's padding (which is now the bordered
+     element). */
+  .section-marquee[data-border-top="true"] {
+    padding-block-start: 0;
+  }
+  .section-marquee[data-border-bottom="true"] {
+    padding-block-end: 0;
+  }
+
+  /* Rounded variant — only when merchant explicitly chose a non-zero
+     radius. The Jinja emits `data-rounded="true"` to gate this. The
+     radius is applied to the .theme-container so the rounded shape
+     also hugs the contained content rather than the viewport edges.
+     `overflow: hidden` clips the marquee track at the rounded corners
+     (necessary because the track extends past the viewport on long
+     loops). */
+  .section-marquee[data-rounded="true"] > .theme-container {
+    border-radius: var(--marquee-radius);
+    overflow: hidden;
+  }
+
+  /* Full-width variant — strip stretches edge-to-edge instead of
+     being capped at the theme-container's 1440px max-width. The
+     Jinja already drops the horizontal `px-4 md:px-16` utilities
+     from the section element when this is enabled, so the only
+     CSS-side change needed is lifting the container's max-width.
+     Use case: full-bleed promo bars, top news tickers, payment-
+     trust ribbons that should match the page's header/footer
+     edges rather than its centered reading width. */
+  .section-marquee[data-full-width="true"] > .theme-container {
+    max-width: none;
+  }
+
+  /* Marquee outer container — also carries the `embla` class for
+     Embla compatibility. Width 100% so it fills the section. */
+  .marquee {
+    width: 100%;
+    /* Container queries / focus-within base. */
+    position: relative;
+  }
+
+  /* Edge fade via mask. The 5%/95% stops keep the fade subtle —
+     enough to soften the cut without obscuring content too far in.
+     `-webkit-mask-image` for Safari < 16 (still in the wild on iOS).
+     Disabled while the marquee has keyboard focus inside it so a
+     focused link near the edge doesn't appear faded out. */
+  .section-marquee[data-edge-fade="true"] .marquee {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 5%,
+      #000 95%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 5%,
+      #000 95%,
+      transparent 100%
+    );
+  }
+  .section-marquee[data-edge-fade="true"] .marquee:focus-within {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* ── Embla wiring ──
+     Standard Embla pattern: viewport clips, container is a flex
+     row that Embla translates via JS. Slides are content-sized
+     (`flex: 0 0 auto`) so each item takes its natural width — the
+     gap between siblings is achieved via padding on the slide
+     itself + a counter-margin on the container, the convention
+     Embla recommends (works correctly with logical properties in
+     RTL because Embla flips `direction` based on `document.dir`). */
+  .section-marquee .embla__viewport {
+    overflow: hidden;
+  }
+  .section-marquee .embla__container {
+    display: flex;
+    align-items: center;
+    /* Counter-margin so the first slide's leading padding doesn't
+       offset the row from the section's edge. Logical property →
+       same value works in LTR and RTL. */
+    margin-inline-start: calc(var(--marquee-gap, 40px) * -1);
+    /* Embla handles touch — let vertical scroll & pinch through. */
+    touch-action: pan-y pinch-zoom;
+  }
+  .section-marquee .embla__slide {
+    flex: 0 0 auto;
+    min-width: 0;
+    /* Each slide carries its leading gap. The container's negative
+       inline-start margin above cancels the very first slide's
+       leading gap so the row starts flush at the edge. */
+    padding-inline-start: var(--marquee-gap, 40px);
+  }
+
+  /* Item — flex row of optional image + optional text.
+     `white-space: nowrap` keeps each item on a single line so the
+     slide takes a stable measured width for Embla's scroll math. */
+  .marquee__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+  }
+  a.marquee__item:hover .marquee__text {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  /* Clones are decorative — block them from receiving pointer events
+     so a screen reader user using a pointer (or anyone who manages
+     to focus a clone) can't activate a duplicate link. */
+  .marquee__item--clone {
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .marquee__img {
+    height: var(--marquee-img-h, 40px);
+    width: auto;
+    /* Cap how wide a single image can render. Wide/banner-shaped
+       logos at a fixed height would otherwise dominate the row.
+       The cap lets `object-fit: contain` letterbox down to fit.
+       Jinja resolves the merchant's `0` sentinel to the keyword
+       `none`, removing the cap entirely. */
+    max-width: var(--marquee-img-max-w, 120px);
+    display: block;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
+
+  /* Text scale */
+  .section-marquee[data-text-size="sm"] .marquee__text { font-size: 12px; }
+  .section-marquee[data-text-size="md"] .marquee__text { font-size: 14px; }
+  .section-marquee[data-text-size="lg"] .marquee__text { font-size: 18px; }
+  .section-marquee[data-text-size="xl"] .marquee__text {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  /* Text weight */
+  .section-marquee[data-text-weight="regular"]  .marquee__text { font-weight: 400; }
+  .section-marquee[data-text-weight="medium"]   .marquee__text { font-weight: 500; }
+  .section-marquee[data-text-weight="semibold"] .marquee__text { font-weight: 600; }
+  .section-marquee[data-text-weight="bold"]     .marquee__text { font-weight: 700; }
+
+  .marquee__text {
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  /* Reduced motion is handled in JS (`assets/js/main.js`) — Embla
+     AutoScroll is JS-driven, not CSS, so we skip the AutoScroll
+     plugin entirely when `prefers-reduced-motion: reduce` matches.
+     The strip stays statically rendered as a row of items the user
+     can drag through manually. */
+
+  /* Empty state — shown when the merchant adds the section but
+     hasn't configured any items yet. Faint dashed outline + center
+     text reads as "this is a slot waiting to be filled" rather than
+     a broken section. The padding override is intentional: it keeps
+     the empty hint visible even if the merchant set padding_y to 0
+     (hint would otherwise collapse to invisible). */
+  .section-marquee--empty {
+    min-height: 56px;
+    padding-block: 16px;
+  }
+  .marquee--empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 24px;
+    border: 1px dashed
+      color-mix(in srgb, var(--foreground) 25%, transparent);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-inline: 16px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  .marquee__empty-hint {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* ========== PRODUCT URGENCY: LIMITED QTY + STOCK STATUS ========== */
+  /* Header row that pairs the limited-quantity meter with the in-stock
+     pill. The limited block grows to fill, the stock pill hugs its end. */
+  .product-info-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px 12px;
+  }
+
+  /* ----- Limited-quantity meter ----- */
+  .wl-limited {
+    flex: 1 1 60%;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .wl-limited-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    /* Match the bar's width so the end-aligned "remaining" count lines up
+       with the end of the progress bar below it. */
+    max-width: 250px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  /* Remaining-count cue ("باقي N فقط"), pushed to the end of the row. */
+  .wl-limited-left {
+    margin-inline-start: auto;
+    font-weight: 700;
+    color: var(--destructive);
+  }
+  .wl-limited-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 0;
+    background: var(--primary);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 60%, transparent);
+    animation: wl-pulse 1.8s ease-out infinite;
+  }
+  .wl-limited-bar {
+    position: relative;
+    width: 100%;
+    max-width: 250px;
+    height: 6px;
+    border-radius: 0;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+  .wl-limited-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    background-size: 200% 100%;
+    animation: wlShimmer 1.8s linear infinite,
+               wlFillBreath 10s ease-in-out infinite;
+  }
+  @keyframes wlShimmer {
+    0%   { background-position: 0 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes wlFillBreath {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.15); }
+  }
+
+  /* ----- In-stock / out-of-stock pill ----- */
+  .product-stock-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .product-stock-status--available {
+    color: var(--success);
+  }
+  .product-stock-status--unavailable {
+    color: var(--destructive);
+  }
+  .product-stock-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: currentColor;
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent);
+    animation: wl-pulse 1.8s ease-out infinite;
+  }
+
+  @keyframes wl-pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+    70%  { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes wl-bar-grow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+  @keyframes wl-shimmer {
+    0%   { transform: translateX(-100%); }
+    60%, 100% { transform: translateX(100%); }
+  }
+
+  /* ========== DISCOUNT BADGE ========== */
+  /* Solid primary chip, flat (zero radius), with a glare sweep. */
+  .wl-discount-glass {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 0;
+    white-space: nowrap;
+  }
+  .wl-discount-glass::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.75),
+      rgba(255, 255, 255, 0)
+    );
+    transform: skewX(-20deg);
+    animation: wlShine 2.2s infinite;
+    pointer-events: none;
+  }
+  @keyframes wlShine {
+    0%        { left: -80%; }
+    60%, 100% { left: 120%; }
+  }
+
+  /* ========== SAVINGS ROW (was-label + struck old price) ========== */
+  /* Groups the configurable "was" label (e.g. "قبل"), the struck old price,
+     and the discount badge — used on the product page and in the quick view. */
+  .wl-pd-tawfer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  /* Show only when the selected variant is on sale — mirrors the `.hidden`
+     class that variants.js toggles on [data-product-price-old]. */
+  .wl-pd-tawfer:not(:has([data-product-price-old]:not(.hidden))) {
+    display: none;
+  }
+  .wl-was {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #9a9a9a;
+  }
+  .wl-pd-price-old {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #9a9a9a;
+    text-decoration: line-through;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wl-limited-dot,
+    .product-stock-status-dot,
+    .wl-limited-fill,
+    .wl-discount-glass::after {
+      animation: none;
+    }
+  }
+
+  /* ========== LIVE VIEWERS (social proof) ========== */
+  .live-viewers {
+    font-weight: 700;
+    color: #444;
+  }
+  /* Eye icon — slow "breathing" pulse. */
+  .live-viewers svg {
+    color: #444;
+    animation: lv-eye-breath 1.4s ease-in-out infinite;
+  }
+  /* The live count — bold, brand-orange, pops in with a quick pulse. */
+  .live-viewers__count {
+    display: inline-block;
+    font-weight: 900;
+    color: #ec912b;
+    animation: lv-count-pulse 0.9s ease;
+  }
+  @keyframes lv-count-pulse {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  @keyframes lv-eye-breath {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.14); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .live-viewers svg,
+    .live-viewers__count {
+      animation: none;
+    }
+  }
+} /* end @layer components */
+
+/* ============================================================================
+   PDP "Additional info" — card accordions
+   ----------------------------------------------------------------------------
+   Unlayered (outside @layer) so these win over the Tailwind utilities baked
+   into the markup (bg-secondary, rounded, etc.). Scoped to #additional-info,
+   and via :has() only to the disclosure rows — so non-accordion children
+   (e.g. grouped products) aren't carded.
+   ============================================================================ */
+#additional-info > div:has(> button[aria-expanded]) {
+  border: 1px solid var(--border-light, #f2f2f2);
+  border-radius: calc(var(--radius) * 2);
+  overflow: hidden;
+  background: var(--background);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+#additional-info > div:has(> button[aria-expanded]):hover {
+  border-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+/* Header — drop the grey bar; clean row with an inline-start accent. */
+#additional-info > div > button[aria-expanded] {
+  position: relative;
+  background: transparent;
+  border-radius: 0;
+  padding-block: 0.875rem;
+  padding-inline: 1.25rem 1rem;
+  transition: background-color 0.18s ease;
+}
+#additional-info > div > button[aria-expanded]:hover {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+#additional-info > div > button[aria-expanded]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: 3px;
+  background: transparent;
+  transition: background-color 0.18s ease;
+}
+/* Open state — soft primary tint + a primary accent bar. */
+#additional-info > div > button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+#additional-info > div > button[aria-expanded="true"]::before {
+  background: var(--primary);
+}
+/* Trim the chevron chip's box so it doesn't add a hover square. */
+#additional-info > div > button[aria-expanded] > span:last-child {
+  width: auto;
+  height: auto;
+  padding: 0;
+}

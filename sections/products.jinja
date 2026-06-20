@@ -1,0 +1,167 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{% if settings.products and settings.products.results %}
+  {% set layout = settings.layout | default('carousel') %}
+
+  {# Cap the rendered count via the merchant-controlled limit.
+     `max_products` of 0 (the default) means "show everything the
+     source returned" — preserves backward-compat for sections saved
+     before this field existed. Any positive value slices the list to
+     just the first N items. The slice happens once here so both
+     carousel and grid layouts iterate over the same trimmed list. #}
+  {# Display order — merchant-controlled from Dashboard → Products →
+     "Product display order" (`sort_order`). Sort the FULL source list first,
+     THEN slice to `max_products`, so e.g. "Newest first" + max 8 picks the 8
+     newest. 'manual' leaves the hand-picked order untouched. Price sort is
+     guarded by an `is defined` check so it never errors if the product object
+     doesn't expose a numeric `price`. #}
+  {% set _sort_order = settings.sort_order | default('manual', true) %}
+  {% set _all_products = settings.products.results %}
+  {% if _sort_order == 'name_asc' %}
+    {% set _all_products = _all_products | sort(attribute='name') %}
+  {% elif _sort_order == 'name_desc' %}
+    {% set _all_products = _all_products | sort(attribute='name', reverse=true) %}
+  {% elif _sort_order == 'newest' %}
+    {% set _all_products = _all_products | sort(attribute='id', reverse=true) %}
+  {% elif _sort_order == 'oldest' %}
+    {% set _all_products = _all_products | sort(attribute='id') %}
+  {% elif _sort_order == 'price_asc' and _all_products and _all_products[0].price is defined %}
+    {% set _all_products = _all_products | sort(attribute='price') %}
+  {% elif _sort_order == 'price_desc' and _all_products and _all_products[0].price is defined %}
+    {% set _all_products = _all_products | sort(attribute='price', reverse=true) %}
+  {% endif %}
+
+  {% set _max_products = settings.max_products | default(0, true) | int %}
+  {% set _products = _all_products[:_max_products] if _max_products > 0 else _all_products %}
+
+  {# Card-level knobs — defaults match the old behaviour so legacy instances
+     (saved before the schema expanded) render identically.
+     - `card_density` can either inherit from the theme global or be set
+       explicitly per-section; the "inherit" option in the schema maps to
+       the global `card_density_default`. #}
+  {% set cols_desktop   = settings.columns_desktop   | default('4', true) %}
+  {% set cols_mobile    = settings.columns_mobile    | default('2', true) %}
+  {% set aspect         = settings.image_aspect_ratio | default('square', true) %}
+  {% set _section_density = settings.card_density | default('inherit', true) %}
+  {% set card_density   = card_density_default if _section_density == 'inherit' else _section_density %}
+  {# show_wishlist / show_quick_view are theme-wide only (Layout Settings
+     → Product Card). No per-section override — the card reads the global
+     directly via `card_show_wishlist` / `card_show_quick_view`. #}
+  {# Image-swap resolution (matches `card_density` inherit pattern).
+     Accepts the new select values ('inherit' / 'on' / 'off') AND legacy
+     booleans (true / false) from merchants who set this before the schema
+     changed, so nothing breaks on upgrade. #}
+  {% set _raw_swap = settings.enable_image_swap %}
+  {% if _raw_swap in [true, 'on'] %}
+    {% set enable_img_swap = true %}
+  {% elif _raw_swap in [false, 'off'] %}
+    {% set enable_img_swap = false %}
+  {% else %}
+    {# 'inherit' or undefined → global default from Layout Settings. #}
+    {% set enable_img_swap = card_enable_image_swap %}
+  {% endif %}
+
+  {# Heading style knobs — alignment + size + visual style apply to
+     eyebrow, title, subtitle. Style resolves like `card_density`:
+     'inherit' → global default from Layout Settings → Section Headings,
+     otherwise the section's own pick. #}
+  {% set heading_align  = settings.heading_alignment | default(heading_alignment_default, true) %}
+  {% set heading_size   = settings.heading_size      | default('md',       true) %}
+  {% set _section_hs    = settings.heading_style     | default('inherit',  true) %}
+  {% set heading_style_ = heading_style_default if _section_hs == 'inherit' else _section_hs %}
+  {% set eyebrow       = settings.eyebrow %}
+  {% set subtitle      = settings.subtitle %}
+
+  <section
+    section-id="{{ sectionId }}"
+    class="section-products px-4 py-6 md:px-16 md:py-16"
+  >
+    <div class="theme-container">
+      {% if layout == 'carousel' %}
+        {# Carousel Layout #}
+        {%
+          with
+          products=_products,
+          title=settings.title,
+          subtitle=subtitle,
+          eyebrow=eyebrow,
+          heading_alignment=heading_align,
+          heading_size=heading_size,
+          heading_style=heading_style_,
+          heading_icon=heading_icon_default,
+          more_url=(settings.products.url or url_for('list_products')) if settings.display_more else none,
+          more_text=settings.more_text if settings.display_more else none,
+          carousel_id=sectionId,
+          is_priority_section=(settings.order <= 2),
+          columns_desktop=cols_desktop,
+          columns_mobile=cols_mobile,
+          image_aspect_ratio=aspect,
+          card_density=card_density,
+          enable_image_swap=enable_img_swap,
+          autoplay=settings.autoplay,
+          autoplay_interval=settings.autoplay_interval | default(4000, true),
+          show_arrows=settings.show_arrows if settings.show_arrows is not none else true,
+          show_progress=settings.show_progress if settings.show_progress is not none else true
+        %}
+          {% include 'components/products/products-carousel.jinja' %}
+        {% endwith %}
+      {% else %}
+        {# Grid or List Layout — column counts applied via inline CSS custom
+           properties so merchants can pick any value from the schema without
+           needing a Tailwind utility match. #}
+        <div class="flex flex-col gap-6">
+          {% with
+            title=settings.title,
+            subtitle=subtitle,
+            eyebrow=eyebrow,
+            heading_alignment=heading_align,
+            heading_size=heading_size,
+            heading_style=heading_style_,
+            heading_icon=heading_icon_default,
+            more_url=(settings.products.url or url_for('list_products')) if settings.display_more else none,
+            more_text=settings.more_text if settings.display_more else none
+          %}
+            {% include 'components/products/section-heading.jinja' %}
+          {% endwith %}
+
+          <div
+            data-grid-root="true"
+            data-grid="{{ layout }}"
+            data-card-density="{{ card_density }}"
+            class="group/grid products-grid gap-x-4 gap-y-10"
+            style="--cols-mobile: {{ cols_mobile }}; --cols-desktop: {{ cols_desktop }};"
+          >
+            {% for product in _products %}
+              {% with
+                index=loop.index0,
+                is_priority=(loop.first and settings.order <= 2),
+                card_image_aspect_ratio=aspect,
+                card_density=card_density,
+                enable_image_swap=enable_img_swap
+              %}
+                {% include 'components/products/product-card.jinja' %}
+              {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+{% endif %}{# /country-visibility guard #}

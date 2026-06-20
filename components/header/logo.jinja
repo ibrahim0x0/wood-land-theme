@@ -1,0 +1,55 @@
+{# Header Logo Component — image or text mode #}
+
+{% set logo_type = settings.logo_type or 'image' %}
+
+{% if logo_type == 'text' %}
+  {% set weight_class = {
+    'normal':   'font-normal',
+    'medium':   'font-medium',
+    'semibold': 'font-semibold',
+    'bold':     'font-bold'
+  }[settings.logo_text_weight or 'medium'] %}
+  <h2
+    class="{{ weight_class }} {{ 'uppercase' if settings.logo_text_uppercase else '' }}"
+    style="color: {{ settings.logo_text_color or '#0B0A09' }}; font-size: {{ settings.logo_text_size or 20 }}px;"
+  >
+    {{ settings.logo_text or store.name }}
+  </h2>
+
+{% elif settings.logo_desktop or settings.logo_mobile %}
+  {% set max_d = settings.logo_max_height_desktop or 66 %}
+  {% set max_m = settings.logo_max_height_mobile or 44 %}
+  {% if settings.logo_desktop %}
+    <img
+      src="{{ image_url(settings.logo_desktop | default(settings.logo_mobile) | default(store.logo), w=400, q=90, f='auto') }}"
+      class="w-auto object-contain {% if settings.logo_mobile %}hidden md:block{% endif %}"
+      style="max-height: {{ max_d }}px;"
+      alt="{{ store.name }}"
+      fetchpriority="high"
+      decoding="sync"
+    />
+  {% endif %}
+  {% if settings.logo_mobile %}
+    <img
+      src="{{ image_url(settings.logo_mobile | default(settings.logo_desktop) | default(store.logo), w=300, q=90, f='auto') }}"
+      class="w-auto object-contain {% if settings.logo_desktop %}block md:hidden{% endif %}"
+      style="max-height: {{ max_m }}px;"
+      alt="{{ store.name }}"
+      fetchpriority="high"
+      decoding="sync"
+    />
+  {% endif %}
+
+{% elif store.logo %}
+  <img
+    src="{{ image_url(store.logo, w=400, q=90, f='auto') }}"
+    alt="{{ store.name }}"
+    class="w-auto object-contain"
+    style="max-height: {{ settings.logo_max_height_desktop or 66 }}px;"
+    fetchpriority="high"
+    decoding="sync"
+  />
+
+{% else %}
+  <h2 class="font-medium">{{ store.name }}</h2>
+{% endif %}

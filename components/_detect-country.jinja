@@ -1,0 +1,58 @@
+{#- ────────────────────────────────────────────────────────────────
+    Detect visitor's country code → emits the uppercased ISO code
+    (or empty string when undetectable) directly as output text.
+
+    Usage from any caller:
+
+      {% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+      {% set _detected_country = _detected_country | trim %}
+
+    The two-step pattern is intentional:
+      1. The `{% set %}{% endset %}` block captures the rendered
+         output of the include AS A STRING (instead of running it
+         for side effects, which Jinja's include doesn't propagate
+         back to the caller's scope).
+      2. The trailing `| trim` strips any surrounding whitespace
+         the include emits.
+
+    Why a partial vs. inlining everywhere: 19 sections + footer
+    contact items × ~15 lines of detection logic = ~300 lines of
+    repetition. This file centralises the chain so adding a new
+    detection path only requires one edit.
+
+    Why a partial vs. a macro: Vitrin's Jinja sandbox doesn't expose
+    `session`, `request`, or `store` globals inside macro bodies.
+    Includes inherit the parent context by default and CAN access
+    them. (Confirmed empirically: a macro reading `session.country`
+    saw it as undefined; the same code as an include works fine.)
+    ──────────────────────────────────────────────────────────────── -#}
+{%- set _ns_dc = namespace(cc='') -%}
+{#- 1. session.locale.country.code — locale country object with .code -#}
+{%- if session.locale -%}
+  {%- if session.locale.country and session.locale.country.code is defined -%}
+    {%- set _ns_dc.cc = session.locale.country.code -%}
+  {%- elif session.locale.country -%}
+    {#- 2. session.locale.country — string variant -#}
+    {%- set _ns_dc.cc = session.locale.country -%}
+  {%- elif session.locale.code and '-' in session.locale.code -%}
+    {#- 3. session.locale.code split — URL locale "ar-SA" → "SA" -#}
+    {%- set _ns_dc.cc = session.locale.code.split('-')[1] -%}
+  {%- endif -%}
+{%- endif -%}
+{#- 4. request.country — per README spec, request-scoped country. -#}
+{%- if not _ns_dc.cc and request is defined and request and request.country -%}
+  {%- set _ns_dc.cc = request.country -%}
+{%- endif -%}
+{#- 5. session.country_code — flat field. -#}
+{%- if not _ns_dc.cc and session.country_code -%}
+  {%- set _ns_dc.cc = session.country_code -%}
+{%- endif -%}
+{#- 6. session.country.code — OBJECT path used by whatsapp-fab.jinja. -#}
+{%- if not _ns_dc.cc and session.country and session.country.code is defined -%}
+  {%- set _ns_dc.cc = session.country.code -%}
+{%- endif -%}
+{#- 7. store.country_code — store-level default as last resort. -#}
+{%- if not _ns_dc.cc and store is defined and store and store.country_code -%}
+  {%- set _ns_dc.cc = store.country_code -%}
+{%- endif -%}
+{{- _ns_dc.cc | string | upper | trim -}}

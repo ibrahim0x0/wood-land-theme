@@ -1,0 +1,53 @@
+{# ───────────────────────────────────────────────────────────────────
+   Header highlights strip — resolves the global header-highlights
+   settings into an `hl` namespace, then delegates to the shared
+   render partial.
+
+   Rendered INSIDE the <header> tag (not above/below it), so the
+   strip participates in any sticky / blur / shrink-on-scroll
+   treatment automatically and reads as part of the header itself.
+
+   The same partial powers sections/highlights.jinja — passing
+   `variant: 'header'` switches the render to the header-specific
+   styling (no borders, soft shadow, 1500px max content width,
+   max 3 items).
+
+   Page-display logic mirrors header-announcement-bar.jinja:
+     • `display`      — global on/off
+     • `page_display` — 'all' or 'home' (only render on home page)
+   ─────────────────────────────────────────────────────────────────── #}
+
+{% set _display      = settings.header_highlights_display %}
+{% set _page_display = settings.header_highlights_page_display %}
+
+{% if _display %}
+  {% set _show_here = (not _page_display)
+                     or (_page_display == 'all')
+                     or (session.template == 'home' and _page_display == 'home') %}
+
+  {% if _show_here %}
+    {# Default trust row — used when the strip is enabled but the merchant
+       hasn't added any items yet. Each has no image, so the cycled default
+       accent icons (quality → support → delivery) render automatically.
+       Merchants override or remove these via Header → Highlights → Items. #}
+    {% set _default_points = [
+      {'title': _('European quality'),   'description': _('Certified')},
+      {'title': _('Continuous support'), 'description': _('Around the clock')},
+      {'title': _('Fast delivery'),      'description': _('Secure packaging')}
+    ] %}
+    {% set _cfg_points = settings.header_highlights_points %}
+    {% set _points = _cfg_points if (_cfg_points and _cfg_points | length > 0) else _default_points %}
+    {% set hl = {
+      'points':           _points,
+      'container_style':  settings.header_highlights_container_style | default('unified', true),
+      'item_radius':      settings.header_highlights_item_radius if settings.header_highlights_item_radius is not none else 0,
+      'background':       settings.header_highlights_background | default('secondary', true),
+      'show_on_mobile':   settings.header_highlights_show_on_mobile if settings.header_highlights_show_on_mobile is not none else true,
+      'show_on_desktop':  settings.header_highlights_show_on_desktop if settings.header_highlights_show_on_desktop is not none else true,
+      'is_lazy':          false,
+      'variant':          'header'
+    } %}
+    {% set instance_id = 'header-highlights' %}
+    {% include 'components/highlights-render.jinja' %}
+  {% endif %}
+{% endif %}

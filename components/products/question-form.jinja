@@ -1,0 +1,141 @@
+{#
+  Product Question Form — centered modal.
+
+  Opened by the "Ask your question" trigger button in templates/product.jinja
+  via `command="show-modal" commandfor="question-dialog"`. Mirrors the
+  notify-me-dialog pattern (el-dialog + el-dialog-panel + Tailwind transition
+  utilities) so it pops centered with the same motion as the rest of the theme.
+
+  JS CONTRACT — assets/js/question-form.js binds by these and must not break:
+    • form  #question-form  (+ its data-* attributes)
+    • fields named  question_name / question_text / question_email / is_anonymous
+    • ids  submit-question-btn, name-error, question-error, email-error
+    • message box  #question-form-message
+#}
+{% if product %}
+  <el-dialog id="question-dialog-wrapper">
+    <dialog
+      id="question-dialog"
+      aria-labelledby="question-dialog-title"
+      class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent"
+    >
+      <el-dialog-backdrop
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+      ></el-dialog-backdrop>
+
+      <div
+        tabindex="0"
+        class="flex min-h-full justify-center p-4 focus:outline-none sm:items-center"
+      >
+        <el-dialog-panel
+          class="bg-background relative w-full max-w-md transform overflow-hidden rounded p-6 transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in data-closed:sm:translate-y-0 data-closed:sm:scale-95"
+        >
+          {# Header #}
+          <div class="mb-6 flex items-center justify-between gap-2">
+            <h2 id="question-dialog-title" class="text-foreground text-base font-semibold">
+              {{ _("Ask your question") }}
+            </h2>
+            <button
+              command="close"
+              commandfor="question-dialog"
+              type="button"
+              class="text-foreground inline-flex size-10 shrink-0 items-center justify-center rounded bg-white/10 p-2.5 backdrop-blur-sm transition-colors"
+              aria-label="{{ _('Close') }}"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form
+            id="question-form"
+            data-product-id="{{ product.id }}"
+            data-sending-text="{{ _('Sending...') }}"
+            data-success-message="{{ _('Your question has been sent successfully. You will receive a notification if it is answered.') }}"
+            data-success-title="{{ _('Sent Successfully') }}"
+            data-error-message="{{ _('Failed to send your question. Please try again.') }}"
+            data-error-title="{{ _('Error') }}"
+            class="flex flex-col gap-4"
+          >
+            {# Name #}
+            <div class="flex flex-col gap-1">
+              <input
+                type="text"
+                id="question_name"
+                name="question_name"
+                required
+                autocomplete="name"
+                placeholder="{{ _('Name') }}"
+                aria-label="{{ _('Name') }}"
+                class="form-input"
+              />
+              <p id="name-error" class="text-destructive text-xs hidden">{{ _("This field is required") }}</p>
+            </div>
+
+            {# Question #}
+            <div class="flex flex-col gap-1">
+              <textarea
+                id="question_text"
+                name="question_text"
+                rows="4"
+                required
+                placeholder="{{ _('Enter your question here') }}"
+                aria-label="{{ _('Your question') }}"
+                class="form-textarea"
+              ></textarea>
+              <p id="question-error" class="text-destructive text-xs hidden">{{ _("This field is required") }}</p>
+            </div>
+
+            {# Email #}
+            <div class="flex flex-col gap-1">
+              <input
+                type="email"
+                id="question_email"
+                name="question_email"
+                required
+                autocomplete="email"
+                placeholder="{{ _('Email') }}"
+                aria-label="{{ _('Email') }}"
+                class="form-input"
+              />
+              <p id="email-error" class="text-destructive text-xs hidden">{{ _("Email is incorrect") }}</p>
+            </div>
+
+            {# Anonymous #}
+            <label class="form-control">
+              <input type="checkbox" id="is_anonymous" name="is_anonymous" class="form-checkbox" />
+              {{ _('Do not show my name in the comments') }}
+            </label>
+
+            {# Footer actions #}
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button
+                command="close"
+                commandfor="question-dialog"
+                type="button"
+                class="btn btn-outlined btn-md"
+              >
+                {{ _('Cancel') }}
+              </button>
+              <button
+                type="submit"
+                id="submit-question-btn"
+                class="btn btn-filled btn-md"
+              >
+                {{ _('Send') }}
+              </button>
+            </div>
+
+            {# Success/Error message #}
+            <div
+              id="question-form-message"
+              class="hidden rounded-lg px-4 py-3 text-sm"
+              role="alert"
+            ></div>
+          </form>
+        </el-dialog-panel>
+      </div>
+    </dialog>
+  </el-dialog>
+{% endif %}

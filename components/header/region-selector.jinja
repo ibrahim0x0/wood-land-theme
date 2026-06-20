@@ -1,0 +1,76 @@
+{# Desktop Region Selector - Opens Vitrin's shared region dialog #}
+{% set multiple_countries = store.countries | length > 1 %}
+{% set multiple_languages = store.languages | length > 1 %}
+{% set show_country = multiple_countries and not safeget(settings, "header_hide_country", false) %}
+{% set show_language = multiple_languages and not safeget(settings, "header_hide_language", false) %}
+
+{% if show_country or show_language %}
+  {# Visible on ALL viewports — including mobile. The button shrinks
+     down to just the globe icon on small screens (the labels hide via
+     CSS rule below) so it fits cleanly into the icons row. #}
+  <li>
+    <button
+      type="button"
+      onclick="typeof zidOpenRegionSettingDialog==='function'&&zidOpenRegionSettingDialog()"
+      class="text-foreground text-sm flex items-center gap-1.5 py-2 hover:underline header-region-btn"
+      aria-label="{{ _('Language and country') }}"
+    >
+      {% if settings.logo_icons_globe %}
+        {% set icon_url = settings.logo_icons_globe %}
+        {% set icon_size = settings.logo_icons_size or 20 %}
+        {% include 'components/header/_icon-img.jinja' %}
+      {% else %}
+        {# Lucide: earth #}
+        <svg xmlns="http://www.w3.org/2000/svg" width="{{ settings.logo_icons_size or 20 }}" height="{{ settings.logo_icons_size or 20 }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/>
+          <path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/>
+          <path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+      {% endif %}
+      {% if not safeget(settings, "header_hide_region_labels", false) %}
+        {# Text labels hidden on mobile (<lg) so the button is icon-only;
+           on desktop the country name + language code show next to the
+           globe. Wrapping in a single span so we can hide both at once. #}
+        <span class="header-region-labels hidden lg:inline-flex items-center gap-1.5">
+          <span class="nav-country-text">
+            {% if show_country %}{{ session.country.name }}{% if show_language %}|{% endif %}{% endif %}
+          </span>
+          {% if show_language %}{{ session.lang | upper }}{% endif %}
+        </span>
+      {% endif %}
+    </button>
+  </li>
+{% endif %}
+
+<script>
+{% if store.settings.products.filter_by_nearest_inventory %}
+  document.addEventListener('DOMContentLoaded', function() {
+    const storedData = localStorage.getItem('zid_kit_select_branch');
+    if (!storedData) return;
+
+    const lang = '{{ session.lang }}';
+    const data = JSON.parse(storedData);
+    const branchData = data.branchData;
+    const buttons = document.querySelectorAll('.nav-country-text');
+    
+    if (!buttons) return;
+
+    let displayText = '';
+    const deliveryToText = '{{ _("Delivery to:") }}';
+    const pickupFromText = '{{ _("Pickup from:") }}';
+
+    if (branchData.type === 'pickup' && branchData.pickup) {
+        displayText = `${pickupFromText} ${branchData.pickup.name}`;
+    } else if (branchData.type === 'delivery' && branchData.address) {
+        const addr = branchData.address;
+        const cityName = lang === 'ar' ? addr.city_name_ar : addr.city_name_en;
+        displayText = `${deliveryToText} ${cityName || ''}`;
+    }
+
+    if (displayText) {
+      buttons.forEach(btn => btn.textContent = `${displayText} | `);
+    }
+  });
+{% endif %}
+</script>

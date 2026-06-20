@@ -1,0 +1,153 @@
+{# ── Country-visibility guard ──
+   Reads the merchant-controlled `visibility_countries` (CSV) and
+   `visibility_mode` ('show_in' | 'hide_in') settings, resolves the
+   visitor's country via the shared detect-country partial, and decides
+   whether to render this section.
+
+   Why a separate detect partial: Vitrin's Jinja sandbox does NOT
+   expose session/request/store globals inside macro bodies, so the
+   country_visible macro can't detect internally. The include below
+   runs in the parent context and CAN access them — its rendered
+   output is captured into _detected_country, which is then passed
+   to country_visible. Empty country list = always visible.
+   See `country_visible` macro + `_detect-country.jinja` partial. #}
+{% from 'components/_macros.jinja' import country_visible %}
+{% set _detected_country %}{% include 'components/_detect-country.jinja' %}{% endset %}
+{% set _detected_country = _detected_country | trim %}
+{% set _section_visibility = country_visible(settings.visibility_countries, settings.visibility_mode, _detected_country) | trim %}
+{% if _section_visibility == 'yes' %}
+{% from 'components/_macros.jinja' import resolve_link %}
+{% set is_lazy_section = settings.order > 2 %}
+
+<section
+  section-id="{{ sectionId }}"
+  class="section-carousel relative overflow-hidden"
+  data-variant="{{ settings.style_variant | default('default') }}"
+>
+  <!-- Carousel with data attributes for JS initialization -->
+  <div
+    class="embla w-full overflow-hidden"
+    data-carousel
+    data-carousel-loop="true"
+    data-carousel-autoplay="{{ settings.autoplay_delay | default(4000) if settings.autoplay_enabled | default(true) else '' }}"
+    data-carousel-fade="{{ 'true' if settings.transition_effect | default('fade') == 'fade' else 'false' }}"
+  >
+    <div class="embla__container h-full">
+      {% for slide in settings.slides or [] %}
+        <div class="embla__slide relative flex items-center justify-center overflow-hidden">
+          <!-- Background image for this slide (responsive, optimized) -->
+          {% set mobile_image = image_url(slide.background_image_mobile or slide.background_image, w=768, q=80, f='auto') %}
+          {% set desktop_image = image_url(slide.background_image, w=1920, q=85, f='auto') %}
+          {% set is_first_slide = loop.first %}
+          <div class="absolute inset-0 -z-10">
+            <picture>
+              <source media="(min-width: 768px)" srcset="{{ desktop_image }}" />
+              <img
+                src="{{ mobile_image }}"
+                alt="{{ slide.heading | default('') }}"
+                class="h-full w-full object-cover"
+                style="object-position: {{ slide.background_position | default('center') }}"
+                {% if is_lazy_section or not is_first_slide %}loading="lazy"{% else %}fetchpriority="high"{% endif %}
+                decoding="async"
+              />
+            </picture>
+            <div
+              class="bg-primary absolute inset-0"
+              style="opacity: {{ slide.overlay_opacity | default(20) / 100 }}"
+            ></div>
+          </div>
+
+          <div
+            class="{% if settings.style_variant == 'compact' %}py-6 md:py-32{% else %}py-6 md:py-0{% endif %} w-full px-4 md:px-16"
+          >
+            <!-- Content for this slide -->
+            {% set has_content = (slide.badge_text and slide.badge_text | trim) or (slide.heading and slide.heading | trim) or (slide.description and slide.description | trim) or (slide.button_text and slide.button_text | trim) %}
+            {% if has_content %}
+              <div
+                class="theme-container {% if slide.text_alignment == 'center' %}items-center{% elif slide.text_alignment == 'end' %}items-end{% else %}items-start{% endif %} flex w-full max-w-[960px] flex-col gap-20"
+              >
+                <div
+                  class="{% if slide.text_alignment == 'center' %}
+                    items-center text-center
+                  {% elif slide.text_alignment == 'end' %}
+                    items-end text-end
+                  {% else %}
+                    items-start text-start
+                  {% endif %} flex max-w-[768px] flex-col gap-6"
+                >
+                  <div class="flex flex-col gap-4">
+                    {% if slide.badge_text and slide.badge_text | trim %}
+                      <span class="text-foreground text-xs uppercase tracking-wide">{{ slide.badge_text }}</span>
+                    {% endif %}
+                    {% if slide.heading and slide.heading | trim %}
+                      <h3 class="text-foreground text-2xl md:text-3xl font-semibold tracking-tight">{{ slide.heading }}</h3>
+                    {% endif %}
+                    {% if slide.description and slide.description | trim %}
+                      <p class="text-foreground text-base">{{ slide.description }}</p>
+                    {% endif %}
+                  </div>
+                  {% if slide.button_text and slide.button_text | trim %}
+                    <div class="flex gap-4">
+                      <a
+                        href="{{ resolve_link(slide.button_shortcut, slide.button_products, slide.button_url) | trim or '#' }}"
+                        class="btn btn-filled btn-lg"
+                      >
+                        {{ slide.button_text }}
+                      </a>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Dots -->
+    {% if settings.slides and settings.slides | length > 1 and settings.show_dots %}
+      <div
+        class="embla__dots pointer-events-auto absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-full bg-white/10 p-1 backdrop-blur-sm"
+        data-carousel-dots
+      ></div>
+    {% endif %}
+  </div>
+
+  <!-- prettier-ignore-start -->
+    <style>
+        [section-id="{{ sectionId }}"] .embla__slide {
+            min-height: {{ settings.min_height_mobile | default(700) }}px;
+        }
+
+        @media (min-width: 768px) {
+            [section-id="{{ sectionId }}"] .embla__slide {
+                min-height: {{ settings.min_height_desktop | default(700) }}px;
+            }
+        }
+
+        {% if settings.transition_effect == 'fade' %}
+            /* Fade effect: use grid layout */
+            [section-id="{{ sectionId }}"] .embla__container {
+                display: grid;
+                grid-auto-flow: column;
+                grid-auto-columns: 100%;
+                height: 100%;
+            }
+        {% else %}
+            /* Slide effect: use flex layout */
+            [section-id="{{ sectionId }}"] .embla__container {
+                display: flex;
+                touch-action: pan-y pinch-zoom;
+            }
+
+            [section-id="{{ sectionId }}"] .embla__slide {
+                flex: 0 0 100%;
+                min-width: 0;
+            }
+        {% endif %}
+    </style>
+  <!-- prettier-ignore-end -->
+</section>
+
+{# Carousel is now initialized by main.js using data-carousel attributes #}
+{% endif %}{# /country-visibility guard #}

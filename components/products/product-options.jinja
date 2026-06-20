@@ -1,0 +1,5 @@
+{% if options %}
+  {% with options=options, product=product, style=style|default('dropdown') %}
+    {% include 'vitrin:v2/products/options/variant_options.jinja' %}
+  {% endwith %}
+{% endif %}

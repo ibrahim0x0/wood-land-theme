@@ -1,0 +1,479 @@
+/* ============================================================================
+   Header / Navbar styles
+   ----------------------------------------------------------------------------
+   Extracted from header.jinja to keep the 300+ lines out of every page's
+   HTML payload. A short inline <style> block in header.jinja still sets a
+   handful of merchant-tunable tokens (`--dropdown-bg`, `--drawer-link`, …)
+   which the rules below consume via var().
+   ============================================================================ */
+
+/* ─── Stop any component from shifting the page via scroll-lock ─────────
+   @tailwindplus/elements (el-popover / el-menu / el-dropdown / el-dialog)
+   aggressively adds `overflow: hidden` + `padding-right: Npx` to <html>
+   when opened — even for non-modal cases. That previously caused the whole
+   page to shift when nav dropdowns opened, and now (with our styled
+   scrollbar) it leaves an obvious empty strip when dialogs open.
+
+   Pairs with `scrollbar-gutter: stable` in scrollbar.css so the scrollbar's
+   gutter is ALWAYS reserved at the browser level — meaning dialogs can hide
+   the scrollbar and the layout still doesn't move, no JS padding needed.
+
+   Real <dialog> elements still work — they handle their own focus trap and
+   backdrop; only the html-level side-effects are neutralized here.
+
+   Dialogs marked with `data-allow-scroll-lock` can opt out (reserved for
+   future legitimate full-viewport modals that genuinely need to suppress
+   the body scrollbar). */
+html:not(:has(dialog[open][data-allow-scroll-lock])) {
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  overflow: auto !important;
+}
+
+/* Cart badge pulse — plays once on add-to-cart for immediate feedback. */
+[data-cart-badge].is-pulsing {
+  animation: cart-badge-pulse 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cart-badge-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); box-shadow: 0 0 0 4px color-mix(in srgb, var(--destructive) 25%, transparent); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cart-badge].is-pulsing { animation: none; }
+}
+
+/* Skip-to-content link — visible only when keyboard-focused */
+.skip-to-content {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 600;
+  transform: translateY(-150%);
+  transition: transform 200ms ease;
+}
+.skip-to-content:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Scroll-up reveal: hide on scroll down, show on scroll up */
+.header-wrapper.has-scroll-reveal {
+  transition: transform 350ms ease;
+}
+.header-wrapper.has-scroll-reveal.is-scroll-hidden {
+  transform: translateY(-100%);
+}
+
+/* Frosted-glass blur after scrolling past 50px — keeps the brand background tint */
+.header-wrapper.has-scroll-blur .site-header {
+  transition: background-color 250ms ease, backdrop-filter 250ms ease;
+}
+.header-wrapper.has-scroll-blur.is-scrolled .site-header {
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background-color: color-mix(in srgb, var(--header-bg) 75%, transparent) !important;
+}
+
+/* Active page indicator (auto-applied by JS based on pathname) */
+.site-header .header-nav a.is-current,
+.site-header .header-nav .is-current > a {
+  font-weight: 600 !important;
+}
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > a.is-current::after,
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > a.is-current::after,
+.site-header[data-nav-hover="bottom_bar"]      .header-nav > ul > li > a.is-current::after {
+  width: 100% !important;
+  transform: scaleX(1) !important;
+  left: 0 !important;
+}
+.site-header[data-nav-hover="top_bar"] .header-nav > ul > li > a.is-current::before {
+  transform: scaleX(1) !important;
+}
+
+/* Respect prefers-reduced-motion — disable animations for visitors who opt out */
+@media (prefers-reduced-motion: reduce) {
+  .header-wrapper,
+  .header-wrapper *,
+  .site-header,
+  .site-header *,
+  .announcement-marquee__track,
+  [data-announcement-bar] .announcement-slide {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.header-wrapper.is-transparent .site-header {
+  position: absolute;
+  left: 0; right: 0;
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+.header-wrapper.has-shrink .site-header {
+  transition: padding 250ms ease, min-height 250ms ease;
+}
+.header-wrapper.has-shrink.is-shrunk .site-header > div {
+  min-height: calc(var(--header-h) * 0.7) !important;
+}
+.header-wrapper.has-shrink.is-shrunk .site-header {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.site-header .header-nav ul,
+.site-header .header-nav .main-nav-list {
+  gap: var(--nav-gap, 24px) !important;
+}
+.site-header .header-icon-link,
+.site-header .header-icon-link svg {
+  color: currentColor;
+}
+/* Force the user-chosen header text/icon color to win over Tailwind's text-foreground class.
+   The `:not(.mobile-drawer-inner *)` exclusion keeps the rule from leaking into the
+   mobile drawer — the drawer is rendered inside the header's DOM tree but is a
+   self-contained UI surface with its own color scheme (white background, dark text).
+   Without this exclusion the !important rule was clobbering the drawer's own colors,
+   notably making the login button text the same color as the button background.
+   Modern browsers (Chrome 88+/Safari 14+/Firefox 84+) support complex selectors
+   inside :not(); we accept the pre-2021 Safari long tail won't get the fix. */
+.site-header,
+.site-header .text-foreground:not(.mobile-drawer-inner *),
+.site-header a:not(.mobile-drawer-inner *),
+.site-header button:not(.mobile-drawer-inner *),
+.site-header svg:not(.mobile-drawer-inner *):not(.highlights-icon) {
+  color: var(--header-fg) !important;
+}
+.site-header svg:not(.mobile-drawer-inner *):not(.highlights-icon) [stroke="currentColor"] { stroke: var(--header-fg) !important; }
+.site-header svg:not(.mobile-drawer-inner *):not(.highlights-icon) [fill="currentColor"]   { fill:   var(--header-fg) !important; }
+
+/* ─── Nav link base styles + premium hover effects ─── */
+.site-header .header-nav a,
+.site-header .header-nav > ul > li > a,
+.site-header .header-nav button,
+.site-header .header-nav summary {
+  color: var(--nav-link) !important;
+  transition: color var(--nav-speed) ease, background-color var(--nav-speed) ease;
+  text-decoration: none !important;
+  position: relative;
+}
+
+/* Disable Tailwind's default hover:underline so our effects can take over */
+.site-header .header-nav a.hover\:underline:hover {
+  text-decoration: none !important;
+}
+
+/* All link rows share these so absolute pseudo-elements anchor correctly */
+.site-header[data-nav-hover] .header-nav > ul > li > a,
+.site-header[data-nav-hover] .header-nav > ul > li > button,
+.site-header[data-nav-hover] .header-nav > ul > li > el-dropdown > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+}
+
+/* Hover color (always applies regardless of effect) */
+.site-header .header-nav a:hover,
+.site-header .header-nav button:hover,
+.site-header .header-nav summary:hover {
+  color: var(--nav-link-hover) !important;
+}
+
+/* ── Effect: static underline (always visible) ── */
+.site-header[data-nav-hover="underline_static"] .header-nav > ul > li > a {
+  text-decoration: underline !important;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+/* ── Effect: underline grows from center on hover ── */
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > a::after,
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > el-dropdown > button::after,
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > a::after,
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > el-dropdown > button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--nav-accent);
+  transition: width var(--nav-speed) ease, left var(--nav-speed) ease;
+}
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > a:hover::after,
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > el-dropdown:hover > button::after,
+.site-header[data-nav-hover="underline_grow"] .header-nav > ul > li > el-dropdown > button:hover::after {
+  left: 0;
+  width: 100%;
+}
+
+/* ── Effect: underline slides from start ── */
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > a::after,
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > el-dropdown > button::after {
+  left: 0;
+  transform-origin: left;
+}
+[dir="rtl"] .site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > a::after,
+[dir="rtl"] .site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > el-dropdown > button::after {
+  left: auto;
+  right: 0;
+  transform-origin: right;
+}
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > a:hover::after,
+.site-header[data-nav-hover="underline_slide"] .header-nav > ul > li > el-dropdown:hover > button::after {
+  width: 100%;
+}
+
+/* ── Effect: top accent bar ── */
+.site-header[data-nav-hover="top_bar"] .header-nav > ul > li > a::before,
+.site-header[data-nav-hover="top_bar"] .header-nav > ul > li > el-dropdown > button::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--nav-accent);
+  transform: scaleX(0);
+  transition: transform var(--nav-speed) ease;
+}
+.site-header[data-nav-hover="top_bar"] .header-nav > ul > li > a:hover::before,
+.site-header[data-nav-hover="top_bar"] .header-nav > ul > li > el-dropdown:hover > button::before {
+  transform: scaleX(1);
+}
+
+/* ── Effect: thick bottom bar ── */
+.site-header[data-nav-hover="bottom_bar"] .header-nav > ul > li > a::after,
+.site-header[data-nav-hover="bottom_bar"] .header-nav > ul > li > el-dropdown > button::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--nav-accent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--nav-speed) ease;
+}
+.site-header[data-nav-hover="bottom_bar"] .header-nav > ul > li > a:hover::after,
+.site-header[data-nav-hover="bottom_bar"] .header-nav > ul > li > el-dropdown:hover > button::after {
+  transform: scaleX(1);
+}
+
+/* ── Effect: pill background ── */
+.site-header[data-nav-hover="pill"] .header-nav > ul > li > a,
+.site-header[data-nav-hover="pill"] .header-nav > ul > li > el-dropdown > button {
+  border-radius: 9999px;
+  padding: 0.5rem 0.875rem;
+}
+.site-header[data-nav-hover="pill"] .header-nav > ul > li > a:hover,
+.site-header[data-nav-hover="pill"] .header-nav > ul > li > el-dropdown > button:hover {
+  background-color: var(--nav-accent);
+  color: #fff !important;
+}
+
+/* ── Effect: soft background fade ── */
+.site-header[data-nav-hover="fade_bg"] .header-nav > ul > li > a,
+.site-header[data-nav-hover="fade_bg"] .header-nav > ul > li > el-dropdown > button {
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+}
+.site-header[data-nav-hover="fade_bg"] .header-nav > ul > li > a:hover,
+.site-header[data-nav-hover="fade_bg"] .header-nav > ul > li > el-dropdown > button:hover {
+  background-color: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+}
+
+/* ─── Premium dropdown sub-menus (matches the cart drawer variant menu style) ─── */
+el-menu,
+[role="menu"][popover] {
+  background: var(--dropdown-bg) !important;
+  border: 1px solid color-mix(in srgb, var(--dropdown-link) 12%, transparent) !important;
+  border-radius: 12px !important;
+  padding: 0.375rem !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 18px 40px -12px rgba(0, 0, 0, 0.22),
+    0 6px 16px -8px rgba(0, 0, 0, 0.10) !important;
+  min-width: 12rem !important;
+  animation: header-dropdown-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: top center;
+}
+@keyframes header-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+el-menu a,
+el-menu button,
+el-menu a.text-foreground,
+el-menu [role="menuitem"],
+[role="menu"][popover] a,
+[role="menu"][popover] button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+  padding: 0.5rem 0.75rem !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  color: var(--dropdown-link) !important;
+  background: transparent !important;
+  transition: background-color 140ms ease, color 140ms ease, padding 140ms ease !important;
+  text-decoration: none !important;
+}
+el-menu a:hover,
+el-menu button:hover,
+el-menu a.text-foreground:hover,
+el-menu [role="menuitem"]:hover,
+[role="menu"][popover] a:hover,
+[role="menu"][popover] button:hover {
+  color: var(--dropdown-hover) !important;
+  background: color-mix(in srgb, var(--dropdown-link) 7%, transparent) !important;
+  padding-inline-start: 1rem !important;
+}
+el-menu a:focus-visible,
+el-menu button:focus-visible {
+  outline: none !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+  box-shadow: 0 0 0 2px var(--primary) !important;
+}
+el-menu a:active,
+el-menu button:active {
+  background: color-mix(in srgb, var(--dropdown-link) 14%, transparent) !important;
+}
+
+/* ─── Mega menu (deep categories) ─────────────────────────────────────────
+   Used when a top-level menu item has children with their own children.
+   Replaces the old "dropdown → nested dropdown" two-hover UX with a flat
+   multi-column panel that exposes all level-3 links at once. */
+.mega-menu {
+  position: fixed;
+  background: var(--dropdown-bg);
+  color: var(--dropdown-link);
+  border: 1px solid color-mix(in srgb, var(--dropdown-link) 12%, transparent);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 22px 50px -16px rgba(0, 0, 0, 0.24),
+    0 8px 20px -10px rgba(0, 0, 0, 0.12);
+  /* Width adapts to content but tops out so the panel doesn't span the whole
+     viewport on huge menus. */
+  min-width: 420px;
+  max-width: min(90vw, 960px);
+  transform-origin: top center;
+  animation: header-dropdown-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mega-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem 1.75rem;
+}
+.mega-menu__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.mega-menu__heading {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--dropdown-link);
+  text-decoration: none;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--dropdown-link) 12%, transparent);
+}
+a.mega-menu__heading {
+  transition: color 140ms ease;
+}
+a.mega-menu__heading:hover {
+  color: var(--dropdown-hover);
+}
+.mega-menu__heading--solo {
+  border-bottom-color: transparent;
+  font-size: 0.875rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.mega-menu__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mega-menu__link {
+  display: block;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--dropdown-link) 85%, transparent);
+  text-decoration: none;
+  transition: color 140ms ease, padding-inline-start 140ms ease;
+  border-radius: 4px;
+}
+.mega-menu__link:hover {
+  color: var(--dropdown-hover);
+  padding-inline-start: 0.375rem;
+}
+.mega-menu__link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary);
+  padding-inline-start: 0.375rem;
+}
+
+/* Mobile drawer (rendered inside <dialog>, outside .site-header) */
+#mobile-drawer .bg-background {
+  background-color: var(--drawer-bg) !important;
+}
+/* Apply drawer link color ONLY to navigation items. The footer action
+   buttons (Login filled-primary, Logout outlined, Account/Region icon-only)
+   carry their own explicit colors — forcing --drawer-link on them would
+   wipe out the primary-foreground text on the filled Login button and
+   leave it invisible on same-color themes. */
+#mobile-drawer a:not(.mobile-drawer-login-btn):not(.mobile-drawer-logout-btn):not(.mobile-drawer-icon-btn):not(.mobile-drawer-social__btn),
+#mobile-drawer button:not(.mobile-drawer-login-btn):not(.mobile-drawer-logout-btn):not(.mobile-drawer-icon-btn):not(.mobile-drawer-social__btn):not(.mobile-drawer-close),
+#mobile-drawer summary,
+#mobile-drawer summary span {
+  color: var(--drawer-link) !important;
+  transition: color 150ms ease;
+}
+#mobile-drawer a:not(.mobile-drawer-login-btn):not(.mobile-drawer-logout-btn):not(.mobile-drawer-icon-btn):not(.mobile-drawer-social__btn):hover,
+#mobile-drawer button:not(.mobile-drawer-login-btn):not(.mobile-drawer-logout-btn):not(.mobile-drawer-icon-btn):not(.mobile-drawer-social__btn):not(.mobile-drawer-close):hover,
+#mobile-drawer summary:hover,
+#mobile-drawer summary:hover span {
+  color: var(--drawer-link-hover) !important;
+}
+/* Input pill mode: hide the original icon-only search trigger so only the pill remains */
+.search-slot.is-input-mode > button[data-search-trigger]:not(.header-search-pill) {
+  display: none !important;
+}
+/* Prevent closed search dialog from blocking clicks on adjacent header icons */
+#search-dialog-wrapper { pointer-events: none; }
+#search-dialog-wrapper dialog[open] { pointer-events: auto; }
+#search-dialog:not([open]) { pointer-events: none !important; display: none !important; }
+/* Layout 5/6: force the hamburger to be visible at all breakpoints */
+.header-wrapper.layout-drawer-only #mobile-drawer-dialog > button {
+  display: inline-flex !important;
+}
+/* Layout 5/6: constrain the drawer panel width on desktop */
+@media (min-width: 1024px) {
+  .header-wrapper.layout-drawer-only ~ * #mobile-drawer,
+  body:has(.header-wrapper.layout-drawer-only) #mobile-drawer {
+    left: auto !important;
+    width: 360px;
+    max-width: 90vw;
+  }
+  body:has(.header-wrapper.layout-drawer-only) #mobile-drawer el-dialog-panel {
+    width: 360px;
+    max-width: 90vw;
+  }
+}

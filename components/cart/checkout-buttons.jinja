@@ -1,0 +1,20 @@
+<div
+  class="flex flex-col gap-2"
+  data-checkout-buttons
+>
+  {% if store.settings.general.availability.closed_now %}
+    <button
+      class="btn btn-filled btn-lg w-full"
+      disabled
+    >
+      {{ _("Store is closed") }}
+    </button>
+  {% else %}
+    <a
+      href="/checkout"
+      class="btn btn-filled btn-lg w-full"
+    >
+      {{ _("Checkout") }}
+    </a>
+  {% endif %}
+</div>

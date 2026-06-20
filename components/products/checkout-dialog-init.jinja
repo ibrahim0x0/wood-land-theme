@@ -1,0 +1,20 @@
+{# ───────────────────────────────────────────────────────────────────
+   Vitrin Quick-Checkout Dialog
+
+   Per Zid docs (https://docs.zid.dev/themes-developer-guide
+   /features/checkout-as-a-popup), including this platform template
+   on the page:
+     • Loads the right SDK version automatically
+     • Initializes the checkout_dialog Kit Component
+     • Exposes `window.checkout_dialog = { open, close }`
+     • Provides `window.zid.cart.buyNow({ form_id }, opts)` for the
+       Buy Now flow used by assets/js/features/buy-now.js
+
+   That's it. Everything else (version management, Kit init, custom
+   styles wiring) is handled by the platform.
+
+   Custom styles: any per-merchant Kit customization goes through
+   `window.zidCustomStyles.checkout_dialog = { ... }` set up in
+   `layout.jinja` (see the existing zidCustomStyles block).
+   ─────────────────────────────────────────────────────────────────── #}
+{% include "vitrin:checkout/checkout_dialog.jinja" %}

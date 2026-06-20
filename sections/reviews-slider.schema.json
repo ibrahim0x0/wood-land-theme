@@ -1,0 +1,461 @@
+{
+  "template": "sections/reviews-slider.jinja",
+  "name": {
+    "ar": "معرض آراء العملاء (لقطات)",
+    "en": "Customer Reviews Gallery (screenshots)"
+  },
+  "settings": [
+    {
+      "id": "eyebrow",
+      "type": "text",
+      "label": {
+        "ar": "النص الافتتاحي (اختياري)",
+        "en": "Eyebrow (optional)"
+      },
+      "default": ""
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "label": {
+        "ar": "العنوان",
+        "en": "Title"
+      },
+      "info": {
+        "ar": "مثال: \"آراء العملاء\" أو \"تجارب حقيقية\".",
+        "en": "e.g. \"Customer Reviews\" or \"Real experiences\"."
+      },
+      "default": ""
+    },
+    {
+      "id": "subtitle",
+      "type": "textarea",
+      "label": {
+        "ar": "الوصف (اختياري)",
+        "en": "Subtitle (optional)"
+      },
+      "default": ""
+    },
+
+    {
+      "id": "images",
+      "type": "list",
+      "label": {
+        "ar": "لقطات الآراء",
+        "en": "Review screenshots"
+      },
+      "info": {
+        "ar": "أضف من 6 إلى 30 لقطة من تعليقات العملاء (واتساب، انستغرام، تيك توك، إلخ). الصور المستطيلة الطويلة (لقطات الجوال) مناسبة جدًا. سيتم فتحها في عارض كامل عند النقر مع إمكانية التكبير والتنقل.",
+        "en": "Add 6–30 customer-feedback screenshots (WhatsApp, Instagram, TikTok, etc.). Tall portrait images (phone screenshots) work especially well. They open in a full-screen viewer with zoom + navigation on click."
+      },
+      "max_items": 30,
+      "settings": [
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "اللقطة",
+            "en": "Screenshot"
+          }
+        },
+        {
+          "id": "alt",
+          "type": "text",
+          "label": {
+            "ar": "وصف اللقطة (لقارئات الشاشة)",
+            "en": "Alt text (for screen readers)"
+          },
+          "info": {
+            "ar": "مثال: \"تعليق سارة من الرياض\". إذا تُرك فارغًا تظهر الصورة كزخرفية.",
+            "en": "e.g. \"Sarah from Riyadh's review\". If empty, the image is announced as decorative."
+          }
+        }
+      ]
+    },
+    {
+      "id": "enable_lightbox",
+      "type": "checkbox",
+      "label": {
+        "ar": "── تفعيل العارض الكامل عند النقر",
+        "en": "── Enable click-to-zoom lightbox"
+      },
+      "info": {
+        "ar": "النقر على أي لقطة يفتحها بحجم كامل مع إمكانية التكبير والتنقل بين اللقطات. يُستخدم PhotoSwipe (مكتبة العرض المضمنة في القالب).",
+        "en": "Clicking any screenshot opens it full-screen with pinch-to-zoom and slide-to-slide navigation. Uses PhotoSwipe (the lightbox library already bundled with the theme)."
+      },
+      "default": true
+    },
+    {
+      "id": "autoplay",
+      "type": "checkbox",
+      "label": {
+        "ar": "── تشغيل تلقائي للشرائح",
+        "en": "── Autoplay slides"
+      },
+      "info": {
+        "ar": "الشرائح تتقدم تلقائيًا. يتوقف عند تفاعل المستخدم.",
+        "en": "Slides advance automatically. Pauses on user interaction."
+      },
+      "default": false
+    },
+    {
+      "id": "autoplay_delay",
+      "type": "range",
+      "label": {
+        "ar": "── مدة عرض الشريحة",
+        "en": "── Slide duration"
+      },
+      "min": 2000,
+      "max": 10000,
+      "step": 500,
+      "unit": "ms",
+      "default": 4000
+    },
+    {
+      "id": "show_pagination",
+      "type": "checkbox",
+      "label": {
+        "ar": "── إظهار نقاط الترقيم",
+        "en": "── Show pagination dots"
+      },
+      "default": true
+    },
+    {
+      "id": "slide_aspect",
+      "type": "select",
+      "label": {
+        "ar": "── نسبة عرض اللقطة",
+        "en": "── Slide aspect ratio"
+      },
+      "info": {
+        "ar": "افتراضياً \"تلقائي\" — كل صورة تحتفظ بأبعادها الأصلية (لا قص، الارتفاعات تختلف قليلاً بين البطاقات). إذا كانت لقطاتك من نفس النوع (كلها جوال طولي مثلاً) اختر نسبة محددة لشريط متجانس تماماً. اختيار نسبة محددة قد يقص أطراف الصور التي لا تتطابق نسبتها.",
+        "en": "Default \"Auto\" — each image keeps its natural dimensions (no cropping, slight height variation between cards). If your screenshots are uniform (all phone portraits, etc.), pick a fixed ratio for a perfectly even strip. Be aware: a fixed ratio crops edges off mismatched-aspect images."
+      },
+      "options": [
+        {
+          "value": "auto",
+          "label": {
+            "ar": "تلقائي (نسبة طبيعية لكل صورة — افتراضي)",
+            "en": "Auto (each image keeps its natural ratio — default)"
+          }
+        },
+        {
+          "value": "9_16",
+          "label": {
+            "ar": "9:16 (لقطة جوال طولية)",
+            "en": "9:16 (phone screenshot, portrait)"
+          }
+        },
+        {
+          "value": "3_4",
+          "label": {
+            "ar": "3:4 (طولي معتدل)",
+            "en": "3:4 (mild portrait)"
+          }
+        },
+        {
+          "value": "4_5",
+          "label": {
+            "ar": "4:5 (انستغرام بوست)",
+            "en": "4:5 (Instagram post)"
+          }
+        },
+        {
+          "value": "1_1",
+          "label": {
+            "ar": "1:1 (مربع)",
+            "en": "1:1 (square)"
+          }
+        },
+        {
+          "value": "16_9",
+          "label": {
+            "ar": "16:9 (عرضي)",
+            "en": "16:9 (landscape)"
+          }
+        }
+      ],
+      "default": "auto"
+    },
+    {
+      "id": "slide_fit",
+      "type": "select",
+      "label": {
+        "ar": "── ملاءمة الصورة داخل البطاقة",
+        "en": "── Image fit inside the card"
+      },
+      "info": {
+        "ar": "يُستخدم فقط عند اختيار نسبة محددة أعلاه. \"ملاءمة\" يعرض الصورة كاملة (مع هامش أبيض إن لم تتطابق الأبعاد) — أكثر أماناً وأقل عدوانية. \"تعبئة\" يقص الأطراف ليملأ البطاقة كاملة.",
+        "en": "Only used when a fixed ratio is picked above. \"Contain\" shows the full image (with whitespace bars if aspects don't match) — safer, less aggressive. \"Cover\" crops edges to fill the card completely."
+      },
+      "options": [
+        {
+          "value": "contain",
+          "label": {
+            "ar": "ملاءمة (عرض الصورة كاملة — افتراضي)",
+            "en": "Contain (show full image — default)"
+          }
+        },
+        {
+          "value": "cover",
+          "label": {
+            "ar": "تعبئة (قص للحفاظ على الإطار)",
+            "en": "Cover (crop to fill)"
+          }
+        }
+      ],
+      "default": "contain"
+    },
+    {
+      "id": "slide_radius",
+      "type": "range",
+      "label": {
+        "ar": "── انحناء حواف اللقطة",
+        "en": "── Slide corner radius"
+      },
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "id": "cta_text",
+      "type": "text",
+      "label": {
+        "ar": "── نص زر الدعوة (اختياري)",
+        "en": "── CTA button text (optional)"
+      },
+      "info": {
+        "ar": "مثال: \"اكتشف منتجاتنا\". اتركه فارغًا لإخفاء الزر تمامًا.",
+        "en": "e.g. \"Shop our products\". Leave empty to hide the button entirely."
+      },
+      "default": ""
+    },
+    {
+      "id": "cta_shortcut",
+      "type": "select",
+      "label": {
+        "ar": "── وجهة الزر (اختصار سريع)",
+        "en": "── CTA destination (quick shortcut)"
+      },
+      "info": {
+        "ar": "اختصار لوجهات شائعة. يتجاوز القائمة الذكية والرابط المخصص أدناه.",
+        "en": "Shortcut for common destinations. Overrides the smart picker and custom URL below."
+      },
+      "options": [
+        {
+          "value": "none",
+          "label": {
+            "ar": "— لا شيء —",
+            "en": "— None —"
+          }
+        },
+        {
+          "value": "recent",
+          "label": {
+            "ar": "الأحدث",
+            "en": "Recent products"
+          }
+        },
+        {
+          "value": "bestseller",
+          "label": {
+            "ar": "الأكثر شيوعًا",
+            "en": "Bestsellers"
+          }
+        },
+        {
+          "value": "on_sale",
+          "label": {
+            "ar": "العروض",
+            "en": "On sale"
+          }
+        },
+        {
+          "value": "all",
+          "label": {
+            "ar": "كل المنتجات",
+            "en": "All products"
+          }
+        },
+        {
+          "value": "home",
+          "label": {
+            "ar": "الصفحة الرئيسية",
+            "en": "Homepage"
+          }
+        }
+      ],
+      "default": "all"
+    },
+    {
+      "id": "cta_products",
+      "type": "products",
+      "label": {
+        "ar": "── أو قائمة ذكية (منتجات/فئة)",
+        "en": "── Or smart picker (products / category)"
+      }
+    },
+    {
+      "id": "cta_url",
+      "type": "url",
+      "label": {
+        "ar": "── أو رابط مخصص",
+        "en": "── Or custom URL"
+      },
+      "default": ""
+    },
+    {
+      "id": "cta_show_shine",
+      "type": "checkbox",
+      "label": {
+        "ar": "── تأثير لمعان على الزر",
+        "en": "── Shine sweep animation on the button"
+      },
+      "info": {
+        "ar": "خط ضوء يلمع عبر الزر كل 3 ثوانٍ. يُحترم تفضيل تقليل الحركة في النظام.",
+        "en": "Light streak sweeps across the button every 3 seconds. Respects OS-level reduce-motion preference."
+      },
+      "default": true
+    },
+    {
+      "id": "cta_target_blank",
+      "type": "checkbox",
+      "label": {
+        "ar": "── فتح الزر في نافذة جديدة",
+        "en": "── Open CTA in a new tab"
+      },
+      "info": {
+        "ar": "مفيد عندما يشير الرابط إلى موقع خارجي حتى لا يخرج العميل من المتجر أثناء التصفح. يُضيف تلقائياً rel=noopener للأمان.",
+        "en": "Useful when the link points to an external site so the customer doesn't get pulled out of the store mid-scroll. Automatically adds rel=noopener for safety."
+      },
+      "default": false
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "── الخلفية",
+        "en": "── Background"
+      },
+      "options": [
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي",
+            "en": "Secondary"
+          }
+        },
+        {
+          "value": "warm",
+          "label": {
+            "ar": "كريمي دافئ",
+            "en": "Warm cream"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "warm"
+    },
+    {
+      "id": "padding_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الداخلية",
+        "en": "── Vertical padding"
+      },
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "id": "margin_y",
+      "type": "range",
+      "label": {
+        "ar": "── المسافة العمودية الخارجية",
+        "en": "── Vertical margin"
+      },
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "id": "border_top",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد علوي",
+        "en": "── Top border"
+      },
+      "default": false
+    },
+    {
+      "id": "border_bottom",
+      "type": "checkbox",
+      "label": {
+        "ar": "── حد سفلي",
+        "en": "── Bottom border"
+      },
+      "default": false
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}

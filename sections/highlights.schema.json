@@ -1,0 +1,175 @@
+{
+  "template": "sections/highlights.jinja",
+  "name": {
+    "ar": "مزايا سريعة",
+    "en": "Highlights"
+  },
+  "settings": [
+    {
+      "id": "points",
+      "type": "list",
+      "label": {
+        "ar": "العناصر",
+        "en": "Items"
+      },
+      "info": {
+        "ar": "حتى 4 عناصر. على الموبايل: 3 عناصر تتقلص لتلائم الصف، 4 عناصر تتحول لشبكة 2×2.",
+        "en": "Up to 4 items. On mobile: 3 items shrink to fit one row; 4 items become a 2×2 grid."
+      },
+      "max_items": 4,
+      "settings": [
+        {
+          "id": "image",
+          "type": "image",
+          "label": {
+            "ar": "الأيقونة",
+            "en": "Icon"
+          },
+          "info": {
+            "ar": "ارفع SVG أو PNG شفاف بحجم ~64×64 بكسل.",
+            "en": "Upload an SVG or transparent PNG, ~64×64 pixels."
+          }
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "label": {
+            "ar": "العنوان",
+            "en": "Title"
+          }
+        },
+        {
+          "id": "description",
+          "type": "text",
+          "label": {
+            "ar": "الوصف",
+            "en": "Description"
+          }
+        }
+      ]
+    },
+    {
+      "id": "container_style",
+      "type": "select",
+      "label": {
+        "ar": "أسلوب العرض",
+        "en": "Display style"
+      },
+      "options": [
+        {
+          "value": "unified",
+          "label": {
+            "ar": "شريط موحد بفواصل عمودية",
+            "en": "Unified bar with vertical dividers"
+          }
+        },
+        {
+          "value": "cards",
+          "label": {
+            "ar": "بطاقات منفصلة لكل عنصر",
+            "en": "Separate card per item"
+          }
+        },
+        {
+          "value": "bare",
+          "label": {
+            "ar": "بدون حدود",
+            "en": "No borders"
+          }
+        }
+      ],
+      "default": "unified"
+    },
+    {
+      "id": "item_radius",
+      "type": "range",
+      "label": {
+        "ar": "نصف قطر الحدود",
+        "en": "Border radius"
+      },
+      "info": {
+        "ar": "يطبق على الحاوية في النمط الموحد، وعلى كل بطاقة في نمط البطاقات.",
+        "en": "Applies to the outer container in Unified style, and to each card in Cards style."
+      },
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "id": "background",
+      "type": "select",
+      "label": {
+        "ar": "الخلفية",
+        "en": "Background"
+      },
+      "options": [
+        {
+          "value": "secondary",
+          "label": {
+            "ar": "ثانوي",
+            "en": "Secondary"
+          }
+        },
+        {
+          "value": "background",
+          "label": {
+            "ar": "خلفية الصفحة",
+            "en": "Page background"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "ar": "شفاف",
+            "en": "Transparent"
+          }
+        }
+      ],
+      "default": "secondary"
+    },
+    {
+      "id": "visibility_countries",
+      "type": "text",
+      "label": {
+        "ar": "── إظهار في دول محددة (اختياري)",
+        "en": "── Show in specific countries (optional)"
+      },
+      "info": {
+        "ar": "رموز الدول مفصولة بفاصلة (مثل: \"SA, KW, AE\"). اتركه فارغًا لإظهار القسم في كل الدول. الكشف يستخدم رابط المتجر (/ar-sa/, /ar-kw/) ثم session.country كاحتياطي. غير حساس لحالة الأحرف.",
+        "en": "Comma-separated country codes (e.g. \"SA, KW, AE\"). Leave empty to show in all countries. Detection uses the storefront URL locale (/ar-sa/, /ar-kw/) first, then session.country as a fallback. Case-insensitive."
+      },
+      "default": ""
+    },
+    {
+      "id": "visibility_mode",
+      "type": "select",
+      "label": {
+        "ar": "── وضع الاستهداف",
+        "en": "── Targeting mode"
+      },
+      "info": {
+        "ar": "إظهار في: يظهر القسم فقط للزوار من الدول المحددة. إخفاء في: يخفى القسم عن الزوار من الدول المحددة. يعمل فقط عند تعبئة قائمة الدول أعلاه.",
+        "en": "Show in: section renders only for visitors from the listed countries. Hide in: section hides from visitors in the listed countries. Only takes effect when the country list above has values."
+      },
+      "options": [
+        {
+          "value": "show_in",
+          "label": {
+            "ar": "إظهار في الدول المحددة (افتراضي)",
+            "en": "Show in listed countries (default)"
+          }
+        },
+        {
+          "value": "hide_in",
+          "label": {
+            "ar": "إخفاء في الدول المحددة",
+            "en": "Hide in listed countries"
+          }
+        }
+      ],
+      "default": "show_in"
+    }
+  ]
+}
